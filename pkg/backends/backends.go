@@ -353,9 +353,23 @@ func RepoConfigPath(sparkwingDir string) string {
 	return filepath.Join(sparkwingDir, "backends.yaml")
 }
 
-// Resolve loads both files and merges them. Repo values win per
-// non-zero field; user values fill blanks.
+// Resolve loads the repo (.sparkwing/backends.yaml) and user
+// ($XDG_CONFIG_HOME/sparkwing/backends.yaml) files, merges them
+// (repo values win per non-zero field; user fills blanks), then
+// layers in BuiltinEnvironments at the bottom so the gha and
+// kubernetes detect rules are always available. The merged File
+// is ready for DetectEnvironment + Effective.
 func Resolve(sparkwingDir string) (File, error) {
+	return ResolveWithOverlay(sparkwingDir, "")
+}
+
+// ResolveWithOverlay extends Resolve with an extra File loaded from
+// overlayPath that sits ABOVE the repo+user merge but BELOW the
+// built-in environment detect rules. Used by the outer wing CLI to
+// forward profile-derived storage settings to the child via a
+// synthesized temp yaml file. Empty overlayPath behaves identically
+// to Resolve.
+func ResolveWithOverlay(sparkwingDir, overlayPath string) (File, error) {
 	user, err := loadUser()
 	if err != nil {
 		return File{}, err
@@ -367,7 +381,43 @@ func Resolve(sparkwingDir string) (File, error) {
 			return File{}, err
 		}
 	}
-	return Merge(repo, user), nil
+	file := Merge(repo, user)
+	if overlayPath != "" {
+		overlay, oerr := Load(overlayPath)
+		if oerr != nil {
+			return File{}, fmt.Errorf("backends overlay %s: %w", overlayPath, oerr)
+		}
+		file = Merge(overlay, file)
+	}
+	return Merge(file, BuiltinEnvironments()), nil
+}
+
+// BuiltinEnvironments returns the auto-detect rules every install
+// gets for free: gha and kubernetes. Users override per-surface by
+// declaring the same environment name in backends.yaml.
+func BuiltinEnvironments() File {
+	return File{
+		Environments: map[string]Environment{
+			"gha": {
+				Name: "gha",
+				Detect: Detect{
+					EnvVar: "GITHUB_ACTIONS",
+					Equals: "true",
+				},
+			},
+			"kubernetes": {
+				Name: "kubernetes",
+				Detect: Detect{
+					EnvVar:  "KUBERNETES_SERVICE_HOST",
+					Present: true,
+				},
+				Surfaces: Surfaces{
+					Cache: &Spec{Type: TypeController},
+					Logs:  &Spec{Type: TypeController},
+				},
+			},
+		},
+	}
 }
 
 func loadUser() (File, error) {

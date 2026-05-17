@@ -422,11 +422,25 @@ type triggerReqGit struct {
 	GithubRepo  string `json:"github_repo,omitempty"`
 }
 
+// triggerReqMeta is the trigger block on POST /api/v1/triggers
+// bodies. The wire field set is intentionally decoupled from the
+// SDK's TriggerInfo: Env carries operational metadata
+// (GITHUB_DELIVERY, GITHUB_REPOSITORY, range-resume markers, ...)
+// onto the persisted store.Trigger row but is not surfaced to step
+// bodies. Step-body code reads trigger-supplied values via the
+// pipeline's typed Config struct (declared under the trigger's
+// values: block in pipelines.yaml).
+type triggerReqMeta struct {
+	Source string            `json:"source,omitempty"`
+	User   string            `json:"user,omitempty"`
+	Env    map[string]string `json:"env,omitempty"`
+}
+
 type triggerReq struct {
-	Pipeline string                `json:"pipeline"`
-	Args     map[string]string     `json:"args,omitempty"`
-	Trigger  sparkwing.TriggerInfo `json:"trigger,omitempty"`
-	Git      triggerReqGit         `json:"git,omitempty"`
+	Pipeline string            `json:"pipeline"`
+	Args     map[string]string `json:"args,omitempty"`
+	Trigger  triggerReqMeta    `json:"trigger,omitempty"`
+	Git      triggerReqGit     `json:"git,omitempty"`
 	// ParentRunID identifies the run that spawned this trigger via
 	// sparkwing.RunAndAwait; the controller walks the parent
 	// chain to reject cycles before persisting.
@@ -577,7 +591,10 @@ func (s *Server) handleTrigger(w http.ResponseWriter, r *http.Request) {
 		RunID:    runID,
 		Pipeline: body.Pipeline,
 		Args:     body.Args,
-		Trigger:  body.Trigger,
+		Trigger: sparkwing.TriggerInfo{
+			Source: body.Trigger.Source,
+			User:   body.Trigger.User,
+		},
 		Git: &sparkwing.Git{
 			Branch:  body.Git.Branch,
 			SHA:     body.Git.SHA,

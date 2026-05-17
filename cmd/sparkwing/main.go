@@ -265,17 +265,6 @@ func runWing(args []string) error {
 		if wf.workers > 0 {
 			env = append(env, fmt.Sprintf("SPARKWING_WORKERS=%d", wf.workers))
 		}
-		// User-set SPARKWING_*_STORE env vars are forwarded verbatim so
-		// the inner shim still translates them (and warns once). Profile-
-		// derived values are materialized into a temp backends.yaml and
-		// passed via --backends-config so the warning fires only when an
-		// operator actually set the env var themselves.
-		if v := os.Getenv("SPARKWING_LOG_STORE"); v != "" {
-			env = append(env, "SPARKWING_LOG_STORE="+v)
-		}
-		if v := os.Getenv("SPARKWING_ARTIFACT_STORE"); v != "" {
-			env = append(env, "SPARKWING_ARTIFACT_STORE="+v)
-		}
 		if wf.on != "" {
 			prof, err := resolveProfile(wf.on)
 			if err != nil {

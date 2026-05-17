@@ -134,7 +134,7 @@ func runInternalCompleteBackendsEnvs(_ []string) error {
 		return nil //nolint:nilerr
 	}
 	sparkwingDir, _ := walkUpForSparkwing(cwd)
-	file, err := backends.ResolveWithEnv(sparkwingDir)
+	file, err := backends.Resolve(sparkwingDir)
 	if err != nil {
 		return nil //nolint:nilerr
 	}

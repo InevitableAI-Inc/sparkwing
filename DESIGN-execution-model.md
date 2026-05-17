@@ -693,11 +693,11 @@ push:
   values: { deploy_env: staging }
 ```
 
-Job code reads `cfg.DeployEnv`, not `rc.TriggerEnv("DEPLOY_ENV")`. `TriggerInfo.Env` is retained read-only for one release, then removed.
+Job code reads `cfg.DeployEnv`, not `rc.TriggerEnv("DEPLOY_ENV")`. The `TriggerInfo.Env` field and the `RunContext.TriggerEnv` accessor have been removed.
 
-**The `secrets:` list on `Pipeline`** (currently a no-op backward-compat field). Reactivated as the fail-fast list, populated automatically from the `Secrets()` typed struct's `required` fields. Free-form string lists are no longer accepted.
+**The `secrets:` list on `Pipeline`.** Now the fail-fast typed list. Each entry is a mapping (`{name: FOO, required: true}`); free-form string lists are rejected at parse time with a migration message.
 
-**`SPARKWING_LOG_STORE` and `SPARKWING_ARTIFACT_STORE`** env vars. Replaced by `backends.yaml` with auto-detection. A compatibility shim maps the old env vars to the new structure for one release; deprecation surfaces a warning when the legacy form is detected.
+**`SPARKWING_LOG_STORE` and `SPARKWING_ARTIFACT_STORE`** env vars. Replaced by `backends.yaml` with auto-detection. The env vars no longer influence backend selection.
 
 ## Out of scope for v1
 
@@ -708,16 +708,18 @@ Job code reads `cfg.DeployEnv`, not `rc.TriggerEnv("DEPLOY_ENV")`. `TriggerInfo.
 
 ## Migration
 
-Each step is a self-contained PR. Existing pipelines run unchanged through step 8; step 10 is the only one that surfaces compile-time deprecation noise.
+Complete. Eleven self-contained PRs landed the new execution model, plus a final cleanup PR that stripped every migration-era compatibility shim:
 
-1. **Rename `*Node` → `*Job`, `*NodeGroup` → `*JobGroup`, `RunsOn` → `Requires`.** Pure type/method rename; behavior unchanged. SDK godoc examples updated; Workable struct naming convention drops the "Job" suffix in examples.
-2. **Add `Prefers(labels...)` and `WhenRunner(labels...)`** as peers to `Requires` on `*Job` and `*JobGroup`. Wire preference ordering and skip-on-no-match through the scheduler.
+1. **Rename `*Node` → `*Job`, `*NodeGroup` → `*JobGroup`, `RunsOn` → `Requires`.** Pure type/method rename; behavior unchanged.
+2. **Add `Prefers(labels...)` and `WhenRunner(labels...)`** as peers to `Requires` on `*Job` and `*JobGroup`. Wired preference ordering and skip-on-no-match through the scheduler.
 3. **Add `Workable.Requires() []string` and `Workable.Prefers() []string`** as optional interfaces; orchestrator reads them when wrapping a Workable into a `*Job`.
-4. **Add `runners.yaml`** parser + merge logic. Define `type: local`, `type: kubernetes`, `type: static`. The local runner remains implicit.
-5. **Add `default_runner`** to `profiles.yaml`. Default it to `local` for any profile without one.
-6. **Extend `pipelines.yaml`** with `targets:`, `runners:`, `values:`, and lift `secrets:` semantics. Keep parsing the old `secrets: []string` form for one release.
+4. **Add `runners.yaml`** parser + merge logic. Defined `type: local`, `type: kubernetes`, `type: static`. The local runner stays implicit.
+5. **Add `default_runner`** to `profiles.yaml`. Defaults to `local` for any profile without one.
+6. **Extend `pipelines.yaml`** with `targets:`, `runners:`, `values:`, and lift `secrets:` to a typed list.
 7. **Add optional `Config()` / `Secrets()` methods** to pipelines. Pipelines without them keep working; pipelines with them get the layered typed config + fail-fast resolution.
-8. **Add `sources.yaml`** parser and resolver-by-target wiring. Add `backends.yaml` parser, auto-detect rules, and the `Cache` / `Logs` / `State` interfaces. Compatibility shim for `SPARKWING_LOG_STORE` / `SPARKWING_ARTIFACT_STORE`.
+8. **Add `sources.yaml`** parser and resolver-by-target wiring. Added the `backends.yaml` parser, auto-detect rules, and the `Cache` / `Logs` interfaces.
 9. **CLI surface**: `--for`, `--job <id>=<runner>`, `--prefer`, `--backends-env`, autocomplete updates, `sparkwing run <pipeline> config` introspection.
-10. **Trim `RuntimeConfig` in place.** Remove `IsLocal`, `RunID`, `NodeID`, and env-var-based detection. Move `Debug` to a free function `sparkwing.Debug()`. Add `sparkwing.Runner(ctx)` accessor (with `WithRunner` constructor for tests). Delete the `Venue` enum and its optional method on pipeline values.
-11. **Deprecate** `TriggerInfo.Env` and the env-var compatibility shims with build-time warnings. Remove one release later.
+10. **Trim `RuntimeConfig` in place.** Removed `IsLocal`, `RunID`, `NodeID`, the `Debug` field, and every env-var-based detection. `sparkwing.DebugEnabled()` exposes the SPARKWING_DEBUG flag; `sparkwing.Runner(ctx)` exposes the chosen runner. Deleted the `Venue` enum (the runner-resolution rule subsumes it).
+11. **Trigger typed values.** Added `on.<trigger>.values:` blocks on trigger specs; values flow through the pipeline's typed Config struct via the same layering as `values.base` and `targets.<name>.values`.
+
+**Cleanup PR (post-step-11).** Stripped every migration-era backward-compat surface: `TriggerInfo.Env`, `RunContext.TriggerEnv`, `PushTrigger.Env`, the `RunConfig` / `CurrentRunConfig` aliases, the `SPARKWING_LOG_STORE` / `SPARKWING_ARTIFACT_STORE` env-var shim and its deprecation warnings, and the bare-string form of `secrets:`. The persisted run record no longer carries `trigger_env_keys`. The post-migration surface is the only surface.

@@ -27,7 +27,7 @@ import (
 // caller (e.g. cluster worker plumbing) take precedence over the
 // resolved configuration.
 func ApplyBackendsConfig(ctx context.Context, opts *Options) error {
-	file, err := backends.ResolveWithEnvAndOverlay(opts.SparkwingDir, opts.BackendsConfig)
+	file, err := backends.ResolveWithOverlay(opts.SparkwingDir, opts.BackendsConfig)
 	if err != nil {
 		return fmt.Errorf("backends.yaml: %w", err)
 	}

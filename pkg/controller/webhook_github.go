@@ -127,12 +127,17 @@ func (s *Server) handleGitHubPush(w http.ResponseWriter, r *http.Request, pipeli
 	trigger := sparkwing.TriggerInfo{
 		Source: "github",
 		User:   payload.Pusher.Name,
-		Env: map[string]string{
-			"GITHUB_DELIVERY":   delivery,
-			"GITHUB_REPOSITORY": payload.Repository.FullName,
-			"GITHUB_BEFORE":     payload.Before,
-			"GITHUB_AFTER":      payload.After,
-		},
+	}
+	// triggerEnv carries the GitHub-delivery metadata onto the
+	// persisted store row. The SDK TriggerInfo type no longer
+	// surfaces these to step bodies; consumers that need the
+	// delivery id, repository, or commit range read them from the
+	// store/DTO column.
+	triggerEnv := map[string]string{
+		"GITHUB_DELIVERY":   delivery,
+		"GITHUB_REPOSITORY": payload.Repository.FullName,
+		"GITHUB_BEFORE":     payload.Before,
+		"GITHUB_AFTER":      payload.After,
 	}
 	owner, repoName := "", ""
 	if parts := strings.SplitN(payload.Repository.FullName, "/", 2); len(parts) == 2 {
@@ -149,7 +154,7 @@ func (s *Server) handleGitHubPush(w http.ResponseWriter, r *http.Request, pipeli
 		Pipeline:      pipeline,
 		TriggerSource: trigger.Source,
 		TriggerUser:   trigger.User,
-		TriggerEnv:    trigger.Env,
+		TriggerEnv:    triggerEnv,
 		GitBranch:     g.Branch,
 		GitSHA:        g.SHA,
 		Repo:          g.Repo,

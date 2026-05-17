@@ -35,14 +35,14 @@ pipelines:
     on:
       push:
         branches: [main]
-        env:
-          TARGET: prod
+        values:
+          target: prod
       schedule: "0 */6 * * *"
       webhook:
         path: /hooks/btd
     secrets:
-      - SPARKWING_ARGOCD_SERVER
-      - SPARKWING_ARGOCD_TOKEN
+      - {name: SPARKWING_ARGOCD_SERVER, required: true}
+      - {name: SPARKWING_ARGOCD_TOKEN, required: true}
     tags: [ci, deploy]
 `
 	cfg, err := pipelines.Parse(strings.NewReader(yaml))
@@ -56,8 +56,8 @@ pipelines:
 	if p.On.Push == nil || len(p.On.Push.Branches) != 1 || p.On.Push.Branches[0] != "main" {
 		t.Fatalf("push branches mis-parsed: %+v", p.On.Push)
 	}
-	if p.On.Push.Env["TARGET"] != "prod" {
-		t.Fatalf("push env mis-parsed")
+	if got := p.On.Push.Values["target"]; got != "prod" {
+		t.Fatalf("push values[target] = %v, want prod", got)
 	}
 	if p.On.Schedule != "0 */6 * * *" {
 		t.Fatalf("schedule mis-parsed: %q", p.On.Schedule)

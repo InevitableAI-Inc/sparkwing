@@ -11,7 +11,7 @@ import (
 	"github.com/sparkwing-dev/sparkwing/pkg/pipelines"
 )
 
-func TestParse_PushTriggerValues_RoundTripsAlongsideEnv(t *testing.T) {
+func TestParse_PushTriggerValues_RoundTrip(t *testing.T) {
 	src := `
 pipelines:
   - name: release
@@ -19,8 +19,6 @@ pipelines:
     on:
       push:
         branches: [main]
-        env:
-          DEPLOY_ENV: staging
         values:
           deploy_env: staging
           replicas: 3
@@ -32,9 +30,6 @@ pipelines:
 	p := cfg.Pipelines[0]
 	if p.On.Push == nil {
 		t.Fatal("push trigger missing")
-	}
-	if p.On.Push.Env["DEPLOY_ENV"] != "staging" {
-		t.Errorf("legacy env not preserved: %+v", p.On.Push.Env)
 	}
 	if got := p.On.Push.Values["deploy_env"]; got != "staging" {
 		t.Errorf("values[deploy_env] = %v, want staging", got)
@@ -54,6 +49,26 @@ pipelines:
 	}
 }
 
+func TestParse_PushTriggerEnv_Rejected(t *testing.T) {
+	src := `
+pipelines:
+  - name: release
+    entrypoint: Release
+    on:
+      push:
+        branches: [main]
+        env:
+          DEPLOY_ENV: staging
+`
+	_, err := pipelines.Parse(strings.NewReader(src))
+	if err == nil {
+		t.Fatal("expected parse error for push.env, got nil")
+	}
+	if !strings.Contains(err.Error(), "env") {
+		t.Errorf("error should reference the offending key, got: %v", err)
+	}
+}
+
 func TestPipeline_TriggerValues_NilPipelineSafe(t *testing.T) {
 	var p *pipelines.Pipeline
 	if got := p.TriggerValues("push"); got != nil {
@@ -61,27 +76,22 @@ func TestPipeline_TriggerValues_NilPipelineSafe(t *testing.T) {
 	}
 }
 
-func TestParse_LegacyBareStringSecrets(t *testing.T) {
+func TestParse_BareStringSecrets_Rejected(t *testing.T) {
 	src := `
 pipelines:
   - name: deploy
     entrypoint: Deploy
     secrets: [FOO, BAR]
 `
-	cfg, err := pipelines.Parse(strings.NewReader(src))
-	if err != nil {
-		t.Fatalf("Parse: %v", err)
+	_, err := pipelines.Parse(strings.NewReader(src))
+	if err == nil {
+		t.Fatal("expected parse error for bare-string secrets, got nil")
 	}
-	p := cfg.Pipelines[0]
-	if len(p.Secrets) != 2 {
-		t.Fatalf("count = %d", len(p.Secrets))
-	}
-	want := pipelines.SecretsField{
-		{Name: "FOO", Required: true},
-		{Name: "BAR", Required: true},
-	}
-	if !reflect.DeepEqual(p.Secrets, want) {
-		t.Errorf("Secrets = %+v, want %+v", p.Secrets, want)
+	msg := err.Error()
+	for _, want := range []string{`bare string "FOO"`, `{name: FOO, required: true}`} {
+		if !strings.Contains(msg, want) {
+			t.Errorf("error missing %q\nfull message: %s", want, msg)
+		}
 	}
 }
 
@@ -116,7 +126,7 @@ pipelines:
 	}
 }
 
-func TestParse_MixedSecretEntries(t *testing.T) {
+func TestParse_MixedSecretsRejectedAtFirstBareString(t *testing.T) {
 	src := `
 pipelines:
   - name: deploy
@@ -126,17 +136,12 @@ pipelines:
       - name: FOO
         optional: true
 `
-	cfg, err := pipelines.Parse(strings.NewReader(src))
-	if err != nil {
-		t.Fatalf("Parse: %v", err)
+	_, err := pipelines.Parse(strings.NewReader(src))
+	if err == nil {
+		t.Fatal("expected parse error for mixed-form secrets, got nil")
 	}
-	got := cfg.Pipelines[0].Secrets
-	want := pipelines.SecretsField{
-		{Name: "BAR", Required: true},
-		{Name: "FOO", Optional: true},
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("Secrets = %+v, want %+v", got, want)
+	if !strings.Contains(err.Error(), `bare string "BAR"`) {
+		t.Errorf("error should call out the bare-string entry, got: %v", err)
 	}
 }
 
@@ -390,7 +395,8 @@ pipelines:
     entrypoint: Release
     runners: [local, cloud-linux]
     secrets:
-      - DEPLOY_TOKEN
+      - name: DEPLOY_TOKEN
+        required: true
       - name: SLACK_HOOK
         optional: true
     values:

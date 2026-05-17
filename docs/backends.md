@@ -110,22 +110,20 @@ defaults:
       prefix: "${PIPELINE_NAME}/"
 ```
 
-## Legacy env-var shim
+## Configuring storage in CI
 
-`SPARKWING_LOG_STORE` and `SPARKWING_ARTIFACT_STORE` are deprecated.
-When either is set, sparkwing translates the value into a synthetic
-`defaults.logs` / `defaults.cache` entry, prints a one-shot
-deprecation warning on stderr, and proceeds. Explicit
-`backends.yaml` entries take precedence over the shim, so a config
-that declares both wins.
-
-Migrate by replacing the env-var assignments with a
-`.sparkwing/backends.yaml` entry:
+Declare cache and logs under the matching environment block. The
+built-in `gha` and `kubernetes` rules auto-detect, so a typical
+GitHub Actions setup just needs the S3 destinations:
 
 ```yaml
-# was: SPARKWING_LOG_STORE=s3://my-team-sparkwing/logs
-# was: SPARKWING_ARTIFACT_STORE=s3://my-team-sparkwing/cache
 defaults:
-  cache: { type: s3, bucket: my-team-sparkwing, prefix: cache/ }
-  logs:  { type: s3, bucket: my-team-sparkwing, prefix: logs/  }
+  cache: { type: filesystem, path: ~/.cache/sparkwing }
+  logs:  { type: filesystem, path: ~/.cache/sparkwing/logs }
+
+environments:
+  gha:
+    detect: { env_var: GITHUB_ACTIONS, equals: "true" }
+    cache: { type: s3, bucket: my-team-sparkwing, prefix: cache/ }
+    logs:  { type: s3, bucket: my-team-sparkwing, prefix: logs/  }
 ```

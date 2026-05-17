@@ -38,7 +38,7 @@ func TestWriteProfileBackendsConfig_RoundTripsThroughOverlay(t *testing.T) {
 
 	// Confirm the inner backends.Resolve picks it up via the overlay.
 	repoDir := filepath.Join(t.TempDir(), ".sparkwing")
-	file, err := backends.ResolveWithEnvAndOverlay(repoDir, path)
+	file, err := backends.ResolveWithOverlay(repoDir, path)
 	if err != nil {
 		t.Fatalf("resolve overlay: %v", err)
 	}

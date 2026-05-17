@@ -27,9 +27,9 @@ type Pipeline struct {
 	Name       string   `yaml:"name"`
 	Entrypoint string   `yaml:"entrypoint"`
 	On         Triggers `yaml:"on"`
-	// Secrets is the declared secrets surface. Each entry is either a
-	// bare string (legacy form, treated as required) or a typed
-	// SecretEntry with explicit required/optional. See SecretsField.
+	// Secrets is the declared secrets surface. Each entry is a
+	// typed SecretEntry with explicit required/optional. See
+	// SecretsField.
 	Secrets SecretsField `yaml:"secrets,omitempty"`
 	Tags    []string     `yaml:"tags,omitempty"`
 	// Hidden omits the entry from default `wing <TAB>` listings.
@@ -131,24 +131,21 @@ type SecretEntry struct {
 	Optional bool   `yaml:"optional,omitempty" json:"optional,omitempty"`
 }
 
-// SecretsField is the polymorphic shape of the secrets: list. The
-// custom UnmarshalYAML accepts each element as either a bare string
-// (legacy) or a typed mapping (new). Mixed lists are allowed.
+// SecretsField is the typed list of secret declarations on a
+// pipeline. Each entry is a mapping with name + required/optional:
 //
-//	secrets: [FOO, BAR]                            # legacy: both required
-//	secrets: [{name: FOO, required: true}, ...]    # typed
-//	secrets: [BAR, {name: FOO, optional: true}]    # mixed
+//	secrets:
+//	  - {name: DEPLOY_TOKEN, required: true}
+//	  - {name: SLACK_HOOK,   optional: true}
 //
-// Bare strings map to SecretEntry{Name: s, Required: true} -- the
-// fail-fast posture is the closer parallel to the legacy behavior of
-// "declared up front for documentation," now that the resolver
-// actually enforces it.
+// The custom UnmarshalYAML rejects the legacy bare-string form
+// (`secrets: [FOO, BAR]`) with a clear migration message.
 type SecretsField []SecretEntry
 
 // UnmarshalYAML implements yaml.Unmarshaler. The list must be a
-// sequence node; each element is dispatched by Kind: scalar nodes
-// become bare-string entries (required by default), mapping nodes
-// decode into a SecretEntry struct.
+// sequence of mapping nodes; scalar nodes (the legacy bare-string
+// form) produce a clear migration error pointing at the typed
+// shape.
 func (s *SecretsField) UnmarshalYAML(node *yaml.Node) error {
 	if node == nil {
 		return nil
@@ -169,20 +166,21 @@ func (s *SecretsField) UnmarshalYAML(node *yaml.Node) error {
 	out := make(SecretsField, 0, len(node.Content))
 	for i, elem := range node.Content {
 		switch elem.Kind {
-		case yaml.ScalarNode:
-			var name string
-			if err := elem.Decode(&name); err != nil {
-				return fmt.Errorf("secrets[%d]: %w", i, err)
-			}
-			out = append(out, SecretEntry{Name: name, Required: true})
 		case yaml.MappingNode:
 			var entry SecretEntry
 			if err := elem.Decode(&entry); err != nil {
 				return fmt.Errorf("secrets[%d]: %w", i, err)
 			}
 			out = append(out, entry)
+		case yaml.ScalarNode:
+			var name string
+			if err := elem.Decode(&name); err != nil {
+				return fmt.Errorf("secrets[%d]: %w", i, err)
+			}
+			return fmt.Errorf("secrets[%d]: bare string %q is not allowed; use the typed form `- {name: %s, required: true}`",
+				i, name, name)
 		default:
-			return fmt.Errorf("secrets[%d]: expected a string or mapping, got %s", i, nodeKindName(elem.Kind))
+			return fmt.Errorf("secrets[%d]: expected a mapping, got %s", i, nodeKindName(elem.Kind))
 		}
 	}
 	*s = out
@@ -243,22 +241,12 @@ type PushTrigger struct {
 	Paths    []string `yaml:"paths"`
 	// Values overlays onto the pipeline's typed Config struct for
 	// runs initiated by this trigger. Layered after the per-target
-	// values and consumed by sparkwing.ResolvePipelineConfig the same
-	// way values.base and targets.<name>.values are. Use this to
-	// flip typed Config fields per-trigger (e.g. push to main =>
-	// deploy_env: staging) without reaching for the deprecated Env
-	// map.
+	// values by sparkwing.ResolvePipelineConfig the same way
+	// values.base and targets.<name>.values are. Use this to flip
+	// typed Config fields per-trigger (e.g. push to main =>
+	// deploy_env: staging) and read them via
+	// sparkwing.PipelineConfig[T](ctx).
 	Values map[string]any `yaml:"values,omitempty"`
-	// Env is the legacy untyped trigger-environment map. Pipeline
-	// authors read individual entries via the deprecated
-	// RunContext.TriggerEnv accessor. New pipelines should declare
-	// fields under Values instead so the values flow through the
-	// typed Config struct.
-	//
-	// Deprecated: declare typed values under the Values block and
-	// read them via sparkwing.PipelineConfig[T](ctx). Env will be
-	// removed one release after the typed surface ships.
-	Env map[string]string `yaml:"env,omitempty"`
 }
 
 // WebhookTrigger exposes an HTTP path that fires the pipeline. The

@@ -51,14 +51,13 @@ func compileAndExec(sparkwingDir string, args []string, env []string, opts compi
 	}
 
 	// 2a) Pluggable ArtifactStore cache: fetch bin/<hash> via the
-	// effective cache backend from .sparkwing/backends.yaml (with
-	// SPARKWING_ARTIFACT_STORE honored via the deprecation shim).
-	// This is the "ci-embedded runs without Go" path: a separate
-	// publish job pre-uploaded the binary, runners curl it back.
-	// Falls through to (2b) on miss or error. Per-target Backend
-	// overlays aren't available here -- compile runs before
-	// pipeline-aware orchestrator init -- so only defaults and the
-	// auto-detected environment apply.
+	// effective cache backend from .sparkwing/backends.yaml. This
+	// is the "ci-embedded runs without Go" path: a separate publish
+	// job pre-uploaded the binary, runners curl it back. Falls
+	// through to (2b) on miss or error. Per-target Backend overlays
+	// aren't available here -- compile runs before the pipeline-aware
+	// orchestrator init -- so only defaults and the auto-detected
+	// environment apply.
 	if cache := resolveEffectiveCacheSpec(sparkwingDir); cache != nil {
 		if as, err := storeurl.OpenArtifactStoreFromSpec(context.Background(), *cache); err == nil {
 			if err := bincache.FetchFromArtifactStore(context.Background(), as, key, binPath); err == nil {

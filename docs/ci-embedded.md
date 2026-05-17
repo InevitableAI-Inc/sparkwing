@@ -71,10 +71,8 @@ A pipeline node that fails fails the GHA job (exit code propagates).
 | `--workers=N` | `runtime.NumCPU()` | Caps the local dispatcher. GHA hosted runners are 2-CPU; setting `--workers=4` on small VMs over-subscribes -- pick deliberately. |
 | `--on PROFILE` | (off) | Selects a controller profile from `~/.config/sparkwing/profiles.yaml`. |
 
-> `SPARKWING_LOG_STORE` and `SPARKWING_ARTIFACT_STORE` env vars are
-> deprecated. When set they fill the `defaults.logs` / `defaults.cache`
-> slots and a one-shot warning prints on stderr. Migrate to
-> [backends.yaml](backends).
+Cache and logs come from `.sparkwing/backends.yaml`; see
+[backends.yaml](backends) for the configuration shape.
 
 ### Recommended: `SPARKWING_NO_SPARKS_RESOLVE=1` in CI
 

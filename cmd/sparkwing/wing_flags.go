@@ -94,9 +94,9 @@ type wingFlags struct {
 	// resolved file at run start.
 	backendsEnv string
 	// backendsConfig points at a (possibly synthesized) backends.yaml
-	// fragment the inner binary layers underneath defaults. Used by
-	// the outer CLI to forward profile-derived storage settings to
-	// the child without going through the deprecated env-var shim.
+	// fragment the inner binary layers underneath defaults. The
+	// outer CLI uses this to forward profile-derived storage
+	// settings to the child via a temp file.
 	backendsConfig string
 }
 

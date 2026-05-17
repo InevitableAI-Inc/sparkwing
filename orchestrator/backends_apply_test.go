@@ -53,7 +53,6 @@ func writeBackendsYAML(t *testing.T, dir, body string) string {
 func neutralizeEnv(t *testing.T) {
 	t.Helper()
 	for _, k := range []string{
-		"SPARKWING_LOG_STORE", "SPARKWING_ARTIFACT_STORE",
 		"GITHUB_ACTIONS", "KUBERNETES_SERVICE_HOST",
 		"XDG_CONFIG_HOME",
 	} {
@@ -83,19 +82,20 @@ defaults:
 	}
 }
 
-func TestApplyBackendsConfig_EnvShimFillsAndWarns(t *testing.T) {
+func TestApplyBackendsConfig_LegacyEnvVarsDoNothing(t *testing.T) {
 	neutralizeEnv(t)
-	logDir := t.TempDir()
-	cacheDir := t.TempDir()
-	t.Setenv("SPARKWING_LOG_STORE", "fs://"+logDir)
-	t.Setenv("SPARKWING_ARTIFACT_STORE", "fs://"+cacheDir)
+	// The env-var shim was removed; setting these vars must have
+	// zero effect on backend selection.
+	t.Setenv("SPARKWING_LOG_STORE", "fs:///tmp/should-not-be-read")
+	t.Setenv("SPARKWING_ARTIFACT_STORE", "s3://should-not-be-read")
 	dir := writeBackendsYAML(t, t.TempDir(), ``)
 	opts := Options{SparkwingDir: dir}
 	if err := ApplyBackendsConfig(context.Background(), &opts); err != nil {
 		t.Fatalf("apply: %v", err)
 	}
-	if opts.ArtifactStore == nil || opts.LogStore == nil {
-		t.Fatal("shim values not applied")
+	if opts.ArtifactStore != nil || opts.LogStore != nil {
+		t.Errorf("env vars should not populate stores; got cache=%v logs=%v",
+			opts.ArtifactStore, opts.LogStore)
 	}
 }
 

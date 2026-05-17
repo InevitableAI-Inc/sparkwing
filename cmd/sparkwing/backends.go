@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	neturl "net/url"
 	"os"
+	"strings"
 
 	"github.com/sparkwing-dev/sparkwing/pkg/backends"
 )
@@ -12,9 +14,8 @@ import (
 // writeProfileBackendsConfig materializes profile.LogStore /
 // profile.ArtifactStore into a temp backends.yaml fragment so the
 // inner pipeline binary picks them up via the normal backends-
-// resolution pathway instead of through the deprecated
-// SPARKWING_*_STORE env-var shim. Returns ("", noop, nil) when the
-// profile has neither field set.
+// resolution pathway. Returns ("", noop, nil) when the profile has
+// neither field set.
 //
 // The returned cleanup must be deferred by the caller for the
 // lifetime of the child process.
@@ -24,14 +25,14 @@ func writeProfileBackendsConfig(logStoreURL, artifactStoreURL string) (path stri
 	}
 	file := backends.File{}
 	if logStoreURL != "" {
-		spec, ok := backends.LegacyURLToSpec(logStoreURL)
+		spec, ok := profileStoreURLToSpec(logStoreURL)
 		if !ok {
 			return "", func() {}, fmt.Errorf("profile log_store %q is not a recognized URL", logStoreURL)
 		}
 		file.Defaults.Logs = spec
 	}
 	if artifactStoreURL != "" {
-		spec, ok := backends.LegacyURLToSpec(artifactStoreURL)
+		spec, ok := profileStoreURLToSpec(artifactStoreURL)
 		if !ok {
 			return "", func() {}, fmt.Errorf("profile artifact_store %q is not a recognized URL", artifactStoreURL)
 		}
@@ -96,16 +97,16 @@ func renderSpec(s backends.Spec, indent string) string {
 }
 
 // resolveEffectiveCacheSpec returns the cache backend spec the wing
-// CLI should consult before the orchestrator boots: file defaults +
-// built-in environments + the SPARKWING_*_STORE shim, with no
-// pipeline/target context (compile runs before the
-// pipeline-aware orchestrator init).
+// CLI should consult before the orchestrator boots: backends.yaml
+// defaults plus the matched built-in environment, with no pipeline
+// or target context (compile runs before the pipeline-aware
+// orchestrator init).
 //
 // Returns nil when no cache backend is configured. Resolution
 // errors are logged at debug level and yield nil so the compile
 // loop falls through to the next cache layer instead of failing.
 func resolveEffectiveCacheSpec(sparkwingDir string) *backends.Spec {
-	file, err := backends.ResolveWithEnv(sparkwingDir)
+	file, err := backends.Resolve(sparkwingDir)
 	if err != nil {
 		slog.Default().Debug("backends.yaml resolve failed", "err", err)
 		return nil
@@ -113,4 +114,42 @@ func resolveEffectiveCacheSpec(sparkwingDir string) *backends.Spec {
 	envName, _, _ := backends.DetectEnvironment(file)
 	eff := backends.Effective(file, envName, backends.Surfaces{})
 	return eff.Cache
+}
+
+// profileStoreURLToSpec parses a profile's log_store / artifact_store
+// URL into a typed Spec. Supported schemes:
+//
+//	fs:///abs/path           → backends.Spec{Type: filesystem, Path}
+//	s3://bucket/prefix       → backends.Spec{Type: s3, Bucket, Prefix}
+//
+// Returns (nil, false) on a malformed URL so the caller surfaces a
+// clear "profile field X is not a recognized URL" error.
+func profileStoreURLToSpec(raw string) (*backends.Spec, bool) {
+	scheme, rest, ok := strings.Cut(raw, "://")
+	if !ok || rest == "" {
+		return nil, false
+	}
+	switch scheme {
+	case "fs":
+		if !strings.HasPrefix(rest, "/") && !strings.HasPrefix(rest, "~") {
+			return nil, false
+		}
+		if strings.HasPrefix(rest, "~/") {
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return nil, false
+			}
+			rest = home + rest[1:]
+		}
+		return &backends.Spec{Type: backends.TypeFilesystem, Path: rest}, true
+	case "s3":
+		u, err := neturl.Parse("s3://" + rest)
+		if err != nil || u.Host == "" {
+			return nil, false
+		}
+		prefix := strings.TrimSuffix(strings.TrimPrefix(u.Path, "/"), "/")
+		return &backends.Spec{Type: backends.TypeS3, Bucket: u.Host, Prefix: prefix}, true
+	default:
+		return nil, false
+	}
 }

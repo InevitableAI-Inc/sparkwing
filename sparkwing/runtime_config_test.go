@@ -91,13 +91,3 @@ func TestSetGit_AttachesPopulatedGit(t *testing.T) {
 		t.Errorf("ShortSHA = %q", got.ShortSHA())
 	}
 }
-
-// RunConfig alias must keep working for sparks-core and friends.
-func TestRunConfigAliasStillWorks(t *testing.T) {
-	a := CurrentRuntime()
-	b := CurrentRunConfig()
-	if a.WorkDir != b.WorkDir {
-		t.Errorf("alias WorkDir mismatch: %q vs %q", a.WorkDir, b.WorkDir)
-	}
-	var _ RunConfig = RuntimeConfig{}
-}

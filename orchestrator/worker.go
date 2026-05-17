@@ -101,7 +101,6 @@ func ExecuteClaimedTrigger(ctx context.Context, opts WorkerOptions, backends Bac
 		Trigger: sparkwing.TriggerInfo{
 			Source: trigger.TriggerSource,
 			User:   trigger.TriggerUser,
-			Env:    trigger.TriggerEnv,
 		},
 		Git: sparkwing.NewGit(sparkwing.CurrentRuntime().WorkDir,
 			trigger.GitSHA, trigger.GitBranch, trigger.Repo, trigger.RepoURL),

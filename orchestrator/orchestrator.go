@@ -678,10 +678,6 @@ func validatePlanModifiers(delegate sparkwing.Logger, plan *sparkwing.Plan) {
 // read carries the same shape). Adding a new context field is a
 // one-line edit here -- no schema migration, no separate emit-vs-
 // store divergence.
-//
-// Trigger env values are deliberately omitted; only the names are
-// surfaced because the values can carry secrets pipelines pull at
-// runtime via TriggerEnv(...).
 func buildRunInvocation(opts Options, runID string) map[string]any {
 	inv := map[string]any{
 		"run_id":   runID,
@@ -707,21 +703,6 @@ func buildRunInvocation(opts Options, runID string) map[string]any {
 	}
 	if flags := buildRunFlags(opts); len(flags) > 0 {
 		inv["flags"] = flags
-	}
-	// trigger_env_keys persists the names of legacy trigger.Env
-	// entries on the run record so dashboards can show "which env
-	// vars were live at dispatch" without the values themselves.
-	// Stays populated through the TriggerInfo.Env deprecation cycle
-	// because the run-record schema is the agreed wire surface for
-	// older trigger payloads; once Env removal lands, this block
-	// goes too.
-	if len(opts.Trigger.Env) > 0 { //nolint:staticcheck // see comment above
-		keys := make([]string, 0, len(opts.Trigger.Env)) //nolint:staticcheck
-		for k := range opts.Trigger.Env {                //nolint:staticcheck
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		inv["trigger_env_keys"] = keys
 	}
 	inv["reproducer"] = buildReproducer(opts, runID)
 	return inv
