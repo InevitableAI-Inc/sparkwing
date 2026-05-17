@@ -131,6 +131,13 @@ type Options struct {
 	// (runs/<runID>/state.ndjson) after RunLocal exits.
 	ArtifactStore storage.ArtifactStore
 
+	// State, when non-nil, is the run-record store RunLocal wraps into
+	// LocalBackends. ApplyBackendsConfig populates this from
+	// backends.yaml (defaults / environment / target overlay) or
+	// synthesizes a sqlite spec at paths.StateDB() when nothing is
+	// configured. Pre-set values from the caller are preserved.
+	State storage.StateStore
+
 	// JobRunnerOverrides forces specific plan-node ids onto specific
 	// runner names (from runners.yaml). Validated at run start: the
 	// id must match a node in the plan, the runner must exist, and
@@ -155,6 +162,14 @@ type Options struct {
 	// to the child without going through the deprecated env-var
 	// shim. The file is expected to be cleaned up by the caller.
 	BackendsConfig string
+
+	// DefaultStateDB names the SQLite file ApplyBackendsConfig falls
+	// back to when no state surface is configured in backends.yaml and
+	// the caller didn't pre-set State. RunLocal sets this to
+	// paths.StateDB() so every code path opens the state store through
+	// the factory. Cluster boot paths leave it empty; they wire State
+	// through their own plumbing.
+	DefaultStateDB string
 }
 
 // DebugDirectives is the ephemeral pause surface for one run.
@@ -484,16 +499,22 @@ func RunLocal(ctx context.Context, paths Paths, opts Options) (*Result, error) {
 	if err := paths.EnsureRoot(); err != nil {
 		return nil, fmt.Errorf("ensure sparkwing root: %w", err)
 	}
-	st, err := store.Open(paths.StateDB())
-	if err != nil {
-		return nil, fmt.Errorf("open state db: %w", err)
-	}
-	defer st.Close()
 	if opts.SecretSource == nil {
 		opts.SecretSource = secrets.NewDotenvSource("")
 	}
+	if opts.DefaultStateDB == "" {
+		opts.DefaultStateDB = paths.StateDB()
+	}
+	ownsState := opts.State == nil
 	if err := ApplyBackendsConfig(ctx, &opts); err != nil {
 		return nil, fmt.Errorf("backends: %w", err)
+	}
+	if opts.State == nil {
+		return nil, fmt.Errorf("state backend: no store resolved (no spec configured and no default)")
+	}
+	st := opts.State
+	if ownsState {
+		defer st.Close()
 	}
 	backends := LocalBackends(paths, st)
 	if opts.LogStore != nil {

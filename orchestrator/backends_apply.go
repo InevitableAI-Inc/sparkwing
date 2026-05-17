@@ -65,6 +65,19 @@ func ApplyBackendsConfig(ctx context.Context, opts *Options) error {
 		}
 		opts.LogStore = store
 	}
+	if opts.State == nil {
+		spec := eff.State
+		if spec == nil && opts.DefaultStateDB != "" {
+			spec = &backends.Spec{Type: backends.TypeSQLite, Path: opts.DefaultStateDB}
+		}
+		if spec != nil {
+			st, err := storeurl.OpenStateStoreFromSpec(ctx, *spec)
+			if err != nil {
+				return fmt.Errorf("state backend: %w", err)
+			}
+			opts.State = st
+		}
+	}
 	return nil
 }
 

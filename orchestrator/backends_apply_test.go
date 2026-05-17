@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/orchestrator/store"
 	"github.com/sparkwing-dev/sparkwing/pkg/pipelines"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
@@ -189,6 +190,113 @@ environments:
 	}
 	if !dirHasFile(t, envCache) {
 		t.Errorf("env cache path %s wasn't used", envCache)
+	}
+}
+
+func TestApplyBackendsConfig_DefaultStateDBSynthesizesSQLite(t *testing.T) {
+	neutralizeEnv(t)
+	dir := writeBackendsYAML(t, t.TempDir(), ``)
+	defaultDB := filepath.Join(t.TempDir(), "state.db")
+	opts := Options{SparkwingDir: dir, DefaultStateDB: defaultDB}
+	if err := ApplyBackendsConfig(context.Background(), &opts); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if opts.State == nil {
+		t.Fatal("State not populated from DefaultStateDB")
+	}
+	defer opts.State.Close()
+	if _, err := os.Stat(defaultDB); err != nil {
+		t.Errorf("expected db file at default path: %v", err)
+	}
+}
+
+func TestApplyBackendsConfig_NoStateWhenUnconfigured(t *testing.T) {
+	neutralizeEnv(t)
+	dir := writeBackendsYAML(t, t.TempDir(), ``)
+	opts := Options{SparkwingDir: dir}
+	if err := ApplyBackendsConfig(context.Background(), &opts); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if opts.State != nil {
+		opts.State.Close()
+		t.Fatal("State should stay nil when neither spec nor DefaultStateDB is set")
+	}
+}
+
+func TestApplyBackendsConfig_StateFromDefaultsYAML(t *testing.T) {
+	neutralizeEnv(t)
+	dbPath := filepath.Join(t.TempDir(), "from-yaml.db")
+	dir := writeBackendsYAML(t, t.TempDir(), `
+defaults:
+  state: { type: sqlite, path: `+dbPath+` }
+`)
+	opts := Options{SparkwingDir: dir, DefaultStateDB: filepath.Join(t.TempDir(), "should-not-win.db")}
+	if err := ApplyBackendsConfig(context.Background(), &opts); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if opts.State == nil {
+		t.Fatal("State not populated from YAML")
+	}
+	defer opts.State.Close()
+	if _, err := os.Stat(dbPath); err != nil {
+		t.Errorf("expected db at yaml-declared path %s: %v", dbPath, err)
+	}
+}
+
+func TestApplyBackendsConfig_StateTargetOverlayWins(t *testing.T) {
+	neutralizeEnv(t)
+	defaultsDB := filepath.Join(t.TempDir(), "defaults.db")
+	targetDB := filepath.Join(t.TempDir(), "target.db")
+	dir := writeBackendsYAML(t, t.TempDir(), `
+defaults:
+  state: { type: sqlite, path: `+defaultsDB+` }
+`)
+	opts := Options{
+		SparkwingDir: dir,
+		Target:       "prod",
+		PipelineYAML: &pipelines.Pipeline{
+			Targets: map[string]pipelines.Target{
+				"prod": {
+					Backend: &pipelines.TargetBackend{
+						State: map[string]any{"type": "sqlite", "path": targetDB},
+					},
+				},
+			},
+		},
+	}
+	if err := ApplyBackendsConfig(context.Background(), &opts); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if opts.State == nil {
+		t.Fatal("State nil")
+	}
+	defer opts.State.Close()
+	if _, err := os.Stat(targetDB); err != nil {
+		t.Errorf("target state path not used: %v", err)
+	}
+	if _, err := os.Stat(defaultsDB); err == nil {
+		t.Errorf("defaults state path leaked through despite target overlay")
+	}
+}
+
+func TestApplyBackendsConfig_StateRespectsPreSet(t *testing.T) {
+	neutralizeEnv(t)
+	preDB := filepath.Join(t.TempDir(), "pre.db")
+	pre, err := store.Open(preDB)
+	if err != nil {
+		t.Fatalf("pre open: %v", err)
+	}
+	defer pre.Close()
+	dir := writeBackendsYAML(t, t.TempDir(), `
+defaults:
+  state: { type: sqlite, path: /should/not/win.db }
+`)
+	opts := Options{SparkwingDir: dir, State: pre}
+	if err := ApplyBackendsConfig(context.Background(), &opts); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if opts.State != pre {
+		t.Errorf("pre-set State was overwritten")
 	}
 }
 

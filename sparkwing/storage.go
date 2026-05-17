@@ -16,3 +16,14 @@ type Cache = storage.ArtifactStore
 //
 // Logs is an alias for storage.LogStore.
 type Logs = storage.LogStore
+
+// State is the run-record store: persists runs, nodes, steps,
+// annotations, approvals, and the schema migrations the orchestrator
+// depends on. Backend selection lives in .sparkwing/backends.yaml
+// under the state: surface.
+//
+// Implementations today: sqlite. Recognized but not implemented in
+// this build: postgres, mysql, controller.
+//
+// State is an alias for storage.StateStore.
+type State = storage.StateStore

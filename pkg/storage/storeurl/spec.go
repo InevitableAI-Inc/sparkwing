@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/sparkwing-dev/sparkwing/orchestrator/store"
 	"github.com/sparkwing-dev/sparkwing/pkg/backends"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage/fs"
@@ -60,6 +61,28 @@ func OpenLogStoreFromSpec(ctx context.Context, spec backends.Spec) (storage.LogS
 		return nil, unimplemented("logs", spec.Type)
 	default:
 		return nil, fmt.Errorf("logs backend type %q is not recognized", spec.Type)
+	}
+}
+
+// OpenStateStoreFromSpec constructs a StateStore from a backends.Spec.
+// See OpenArtifactStoreFromSpec for error semantics.
+//
+// For type=sqlite, spec.Path is required and names the SQLite database
+// file. Callers that want the historical default (~/.sparkwing/state.db)
+// should pass that path explicitly so the factory has a single,
+// caller-provided source of truth.
+func OpenStateStoreFromSpec(_ context.Context, spec backends.Spec) (storage.StateStore, error) {
+	switch spec.Type {
+	case backends.TypeSQLite:
+		path, err := expandPath(spec.Path)
+		if err != nil {
+			return nil, fmt.Errorf("state sqlite: %w", err)
+		}
+		return store.Open(path)
+	case backends.TypePostgres, backends.TypeMySQL, backends.TypeController:
+		return nil, unimplemented("state", spec.Type)
+	default:
+		return nil, fmt.Errorf("state backend type %q is not recognized", spec.Type)
 	}
 }
 

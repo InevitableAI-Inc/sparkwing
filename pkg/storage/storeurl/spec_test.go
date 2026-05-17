@@ -3,6 +3,7 @@ package storeurl_test
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"testing"
 
@@ -88,6 +89,57 @@ func TestOpenArtifactStoreFromSpec_FilesystemMissingPath(t *testing.T) {
 	// The factory still surfaces it through expandPath.
 	if !strings.Contains(err.Error(), "path is required") {
 		t.Errorf("want 'path is required', got: %v", err)
+	}
+}
+
+func TestOpenStateStoreFromSpec_SQLite(t *testing.T) {
+	dir := t.TempDir()
+	path := dir + "/state.db"
+	st, err := storeurl.OpenStateStoreFromSpec(context.Background(),
+		backends.Spec{Type: backends.TypeSQLite, Path: path})
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if st == nil {
+		t.Fatal("nil store")
+	}
+	defer st.Close()
+	if _, err := os.Stat(path); err != nil {
+		t.Errorf("expected db file at %s: %v", path, err)
+	}
+}
+
+func TestOpenStateStoreFromSpec_SQLiteMissingPath(t *testing.T) {
+	_, err := storeurl.OpenStateStoreFromSpec(context.Background(),
+		backends.Spec{Type: backends.TypeSQLite})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "path is required") {
+		t.Errorf("want 'path is required', got: %v", err)
+	}
+}
+
+func TestOpenStateStoreFromSpec_Unimplemented(t *testing.T) {
+	for _, ty := range []string{backends.TypePostgres, backends.TypeMySQL, backends.TypeController} {
+		t.Run(ty, func(t *testing.T) {
+			_, err := storeurl.OpenStateStoreFromSpec(context.Background(),
+				backends.Spec{Type: ty, URL: "x"})
+			if err == nil {
+				t.Fatal("expected error")
+			}
+			if !strings.Contains(err.Error(), "not implemented in this build") {
+				t.Errorf("want 'not implemented in this build', got: %v", err)
+			}
+		})
+	}
+}
+
+func TestOpenStateStoreFromSpec_UnrecognizedType(t *testing.T) {
+	_, err := storeurl.OpenStateStoreFromSpec(context.Background(),
+		backends.Spec{Type: backends.TypeFilesystem, Path: "/tmp/x"})
+	if err == nil || !strings.Contains(err.Error(), "not recognized") {
+		t.Errorf("want 'not recognized', got: %v", err)
 	}
 }
 
