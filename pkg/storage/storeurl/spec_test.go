@@ -52,7 +52,7 @@ func TestOpenArtifactStoreFromSpec_Unimplemented(t *testing.T) {
 }
 
 func TestOpenLogStoreFromSpec_Unimplemented(t *testing.T) {
-	for _, ty := range []string{backends.TypeGCS, backends.TypeAzureBlob, backends.TypeController, backends.TypeStdout} {
+	for _, ty := range []string{backends.TypeGCS, backends.TypeAzureBlob, backends.TypeController} {
 		t.Run(ty, func(t *testing.T) {
 			_, err := storeurl.OpenLogStoreFromSpec(context.Background(),
 				backends.Spec{Type: ty, Bucket: "x"})
@@ -63,6 +63,28 @@ func TestOpenLogStoreFromSpec_Unimplemented(t *testing.T) {
 				t.Errorf("want 'not implemented in this build', got: %v", err)
 			}
 		})
+	}
+}
+
+func TestOpenLogStoreFromSpec_Stdout(t *testing.T) {
+	store, err := storeurl.OpenLogStoreFromSpec(context.Background(),
+		backends.Spec{Type: backends.TypeStdout})
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if store == nil {
+		t.Fatal("nil store")
+	}
+}
+
+func TestOpenLogStoreFromSpec_StdoutRejectsExtraFields(t *testing.T) {
+	_, err := storeurl.OpenLogStoreFromSpec(context.Background(),
+		backends.Spec{Type: backends.TypeStdout, Bucket: "foo"})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "does not accept configuration fields") {
+		t.Errorf("want 'does not accept configuration fields', got: %v", err)
 	}
 }
 

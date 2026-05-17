@@ -11,6 +11,7 @@ import (
 	"github.com/sparkwing-dev/sparkwing/pkg/storage"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage/fs"
 	s3store "github.com/sparkwing-dev/sparkwing/pkg/storage/s3"
+	"github.com/sparkwing-dev/sparkwing/pkg/storage/stdoutlogs"
 )
 
 // OpenArtifactStoreFromSpec constructs an ArtifactStore from a
@@ -57,7 +58,12 @@ func OpenLogStoreFromSpec(ctx context.Context, spec backends.Spec) (storage.LogS
 			return nil, err
 		}
 		return s3store.NewLogStore(spec.Bucket, spec.Prefix, client), nil
-	case backends.TypeGCS, backends.TypeAzureBlob, backends.TypeController, backends.TypeStdout:
+	case backends.TypeStdout:
+		if err := stdoutlogs.CheckSpec(spec.Bucket, spec.Prefix, spec.Path, spec.URL, spec.URLSource, spec.Token); err != nil {
+			return nil, err
+		}
+		return stdoutlogs.New(), nil
+	case backends.TypeGCS, backends.TypeAzureBlob, backends.TypeController:
 		return nil, unimplemented("logs", spec.Type)
 	default:
 		return nil, fmt.Errorf("logs backend type %q is not recognized", spec.Type)

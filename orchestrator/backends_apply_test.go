@@ -300,6 +300,27 @@ defaults:
 	}
 }
 
+func TestApplyBackendsConfig_LogsStdout(t *testing.T) {
+	neutralizeEnv(t)
+	dir := writeBackendsYAML(t, t.TempDir(), `
+defaults:
+  cache: { type: filesystem, path: `+t.TempDir()+` }
+  logs:  { type: stdout }
+`)
+	opts := Options{SparkwingDir: dir}
+	if err := ApplyBackendsConfig(context.Background(), &opts); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if opts.LogStore == nil {
+		t.Fatal("LogStore nil")
+	}
+	// Sanity: a write succeeds (the production constructor routes to
+	// os.Stdout; the test confirms wiring resolved, not the byte path).
+	if err := opts.LogStore.Append(context.Background(), "r", "n", []byte("ping\n")); err != nil {
+		t.Errorf("append: %v", err)
+	}
+}
+
 func TestApplyBackendsConfig_KubernetesDetectFiresControllerError(t *testing.T) {
 	neutralizeEnv(t)
 	t.Setenv("KUBERNETES_SERVICE_HOST", "10.0.0.1")
