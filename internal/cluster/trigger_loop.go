@@ -238,8 +238,11 @@ func execHandleTrigger(ctx context.Context, binPath, workDir string, trigger *st
 		"SPARKWING_CONTROLLER_URL="+opts.ControllerURL,
 		"SPARKWING_LOGS_URL="+opts.LogsURL,
 		"SPARKWING_AGENT_TOKEN="+opts.Token,
-		// Cluster-side marker; CurrentRunConfig.IsLocal=false for the child.
-		"SPARKWING_HOST=cluster",
+		// Runner identity for sparkwing.Runner(ctx) on the pod side.
+		// The pod doesn't otherwise know which kind of runner it is;
+		// adapters branching on r.HasLabel("local") or r.Type read
+		// from these env vars at orchestrator boot.
+		"SPARKWING_RUNNER_TYPE=kubernetes",
 	)
 	if tp := otelutil.TraceParentEnv(ctx); tp != "" {
 		env = append(env, tp)

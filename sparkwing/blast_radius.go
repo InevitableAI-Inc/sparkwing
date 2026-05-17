@@ -19,10 +19,9 @@ import "fmt"
 // --dry-run; `wing X --dry-run` always proceeds regardless of the
 // markers, because dry-run is the safe-mode preview path.
 //
-// Mirrors the Venue contract (sparkwing/venue.go): typed values
-// flow through DescribePipeline + PlanPreview + planSnapshot as
-// kebab-case strings so renderers, agents, and the CLI dispatcher
-// all read the same wire format.
+// Typed values flow through DescribePipeline + PlanPreview +
+// planSnapshot as kebab-case strings so renderers, agents, and the
+// CLI dispatcher all read the same wire format.
 type BlastRadius string
 
 const (
@@ -81,8 +80,6 @@ func AllBlastRadii() []BlastRadius {
 // --allow-* flag (or --dry-run). Carries enough structured data
 // that JSON consumers (agents, dashboard) can pattern-match without
 // parsing the message.
-//
-// Mirrors VenueMismatchError's role for the venue gate.
 type BlastRadiusBlockedError struct {
 	Pipeline string
 	StepID   string

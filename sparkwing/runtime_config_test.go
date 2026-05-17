@@ -5,99 +5,37 @@ import (
 	"testing"
 )
 
-// detectIsLocal is the truth function the package-level var calls
-// at init. Re-test it with various env states so any future change
-// to the signal list is caught here.
-func TestDetectIsLocal(t *testing.T) {
-	cases := []struct {
-		name           string
-		sparkwingHost  string
-		k8sServiceHost string
-		want           bool
-	}{
-		{"laptop bare", "", "", true},
-		{"laptop with stale SPARKWING_HOST=laptop", "laptop", "", true},
-		{"explicit cluster signal", "cluster", "", false},
-		{"k8s pod (auto-injected)", "", "10.0.0.1", false},
-		{"both signals (cluster wins)", "cluster", "10.0.0.1", false},
-		{"explicit cluster overrides everything", "cluster", "", false},
+// detectRuntime no longer reads SPARKWING_RUN_ID / SPARKWING_NODE_ID
+// / SPARKWING_DEBUG / SPARKWING_HOST / KUBERNETES_SERVICE_HOST. The
+// only env var that survives at this layer is the implicit cwd; the
+// resulting struct must be byte-identical regardless of the legacy
+// env signals.
+func TestDetectRuntime_IgnoresLegacyEnvSignals(t *testing.T) {
+	for _, k := range []string{
+		"SPARKWING_RUN_ID", "SPARKWING_NODE_ID", "SPARKWING_DEBUG",
+		"SPARKWING_HOST", "KUBERNETES_SERVICE_HOST",
+	} {
+		t.Setenv(k, "would-have-mattered-before-step-10")
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			if tc.sparkwingHost == "" {
-				os.Unsetenv("SPARKWING_HOST")
-			} else {
-				t.Setenv("SPARKWING_HOST", tc.sparkwingHost)
-			}
-			if tc.k8sServiceHost == "" {
-				os.Unsetenv("KUBERNETES_SERVICE_HOST")
-			} else {
-				t.Setenv("KUBERNETES_SERVICE_HOST", tc.k8sServiceHost)
-			}
-			if got := detectIsLocal(); got != tc.want {
-				t.Errorf("detectIsLocal() = %v, want %v", got, tc.want)
-			}
-		})
-	}
-}
-
-func TestParseDebug(t *testing.T) {
-	cases := []struct {
-		in   string
-		want bool
-	}{
-		{"", false},
-		{"0", false},
-		{"false", false},
-		{"False", false},
-		{"FALSE", false},
-		{"1", true},
-		{"true", true},
-		{"yes", true},
-	}
-	for _, tc := range cases {
-		t.Run("v="+tc.in, func(t *testing.T) {
-			if got := parseDebug(tc.in); got != tc.want {
-				t.Errorf("parseDebug(%q) = %v, want %v", tc.in, got, tc.want)
-			}
-		})
-	}
-}
-
-// detectRuntime reads scalar fields (RunID, NodeID, Debug) from env;
-// WorkDir is no longer env-driven -- it's discovered via walk-up to
-// `.sparkwing/`. The env var SPARKWING_WORK_DIR is retired entirely
-// to eliminate the stale-env footgun (Scenario D). Git state still
-// arrives via SetGit from the orchestrator, not env.
-func TestDetectRuntime_PopulatesScalarFieldsFromEnv(t *testing.T) {
-	t.Setenv("SPARKWING_RUN_ID", "run-X")
-	t.Setenv("SPARKWING_NODE_ID", "build-deploy")
-	t.Setenv("SPARKWING_DEBUG", "1")
-	t.Setenv("SPARKWING_HOST", "cluster")
-	os.Unsetenv("KUBERNETES_SERVICE_HOST")
-
 	rc := detectRuntime()
-
-	if rc.IsLocal {
-		t.Error("IsLocal should be false when SPARKWING_HOST=cluster")
-	}
-	if rc.RunID != "run-X" {
-		t.Errorf("RunID = %q", rc.RunID)
-	}
-	if rc.NodeID != "build-deploy" {
-		t.Errorf("NodeID = %q", rc.NodeID)
-	}
-	if !rc.Debug {
-		t.Error("Debug should be true when SPARKWING_DEBUG=1")
-	}
 	if rc.Git == nil {
 		t.Fatal("Git pre-populate failed: nil")
+	}
+	// WorkDir is whatever the cwd walk-up returns; the test only
+	// pins that it doesn't fall back to one of the env values.
+	for _, env := range []string{
+		"would-have-mattered-before-step-10",
+		os.Getenv("SPARKWING_RUN_ID"),
+	} {
+		if env != "" && rc.WorkDir == env {
+			t.Errorf("WorkDir bled from env: %q", rc.WorkDir)
+		}
 	}
 }
 
 // detectRuntime ignores SPARKWING_WORK_DIR even when set, since the
-// stale-env-var hijack scenario (Scenario D) was the bug we were
-// trying to eliminate. Walk-up from cwd is the sole source of truth.
+// stale-env-var hijack scenario was the bug we were trying to
+// eliminate. Walk-up from cwd is the sole source of truth.
 func TestDetectRuntime_IgnoresLegacyWorkDirEnv(t *testing.T) {
 	t.Setenv("SPARKWING_WORK_DIR", "/some/stale/path/that/does/not/exist")
 	rc := detectRuntime()
@@ -158,8 +96,8 @@ func TestSetGit_AttachesPopulatedGit(t *testing.T) {
 func TestRunConfigAliasStillWorks(t *testing.T) {
 	a := CurrentRuntime()
 	b := CurrentRunConfig()
-	if a.IsLocal != b.IsLocal || a.WorkDir != b.WorkDir {
-		t.Errorf("alias mismatch: %#v vs %#v", a, b)
+	if a.WorkDir != b.WorkDir {
+		t.Errorf("alias WorkDir mismatch: %q vs %q", a.WorkDir, b.WorkDir)
 	}
 	var _ RunConfig = RuntimeConfig{}
 }

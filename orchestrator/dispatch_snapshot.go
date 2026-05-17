@@ -34,9 +34,10 @@ var envAllowPrefixes = []string{
 	"GITHUB_",
 }
 
-// envAllowExact pins names that don't fit a prefix but are needed to
-// reproduce dispatch-time behavior (KUBERNETES_SERVICE_HOST drives
-// RuntimeConfig.IsLocal).
+// envAllowExact pins names that don't fit a prefix but are needed
+// to reproduce dispatch-time behavior (the AWS SDK + Go runtime
+// honor a few non-prefixed vars whose values shape what the snapshot
+// would have observed at run time).
 var envAllowExact = map[string]bool{
 	"KUBERNETES_SERVICE_HOST": true,
 	"PATH":                    true,

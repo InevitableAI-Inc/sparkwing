@@ -10,11 +10,11 @@ import (
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
-// ensureRegistered registers `name` with `factory` if absent. The
-// sparkwing test suite includes TestPipelineVenue, which resets the
-// global pipeline registry; init-time registrations don't survive
-// that wipe. Calling this at the top of each test that needs a
-// fixture restores the registration cleanly.
+// ensureRegistered registers `name` with `factory` if absent.
+// Several SDK tests reset the global pipeline registry as part of
+// their setup; init-time registrations don't survive that wipe.
+// Calling this at the top of each test that needs a fixture
+// restores the registration cleanly.
 func ensureRegistered(t *testing.T, name string, factory func() sparkwing.Pipeline[sparkwing.NoInputs]) *sparkwing.Registration {
 	t.Helper()
 	if reg, ok := sparkwing.Lookup(name); ok {

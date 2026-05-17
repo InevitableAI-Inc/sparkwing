@@ -17,12 +17,6 @@ import (
 // static structure without re-parsing.
 type PlanPreview struct {
 	Pipeline string `json:"pipeline"`
-	// Venue is the pipeline's author-declared dispatch constraint
-	// ("either" / "local-only" / "cluster-only"). Pre-flight consumers
-	// see venue alongside the DAG so a `pipeline plan` renderer can
-	// warn an operator that this pipeline can't be `--on`'d without
-	// going through the dispatcher first.
-	Venue string `json:"venue,omitempty"`
 	// ResolvedArgs are the typed Inputs values after default
 	// resolution + flag parsing. Plain map for JSON-friendliness.
 	ResolvedArgs map[string]string `json:"resolved_args,omitempty"`
@@ -157,14 +151,6 @@ func PreviewPlan(plan *Plan, pipeline string, resolvedArgs map[string]string, op
 		ResolvedArgs: resolvedArgs,
 		StartAt:      opts.StartAt,
 		StopAt:       opts.StopAt,
-	}
-	// Surface the registered venue as plan-level metadata so
-	// `sparkwing pipeline plan` consumers can render the dispatch
-	// constraint above the DAG. Lookup is best-effort -- a Plan built
-	// against an unregistered name (synthetic test fixtures) just
-	// omits the field.
-	if reg, ok := Lookup(pipeline); ok {
-		out.Venue = PipelineVenue(reg).String()
 	}
 	for _, lw := range plan.LintWarnings() {
 		out.LintWarnings = append(out.LintWarnings, PreviewLintWarning{

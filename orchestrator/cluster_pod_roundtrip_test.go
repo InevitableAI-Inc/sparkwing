@@ -141,6 +141,37 @@ func TestClusterPodRoundTrip_RemoteControllerSource(t *testing.T) {
 	}
 }
 
+// TestClusterPodRoundTrip_RunnerInfoVisibleOnPod asserts that the
+// pod-side install picks up the runner identity the cluster trigger
+// loop stamps via SPARKWING_RUNNER_* env vars, so adapters branching
+// on sparkwing.Runner(ctx).HasLabel(...) take the non-local path on
+// the pod.
+func TestClusterPodRoundTrip_RunnerInfoVisibleOnPod(t *testing.T) {
+	t.Setenv("SPARKWING_RUNNER_NAME", "warm-pool-a")
+	t.Setenv("SPARKWING_RUNNER_TYPE", "kubernetes")
+	t.Setenv("SPARKWING_RUNNER_LABELS", "kubernetes,os=linux,cloud-linux")
+
+	info := podRunnerInfo()
+	if info == nil {
+		t.Fatal("podRunnerInfo nil")
+	}
+	ctx := sparkwing.WithRunner(context.Background(), info)
+
+	r := sparkwing.Runner(ctx)
+	if r == nil {
+		t.Fatal("Runner(ctx) nil after install")
+	}
+	if r.HasLabel("local") {
+		t.Errorf("pod adapter would take local path; labels = %v", r.Labels)
+	}
+	if !r.HasLabel("kubernetes") {
+		t.Errorf("pod adapter would miss kubernetes path; labels = %v", r.Labels)
+	}
+	if r.Name != "warm-pool-a" || r.Type != "kubernetes" {
+		t.Errorf("identity wrong: %+v", r)
+	}
+}
+
 // TestClusterPodRoundTrip_AuthFailureSurfacesAsError pins the
 // controller's 401 contract end-to-end: the pod-side rehydrate
 // surfaces the auth failure rather than silently substituting an

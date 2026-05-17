@@ -3,44 +3,39 @@ package sparkwing
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 )
 
 // RuntimeConfig is the snapshot of "what is true about this process
-// at the moment it started." Populated once at package init from the
-// environment the binary was exec'd with; stable for the lifetime of
-// the run.
+// at the moment it started." Populated once at package init by
+// walking up from cwd to find the project root; stable for the
+// lifetime of the run.
 //
-// All env reads happen in detectRuntime. Empty string is the "unset"
-// sentinel.
+// Only the WorkDir + Git fields remain. Earlier shapes carried
+// IsLocal, RunID, NodeID, and a Debug flag derived from environment
+// variables; those have moved out:
+//
+//   - "Am I local?" is per-job and reachable via Runner(ctx). The
+//     orchestrator installs RunnerInfo on the ctx the step body
+//     receives; adapters branch on r.HasLabel("local") or r.Type.
+//   - RunID and NodeID belong to RunContext and per-job context;
+//     read them from rc.RunID / NodeFromContext(ctx) instead of a
+//     package-global.
+//   - Debug() is a free function (debug.go) reading SPARKWING_DEBUG
+//     once at package init.
 type RuntimeConfig struct {
-	// IsLocal is true on laptop-class hosts. False inside cluster
-	// runner pods (detected via SPARKWING_HOST=cluster or implicit
-	// KUBERNETES_SERVICE_HOST).
-	IsLocal bool
-
-	// WorkDir is the directory the pipeline should treat as the repo
-	// root. Discovered at process init by walking up from cwd looking
-	// for a `.sparkwing/` subdir. Empty when no project was found
-	// above cwd -- helpers (Path, ReadFile, ...) then refuse to run
-	// with a clear error.
+	// WorkDir is the directory the pipeline should treat as the
+	// repo root. Discovered at process init by walking up from cwd
+	// looking for a `.sparkwing/` subdir. Empty when no project
+	// was found above cwd; helpers (Path, ReadFile, ...) then
+	// refuse to run with a clear error.
 	WorkDir string
 
-	// RunID and NodeID identify the current invocation. Empty on
-	// laptop dev runs (the local orchestrator assigns internally);
-	// populated on cluster runs and `handle-trigger` exec'd binaries.
-	RunID  string
-	NodeID string
-
-	// Git describes the source state being built. Same instance as
-	// RunContext.Git. Always non-nil so live methods are safe to call
-	// from init time; data fields stay empty until SetGit fills them.
+	// Git describes the source state being built. Same instance
+	// as RunContext.Git. Always non-nil so live methods are safe
+	// to call from init time; data fields stay empty until SetGit
+	// fills them.
 	Git *Git
-
-	// Debug reflects SPARKWING_DEBUG at process start. Mutate via
-	// SetDebug; env is not re-read.
-	Debug bool
 }
 
 var (
@@ -49,17 +44,12 @@ var (
 )
 
 func detectRuntime() RuntimeConfig {
-	rc := RuntimeConfig{
-		IsLocal: detectIsLocal(),
-		RunID:   os.Getenv("SPARKWING_RUN_ID"),
-		NodeID:  os.Getenv("SPARKWING_NODE_ID"),
-		Debug:   parseDebug(os.Getenv("SPARKWING_DEBUG")),
-	}
+	rc := RuntimeConfig{}
 	if cwd, err := os.Getwd(); err == nil {
 		// Git-style auto-discovery: walk up from cwd looking for a
 		// `.sparkwing/` subdir. Empty result means no project here;
-		// helpers that need WorkDir fail loudly rather than fall back
-		// to cwd.
+		// helpers that need WorkDir fail loudly rather than fall
+		// back to cwd.
 		rc.WorkDir = walkUpToProject(cwd)
 	}
 	// Pre-populate Git so callers can do `runtime.Git.IsDirty(ctx)`
@@ -84,25 +74,6 @@ func walkUpToProject(start string) string {
 		}
 		dir = parent
 	}
-}
-
-// parseDebug interprets SPARKWING_DEBUG. Empty / "0" / "false" → off;
-// any other non-empty value → on.
-func parseDebug(v string) bool {
-	if v == "" || v == "0" || strings.EqualFold(v, "false") {
-		return false
-	}
-	return true
-}
-
-func detectIsLocal() bool {
-	if os.Getenv("SPARKWING_HOST") == "cluster" {
-		return false
-	}
-	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
-		return false
-	}
-	return true
 }
 
 // CurrentRuntime returns the RuntimeConfig snapshot for this process.
@@ -145,8 +116,11 @@ func SetGit(g *Git) {
 	runtime.Git = g
 }
 
-// RunConfig is an alias for RuntimeConfig retained for compatibility.
+// RunConfig is an alias for RuntimeConfig retained for external
+// consumers (sparks-core helpers and other SDK reuses) that import
+// the older name. New code uses RuntimeConfig directly.
 type RunConfig = RuntimeConfig
 
-// CurrentRunConfig is an alias for CurrentRuntime.
+// CurrentRunConfig is an alias for CurrentRuntime, kept for the
+// same reason as RunConfig.
 func CurrentRunConfig() RunConfig { return CurrentRuntime() }

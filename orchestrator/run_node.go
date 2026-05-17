@@ -140,6 +140,15 @@ func RunNodeOnce(
 		ctx = sparkwing.WithInputs(ctx, in)
 	}
 
+	// Pod-side install of the runner identity so adapters branching
+	// on sparkwing.Runner(ctx) see "kubernetes" (or whatever the
+	// cluster trigger loop stamped) instead of falling back to the
+	// in-process default. Env-driven so the per-pod overrides set by
+	// the trigger loop flow through without a fresh API.
+	if info := podRunnerInfo(); info != nil {
+		ctx = sparkwing.WithRunner(ctx, info)
+	}
+
 	// Pod-side install of the PipelineConfig the orchestrator already
 	// resolved (Values.Base + Target.Values layering happened on the
 	// controller side). The snapshot carries the resolved struct as

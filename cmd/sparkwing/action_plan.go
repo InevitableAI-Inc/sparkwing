@@ -19,11 +19,7 @@ import (
 // separate to avoid pulling the SDK package into the wrapper just
 // for the schema.
 type planPreviewDoc struct {
-	Pipeline string `json:"pipeline"`
-	// Venue mirrors sparkwing.PlanPreview.Venue: the author-declared
-	// dispatch constraint surfaced on the runtime-resolved view.
-	// Empty for older pipeline binaries.
-	Venue        string               `json:"venue,omitempty"`
+	Pipeline     string               `json:"pipeline"`
 	ResolvedArgs map[string]string    `json:"resolved_args,omitempty"`
 	StartAt      string               `json:"start_at,omitempty"`
 	StopAt       string               `json:"stop_at,omitempty"`
@@ -202,12 +198,6 @@ func printPlanPreview(doc *planPreviewDoc) {
 	if doc.Pipeline != "" {
 		fmt.Printf("Plan: %s\n", doc.Pipeline)
 	}
-	// Surface the dispatch constraint right after the name so a
-	// `pipeline plan` reader sees "venue: local-only" before reading
-	// the DAG. Suppressed for the permissive default.
-	if doc.Venue != "" && doc.Venue != "either" {
-		fmt.Printf("Venue: %s\n", doc.Venue)
-	}
 	if doc.StartAt != "" || doc.StopAt != "" {
 		fmt.Printf("Range: --start-at=%s --stop-at=%s\n",
 			orDashStr(doc.StartAt), orDashStr(doc.StopAt))
@@ -280,9 +270,8 @@ func printPlanPreviewItem(kind string, it *planPreviewItemDoc, indent string) {
 	}
 	// Append the blast-radius set inline so a `pipeline plan` reader
 	// sees both the runtime decision and the contract before drilling
-	// into needs / cardinality. Format mirrors the `Venue: <kind>`
-	// placement: tucked into the same header line so the renderer
-	// stays compact for the common no-marker case.
+	// into needs / cardinality. Tucked into the same header line so
+	// the renderer stays compact for the common no-marker case.
 	if len(it.BlastRadius) > 0 {
 		decision += " blast=" + strings.Join(it.BlastRadius, ",")
 	}

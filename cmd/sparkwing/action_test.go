@@ -18,7 +18,6 @@ import (
 func TestPipelineJSON_SurfacesBlastRadius(t *testing.T) {
 	p := Pipeline{
 		Name:        "cluster-down",
-		Venue:       "local-only",
 		BlastRadius: []string{"destructive", "production"},
 		BlastRadiusBySteps: []sparkwing.DescribeStepBlastRadius{
 			{NodeID: "cluster-down", StepID: "terraform-destroy-eks", Markers: []string{"destructive", "production"}},
@@ -48,10 +47,7 @@ func TestPipelineJSON_SurfacesBlastRadius(t *testing.T) {
 // absent-field signal to mean "no markers declared", not "old CLI
 // version".
 func TestPipelineJSON_OmitsEmptyBlastRadius(t *testing.T) {
-	p := Pipeline{
-		Name:  "hello",
-		Venue: "either",
-	}
+	p := Pipeline{Name: "hello"}
 	raw, err := json.Marshal(p)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
@@ -63,15 +59,14 @@ func TestPipelineJSON_OmitsEmptyBlastRadius(t *testing.T) {
 }
 
 // The catalog copy in gatherPipelinesCatalog is the load-bearing
-// site -- it copies Short / Help / Args / Examples / Venue from the
-// cached DescribePipeline schema along with the two blast-radius
-// fields. This test fakes the inner copy to assert the union +
-// per-step both round-trip.
+// site -- it copies Short / Help / Args / Examples from the cached
+// DescribePipeline schema along with the two blast-radius fields.
+// This test fakes the inner copy to assert the union + per-step
+// both round-trip.
 func TestCatalogCopy_PreservesBlastRadius(t *testing.T) {
 	dp := sparkwing.DescribePipeline{
 		Name:        "cluster-down",
 		Short:       "tear down the cluster",
-		Venue:       "local-only",
 		BlastRadius: []string{"destructive", "production"},
 		BlastRadiusBySteps: []sparkwing.DescribeStepBlastRadius{
 			{NodeID: "cluster-down", StepID: "destroy", Markers: []string{"destructive", "production"}},
@@ -85,7 +80,6 @@ func TestCatalogCopy_PreservesBlastRadius(t *testing.T) {
 	a.Help = dp.Help
 	a.Args = dp.Args
 	a.Examples = dp.Examples
-	a.Venue = dp.Venue
 	a.BlastRadius = dp.BlastRadius
 	a.BlastRadiusBySteps = dp.BlastRadiusBySteps
 

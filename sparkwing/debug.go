@@ -3,16 +3,29 @@ package sparkwing
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"sync/atomic"
 	"time"
 )
 
 // debugEnabled toggles emission of Level:"debug" LogRecords. Atomic
-// so Debug is close to free when off (one load + branch).
+// so Debug is close to free when off (one load + branch). Seeded
+// from SPARKWING_DEBUG at package init; SetDebug overrides at
+// runtime.
 var debugEnabled atomic.Bool
 
 func init() {
-	debugEnabled.Store(runtime.Debug)
+	debugEnabled.Store(parseDebug(os.Getenv("SPARKWING_DEBUG")))
+}
+
+// parseDebug interprets SPARKWING_DEBUG. Empty / "0" / "false" → off;
+// any other non-empty value → on.
+func parseDebug(v string) bool {
+	if v == "" || v == "0" || strings.EqualFold(v, "false") {
+		return false
+	}
+	return true
 }
 
 // DebugEnabled reports whether SDK-internal verbose logging is on.

@@ -142,20 +142,11 @@ func runWing(args []string) error {
 		}
 	}
 
-	// Gate dispatch against the pipeline's author-declared venue.
-	// LocalOnly pipelines refuse `--on PROFILE` (cluster-up
-	// shells out to terraform / aws against laptop credentials);
-	// ClusterOnly pipelines refuse bare invocation (in-cluster
-	// state-touching chores). Venue is resolved from the describe
-	// cache so the gate fires before the dispatch round-trip; a cold
-	// cache silently degrades to "either" (the safe permissive
-	// default), which is the same behavior pipelines without an
-	// explicit Venue() get.
-	if v := lookupCachedVenue(dir, pipelineName); v != "" {
-		if err := enforcePipelineVenue(v, pipelineName, wf.on); err != nil {
-			return err
-		}
-	}
+	// Pipeline-level dispatch gating now flows through the runner
+	// resolution rule: pipelines.yaml declares which runners a
+	// target accepts, the orchestrator picks one whose labels
+	// satisfy the job's Requires terms, and a mismatch produces a
+	// clear error at run start. No CLI-side venue check is needed.
 
 	// Blast-radius gate. Walk per-step markers via the describe
 	// cache and refuse dispatch when a Destructive /

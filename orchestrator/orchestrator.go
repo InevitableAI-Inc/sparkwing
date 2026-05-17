@@ -1639,6 +1639,10 @@ func (s *dispatchState) runOneNode(node *sparkwing.JobNode) {
 	// inherit a duration from the time they spent waiting on deps.
 	s.markStarted(node.ID())
 	runnerCtx := sparkwing.WithSpawnHandler(s.resolverCtx, s.newSpawnHandler(node.ID()))
+	// Install RunnerInfo so step bodies branching on
+	// sparkwing.Runner(ctx).HasLabel(...) see the runner the
+	// scheduler actually picked.
+	runnerCtx = sparkwing.WithRunner(runnerCtx, runnerInfoFor(activeRunner))
 
 	// Node-level auto-retry: re-dispatch the whole runner on infra
 	// flakes. Only Failed outcomes with a non-nil err are eligible.
@@ -2203,14 +2207,9 @@ func runOnePredicate(ctx context.Context, pred sparkwing.SkipPredicate, index in
 // planSnapshot is the stored DAG with each Node's eager-materialized
 // inner Work tree.
 type planSnapshot struct {
-	Pipeline string `json:"pipeline"`
-	RunID    string `json:"run_id"`
-	// Venue is the author-declared dispatch constraint surfaced at
-	// the top of the plan snapshot. Agents reading --explain JSON
-	// see the venue alongside the DAG so they can honor it without
-	// a separate `--describe` round-trip.
-	Venue string         `json:"venue,omitempty"`
-	Nodes []snapshotNode `json:"nodes"`
+	Pipeline string         `json:"pipeline"`
+	RunID    string         `json:"run_id"`
+	Nodes    []snapshotNode `json:"nodes"`
 
 	// Target is the --for selection that was resolved at run start.
 	// Empty when no target was selected. Carried in the snapshot so
@@ -2364,16 +2363,6 @@ func marshalPlanSnapshot(p *sparkwing.Plan, rc sparkwing.RunContext, meta planSn
 		Secrets:            meta.Secrets,
 		GlobalPrefers:      meta.GlobalPrefers,
 		JobRunnerOverrides: meta.JobRunnerOverrides,
-	}
-	// Surface the registered venue at the snapshot top so agents
-	// reading --explain JSON honor the dispatch constraint
-	// without a separate --describe round-trip. Best-effort lookup --
-	// synthetic test fixtures with a Plan but no Registration just
-	// emit no venue field (json:"omitempty").
-	if rc.Pipeline != "" {
-		if reg, ok := sparkwing.Lookup(rc.Pipeline); ok {
-			snap.Venue = sparkwing.PipelineVenue(reg).String()
-		}
 	}
 	// Cycle detection threads through the snapshot walk to catch
 	// A->B->A loops in one pass.
