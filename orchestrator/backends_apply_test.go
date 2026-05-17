@@ -2,7 +2,10 @@ package orchestrator
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -321,7 +324,57 @@ defaults:
 	}
 }
 
-func TestApplyBackendsConfig_KubernetesDetectFiresControllerError(t *testing.T) {
+func TestApplyBackendsConfig_ControllerTargetOverlayRoutesToProfile(t *testing.T) {
+	neutralizeEnv(t)
+	var sawAuth string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sawAuth = r.Header.Get("Authorization")
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	dir := writeBackendsYAML(t, t.TempDir(), `
+defaults:
+  cache: { type: filesystem, path: `+t.TempDir()+` }
+  logs:  { type: filesystem, path: `+t.TempDir()+` }
+`)
+	lookup := func(name string) (string, string, error) {
+		if name != "prod" {
+			return "", "", fmt.Errorf("unknown profile %q", name)
+		}
+		return srv.URL, "tok-prod", nil
+	}
+	opts := Options{
+		SparkwingDir:  dir,
+		Target:        "prod",
+		ProfileLookup: lookup,
+		PipelineYAML: &pipelines.Pipeline{
+			Targets: map[string]pipelines.Target{
+				"prod": {
+					Backend: &pipelines.TargetBackend{
+						Cache: map[string]any{"type": "controller", "controller": "prod"},
+					},
+				},
+			},
+		},
+	}
+	if err := ApplyBackendsConfig(context.Background(), &opts); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if opts.ArtifactStore == nil {
+		t.Fatal("ArtifactStore nil")
+	}
+	// Round-trip a Put through the cache store to confirm the wired
+	// HTTP client points at the test server with the profile's token.
+	if err := opts.ArtifactStore.Put(context.Background(), "k", strings.NewReader("x")); err != nil {
+		t.Fatalf("put: %v", err)
+	}
+	if sawAuth != "Bearer tok-prod" {
+		t.Errorf("Authorization=%q, want Bearer tok-prod", sawAuth)
+	}
+}
+
+func TestApplyBackendsConfig_KubernetesDetectRequiresControllerName(t *testing.T) {
 	neutralizeEnv(t)
 	t.Setenv("KUBERNETES_SERVICE_HOST", "10.0.0.1")
 	dir := writeBackendsYAML(t, t.TempDir(), `
@@ -332,11 +385,12 @@ defaults:
 	opts := Options{SparkwingDir: dir}
 	err := ApplyBackendsConfig(context.Background(), &opts)
 	if err == nil {
-		t.Fatal("expected controller-unimplemented error")
+		t.Fatal("expected controller-name-missing error")
 	}
-	// The built-in kubernetes environment sets cache+logs to controller;
-	// the factory returns "not implemented in this build".
-	if !strings.Contains(err.Error(), "not implemented in this build") {
+	// The built-in kubernetes environment sets cache+logs to controller
+	// with no controller name; the factory rejects that until the
+	// operator overrides with a profile name in their backends.yaml.
+	if !strings.Contains(err.Error(), "requires controller: <profile-name>") {
 		t.Errorf("got %v", err)
 	}
 }

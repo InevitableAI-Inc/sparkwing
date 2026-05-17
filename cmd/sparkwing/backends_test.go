@@ -50,7 +50,7 @@ func TestWriteProfileBackendsConfig_RoundTripsThroughOverlay(t *testing.T) {
 	}
 
 	// And that the factory builds a real store from the resolved spec.
-	if _, err := storeurl.OpenLogStoreFromSpec(context.Background(), *file.Defaults.Logs); err != nil {
+	if _, err := storeurl.OpenLogStoreFromSpec(context.Background(), *file.Defaults.Logs, nil); err != nil {
 		t.Errorf("OpenLogStoreFromSpec: %v", err)
 	}
 }

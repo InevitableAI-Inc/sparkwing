@@ -11,6 +11,7 @@ import (
 	"github.com/sparkwing-dev/sparkwing/pkg/backends"
 	"github.com/sparkwing-dev/sparkwing/pkg/pipelines"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage/storeurl"
+	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
 // ApplyBackendsConfig resolves backends.yaml + built-in detect
@@ -51,15 +52,16 @@ func ApplyBackendsConfig(ctx context.Context, opts *Options) error {
 	}
 	eff := backends.Effective(file, envName, target)
 
+	lookup := storeurlProfileLookup(opts.ProfileLookup)
 	if opts.ArtifactStore == nil && eff.Cache != nil {
-		store, err := storeurl.OpenArtifactStoreFromSpec(ctx, *eff.Cache)
+		store, err := storeurl.OpenArtifactStoreFromSpec(ctx, *eff.Cache, lookup)
 		if err != nil {
 			return fmt.Errorf("cache backend: %w", err)
 		}
 		opts.ArtifactStore = store
 	}
 	if opts.LogStore == nil && eff.Logs != nil {
-		store, err := storeurl.OpenLogStoreFromSpec(ctx, *eff.Logs)
+		store, err := storeurl.OpenLogStoreFromSpec(ctx, *eff.Logs, lookup)
 		if err != nil {
 			return fmt.Errorf("logs backend: %w", err)
 		}
@@ -79,6 +81,20 @@ func ApplyBackendsConfig(ctx context.Context, opts *Options) error {
 		}
 	}
 	return nil
+}
+
+// storeurlProfileLookup adapts the orchestrator's profile-lookup
+// callback (which the SDK also consumes for remote-controller secret
+// sources) to the storeurl factory's named type. Returns nil when the
+// caller didn't install one; the factory then errors loudly the
+// moment a controller-typed spec arrives.
+func storeurlProfileLookup(lookup sparkwing.ProfileLookup) storeurl.ProfileLookup {
+	if lookup == nil {
+		return nil
+	}
+	return func(name string) (string, string, error) {
+		return lookup(name)
+	}
 }
 
 // decodeTargetBackend converts the target's per-surface

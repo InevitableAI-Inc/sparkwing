@@ -48,8 +48,8 @@ environments:
     detect:
       env_var: KUBERNETES_SERVICE_HOST
       present: true
-    cache: { type: controller }
-    logs:  { type: controller }
+    cache: { type: controller, controller: cluster }
+    logs:  { type: controller, controller: cluster }
 `)
 	f, err := backends.Load(filepath.Join(dir, "backends.yaml"))
 	if err != nil {
@@ -197,6 +197,22 @@ environments:
     cache: { type: filesystem, path: /tmp/x }
 `,
 			wantErr: "detect requires either equals or present",
+		},
+		{
+			name: "controller cache missing controller field",
+			body: `
+defaults:
+  cache: { type: controller }
+`,
+			wantErr: "type=controller requires controller: <profile-name>",
+		},
+		{
+			name: "controller logs missing controller field",
+			body: `
+defaults:
+  logs: { type: controller }
+`,
+			wantErr: "type=controller requires controller: <profile-name>",
 		},
 	}
 	for _, tc := range cases {

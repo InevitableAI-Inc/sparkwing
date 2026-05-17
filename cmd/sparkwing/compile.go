@@ -59,7 +59,7 @@ func compileAndExec(sparkwingDir string, args []string, env []string, opts compi
 	// orchestrator init -- so only defaults and the auto-detected
 	// environment apply.
 	if cache := resolveEffectiveCacheSpec(sparkwingDir); cache != nil {
-		if as, err := storeurl.OpenArtifactStoreFromSpec(context.Background(), *cache); err == nil {
+		if as, err := storeurl.OpenArtifactStoreFromSpec(context.Background(), *cache, nil); err == nil {
 			if err := bincache.FetchFromArtifactStore(context.Background(), as, key, binPath); err == nil {
 				ensureDescribeCache(sparkwingDir, binPath)
 				env = append(env, "SPARKWING_BINARY_SOURCE=artifact-store")

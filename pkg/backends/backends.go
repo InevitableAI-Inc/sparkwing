@@ -105,6 +105,12 @@ type Spec struct {
 	URLSource string `yaml:"url_source,omitempty"`
 	Token     string `yaml:"token,omitempty"`
 
+	// Controller names a profile from profiles.yaml for type=controller
+	// backends. The orchestrator resolves the name to a controller URL
+	// and bearer token via the same profile-lookup callback used by
+	// remote-controller secret sources.
+	Controller string `yaml:"controller,omitempty"`
+
 	// Binaries is an optional nested override on Cache that isolates
 	// compiled pipeline binaries to a separate destination (e.g.
 	// shared s3 bucket while the rest of cache stays on disk). Only
@@ -310,6 +316,10 @@ func validateSpec(spec Spec, surface Surface, where string) error {
 	case TypePostgres, TypeMySQL:
 		if (spec.URL == "") == (spec.URLSource == "") {
 			return fmt.Errorf("%s: type=%s requires exactly one of url or url_source", where, spec.Type)
+		}
+	case TypeController:
+		if spec.Controller == "" {
+			return fmt.Errorf("%s: type=%s requires controller: <profile-name>", where, spec.Type)
 		}
 	}
 	if spec.Binaries != nil {

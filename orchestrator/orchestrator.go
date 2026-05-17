@@ -170,6 +170,15 @@ type Options struct {
 	// the factory. Cluster boot paths leave it empty; they wire State
 	// through their own plumbing.
 	DefaultStateDB string
+
+	// ProfileLookup resolves a profile name to (controller URL, token)
+	// for type=controller cache/logs specs. RunLocal installs the
+	// default profile.Load + profile.Resolve callback when this is
+	// nil. Tests inject a synthetic lookup pointing at an httptest
+	// server. Cluster boot paths leave it nil; controller-typed specs
+	// would error there, which is the right signal since those paths
+	// declare URL + token via CLI flags rather than profile names.
+	ProfileLookup sparkwing.ProfileLookup
 }
 
 // DebugDirectives is the ephemeral pause surface for one run.
@@ -504,6 +513,9 @@ func RunLocal(ctx context.Context, paths Paths, opts Options) (*Result, error) {
 	}
 	if opts.DefaultStateDB == "" {
 		opts.DefaultStateDB = paths.StateDB()
+	}
+	if opts.ProfileLookup == nil {
+		opts.ProfileLookup = profileLookupCallback()
 	}
 	ownsState := opts.State == nil
 	if err := ApplyBackendsConfig(ctx, &opts); err != nil {

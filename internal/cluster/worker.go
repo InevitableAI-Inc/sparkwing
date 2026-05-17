@@ -52,6 +52,16 @@ func RunWorker(ctx context.Context, opts orchestrator.WorkerOptions) error {
 	// a localLogs value for the no-LogsURL fallback. State and
 	// Concurrency are overwritten with HTTP variants below; the local
 	// store is otherwise unreferenced and is closed on return.
+	//
+	// Note on factory bypass: the cluster boot path constructs these
+	// HTTP clients directly from CLI flags (--controller, --logs,
+	// --token) rather than going through storeurl.OpenLogStoreFromSpec
+	// with a Spec{Type: controller, Controller: <profile>}. The factory
+	// resolves controller URLs via a profile name; this process gets
+	// them imperatively from flags, so there's no profile to resolve.
+	// Both paths converge on the same sparkwingcache.Store /
+	// sparkwinglogs.Store instances against the same controller
+	// endpoints -- only the configuration surface differs.
 	dummyStore, err := store.Open(paths.StateDB())
 	if err != nil {
 		return fmt.Errorf("open local store for logs fallback: %w", err)
