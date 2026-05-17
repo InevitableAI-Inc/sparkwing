@@ -2,4 +2,7 @@ package backends
 
 import "sync"
 
-func resetShimWarnedForTest() { shimWarned = sync.Once{} }
+func resetShimWarnedForTest() {
+	shimLogStoreWarned = sync.Once{}
+	shimArtStoreWarned = sync.Once{}
+}

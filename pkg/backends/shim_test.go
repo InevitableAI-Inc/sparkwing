@@ -38,7 +38,7 @@ func TestLegacyURLToSpec(t *testing.T) {
 	}
 }
 
-func TestApplyLegacyEnvShim_PopulatesAndWarnsOnce(t *testing.T) {
+func TestApplyLegacyEnvShim_PopulatesAndWarnsOncePerVar(t *testing.T) {
 	resetShimWarnedForTest()
 	t.Setenv("SPARKWING_LOG_STORE", "fs:///tmp/sw-logs-test")
 	t.Setenv("SPARKWING_ARTIFACT_STORE", "s3://team-cache/prefix")
@@ -54,18 +54,46 @@ func TestApplyLegacyEnvShim_PopulatesAndWarnsOnce(t *testing.T) {
 		t.Errorf("cache = %+v", first.Defaults.Cache)
 	}
 
-	// Second call: no warning, same population.
+	// Second call: no additional warnings, same population.
 	second := ApplyLegacyEnvShim(File{})
 	if second.Defaults.Logs == nil {
 		t.Errorf("logs missing on second call")
 	}
 
 	got := stderr()
-	if !strings.Contains(got, "deprecated") || !strings.Contains(got, "backends.yaml") {
-		t.Errorf("missing deprecation warning, got: %q", got)
+	if !strings.Contains(got, "SPARKWING_LOG_STORE is deprecated") {
+		t.Errorf("missing log-store warning, got: %q", got)
 	}
-	if strings.Count(got, "deprecated") != 1 {
-		t.Errorf("expected warning once, saw %d: %q", strings.Count(got, "deprecated"), got)
+	if !strings.Contains(got, "SPARKWING_ARTIFACT_STORE is deprecated") {
+		t.Errorf("missing artifact-store warning, got: %q", got)
+	}
+	if !strings.Contains(got, "will be removed in a future release") {
+		t.Errorf("missing removal-timeline phrasing, got: %q", got)
+	}
+	// One warning per var, even across two Apply calls.
+	if c := strings.Count(got, "SPARKWING_LOG_STORE is deprecated"); c != 1 {
+		t.Errorf("log-store warning fired %d times, want 1: %q", c, got)
+	}
+	if c := strings.Count(got, "SPARKWING_ARTIFACT_STORE is deprecated"); c != 1 {
+		t.Errorf("artifact-store warning fired %d times, want 1: %q", c, got)
+	}
+}
+
+func TestApplyLegacyEnvShim_PerVarWarningIsolation(t *testing.T) {
+	resetShimWarnedForTest()
+	t.Setenv("SPARKWING_LOG_STORE", "fs:///tmp/only-logs")
+	os.Unsetenv("SPARKWING_ARTIFACT_STORE")
+
+	stderr, restore := captureStderr(t)
+	defer restore()
+
+	ApplyLegacyEnvShim(File{})
+	got := stderr()
+	if strings.Contains(got, "SPARKWING_ARTIFACT_STORE") {
+		t.Errorf("unrelated artifact-store warning fired: %q", got)
+	}
+	if !strings.Contains(got, "SPARKWING_LOG_STORE is deprecated") {
+		t.Errorf("log-store warning missing, got: %q", got)
 	}
 }
 

@@ -70,34 +70,49 @@ func BuiltinEnvironments() File {
 	}
 }
 
-// shimWarned ensures the deprecation warning fires exactly once
+// shimLogStoreWarned and shimArtStoreWarned guard the deprecation
+// warnings for each legacy env var separately so an operator
+// setting only one var sees only the matching line, exactly once
 // per process.
-var shimWarned sync.Once
+var (
+	shimLogStoreWarned sync.Once
+	shimArtStoreWarned sync.Once
+)
 
 // ApplyLegacyEnvShim translates SPARKWING_LOG_STORE and
 // SPARKWING_ARTIFACT_STORE into typed entries on a synthetic
 // backends.File that sits underneath the supplied file. The file's
 // own defaults still win per-surface; the shim only fills blanks.
 // A one-shot deprecation warning is printed on stderr the first
-// time either variable is observed.
+// time each variable is observed.
+//
+// Removal timeline: the env-var shim ships alongside backends.yaml
+// for one release of overlap. After that release the shim is
+// removed and operators must declare cache and logs under
+// .sparkwing/backends.yaml's defaults: block.
 func ApplyLegacyEnvShim(file File) File {
 	logStore := os.Getenv("SPARKWING_LOG_STORE")
 	artStore := os.Getenv("SPARKWING_ARTIFACT_STORE")
 	if logStore == "" && artStore == "" {
 		return file
 	}
-	shimWarned.Do(func() {
-		fmt.Fprintf(os.Stderr,
-			"warn: SPARKWING_LOG_STORE / SPARKWING_ARTIFACT_STORE are deprecated; declare cache and logs in .sparkwing/backends.yaml. See %s\n",
-			DocsURL)
-	})
 	shim := File{}
 	if logStore != "" {
+		shimLogStoreWarned.Do(func() {
+			fmt.Fprintf(os.Stderr,
+				"warn: SPARKWING_LOG_STORE is deprecated. Declare logs in .sparkwing/backends.yaml. The env-var shim will be removed in a future release. See %s\n",
+				DocsURL)
+		})
 		if spec, ok := LegacyURLToSpec(logStore); ok {
 			shim.Defaults.Logs = spec
 		}
 	}
 	if artStore != "" {
+		shimArtStoreWarned.Do(func() {
+			fmt.Fprintf(os.Stderr,
+				"warn: SPARKWING_ARTIFACT_STORE is deprecated. Declare cache in .sparkwing/backends.yaml. The env-var shim will be removed in a future release. See %s\n",
+				DocsURL)
+		})
 		if spec, ok := LegacyURLToSpec(artStore); ok {
 			shim.Defaults.Cache = spec
 		}

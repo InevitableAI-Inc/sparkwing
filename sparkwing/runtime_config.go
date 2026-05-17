@@ -118,9 +118,17 @@ func SetGit(g *Git) {
 
 // RunConfig is an alias for RuntimeConfig retained for external
 // consumers (sparks-core helpers and other SDK reuses) that import
-// the older name. New code uses RuntimeConfig directly.
+// the older name.
+//
+// Deprecated: use RuntimeConfig directly. The RunConfig alias is
+// retained for backward compatibility with external callers and
+// will be removed one release after RuntimeConfig's trimmed shape
+// settles.
 type RunConfig = RuntimeConfig
 
 // CurrentRunConfig is an alias for CurrentRuntime, kept for the
 // same reason as RunConfig.
+//
+// Deprecated: use CurrentRuntime (or Runtime) directly. Will be
+// removed one release later alongside RunConfig.
 func CurrentRunConfig() RunConfig { return CurrentRuntime() }

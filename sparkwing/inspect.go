@@ -45,7 +45,7 @@ type ConfigField struct {
 // ConfigProvider. Other failure modes (yaml type coercion, required
 // missing) propagate as errors so the inspection surfaces the same
 // failure the dispatcher would see.
-func InspectPipelineConfig(reg *Registration, yamlEntry *pipelines.Pipeline, target string) ([]ConfigField, error) {
+func InspectPipelineConfig(reg *Registration, yamlEntry *pipelines.Pipeline, target, triggerSource string) ([]ConfigField, error) {
 	if reg == nil || reg.instance == nil {
 		return nil, nil
 	}
@@ -101,6 +101,20 @@ func InspectPipelineConfig(reg *Registration, yamlEntry *pipelines.Pipeline, tar
 				}
 			}
 			if err := applyValueOverlay(elem, specs, t.Values, reg.Name); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// Layer 4: matched trigger spec's values: block.
+	if yamlEntry != nil && triggerSource != "" {
+		if tv := yamlEntry.TriggerValues(triggerSource); len(tv) > 0 {
+			for _, s := range specs {
+				if _, ok := tv[s.name]; ok {
+					sources[s.name] = fmt.Sprintf("pipelines.yaml on.%s.values", triggerSource)
+				}
+			}
+			if err := applyValueOverlay(elem, specs, tv, reg.Name); err != nil {
 				return nil, err
 			}
 		}

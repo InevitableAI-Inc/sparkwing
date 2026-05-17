@@ -63,7 +63,7 @@ func TestResolvePipelineConfig_BaseAndTargetLayer(t *testing.T) {
 		},
 	}
 
-	out, err := sparkwing.ResolvePipelineConfig(reg, yamlEntry, "prod")
+	out, err := sparkwing.ResolvePipelineConfig(reg, yamlEntry, "prod", "")
 	if err != nil {
 		t.Fatalf("Resolve: %v", err)
 	}
@@ -79,6 +79,62 @@ func TestResolvePipelineConfig_BaseAndTargetLayer(t *testing.T) {
 	}
 }
 
+func TestResolvePipelineConfig_TriggerValuesWinOverTarget(t *testing.T) {
+	reg := registerConfigOnlyPipe(t)
+	yamlEntry := &pipelines.Pipeline{
+		Name:       "release",
+		Entrypoint: "Release",
+		Values: pipelines.PipelineValues{
+			Base: map[string]any{"image_repo": "base.dev/api", "replicas": 1},
+		},
+		Targets: map[string]pipelines.Target{
+			"prod": {Values: map[string]any{"replicas": 5}},
+		},
+		On: pipelines.Triggers{
+			Push: &pipelines.PushTrigger{
+				Values: map[string]any{
+					"replicas":   9,
+					"image_repo": "push.dev/api",
+				},
+			},
+		},
+	}
+	out, err := sparkwing.ResolvePipelineConfig(reg, yamlEntry, "prod", "push")
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+	cfg := out.(*releaseCfg)
+	if cfg.Replicas != 9 {
+		t.Errorf("Replicas = %d, want 9 (trigger.values should win over targets[prod])", cfg.Replicas)
+	}
+	if cfg.ImageRepo != "push.dev/api" {
+		t.Errorf("ImageRepo = %q, want push.dev/api (trigger.values fills base too)", cfg.ImageRepo)
+	}
+}
+
+func TestResolvePipelineConfig_TriggerValuesNoopForUnmatchedSource(t *testing.T) {
+	reg := registerConfigOnlyPipe(t)
+	yamlEntry := &pipelines.Pipeline{
+		Values: pipelines.PipelineValues{
+			Base: map[string]any{"image_repo": "base.dev/api", "replicas": 3},
+		},
+		On: pipelines.Triggers{
+			Push: &pipelines.PushTrigger{
+				Values: map[string]any{"replicas": 99},
+			},
+		},
+	}
+	// triggerSource = "manual" means no spec matches → push.values is ignored.
+	out, err := sparkwing.ResolvePipelineConfig(reg, yamlEntry, "", "manual")
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+	cfg := out.(*releaseCfg)
+	if cfg.Replicas != 3 {
+		t.Errorf("Replicas = %d, want 3 (manual trigger ignores push.values)", cfg.Replicas)
+	}
+}
+
 func TestResolvePipelineConfig_EmptyTargetUsesBaseOnly(t *testing.T) {
 	reg := registerConfigOnlyPipe(t)
 	yamlEntry := &pipelines.Pipeline{
@@ -86,7 +142,7 @@ func TestResolvePipelineConfig_EmptyTargetUsesBaseOnly(t *testing.T) {
 			Base: map[string]any{"image_repo": "foo/bar", "replicas": 3},
 		},
 	}
-	out, err := sparkwing.ResolvePipelineConfig(reg, yamlEntry, "")
+	out, err := sparkwing.ResolvePipelineConfig(reg, yamlEntry, "", "")
 	if err != nil {
 		t.Fatalf("Resolve: %v", err)
 	}
@@ -98,7 +154,7 @@ func TestResolvePipelineConfig_EmptyTargetUsesBaseOnly(t *testing.T) {
 
 func TestResolvePipelineConfig_MissingRequiredFails(t *testing.T) {
 	reg := registerConfigOnlyPipe(t)
-	_, err := sparkwing.ResolvePipelineConfig(reg, &pipelines.Pipeline{}, "")
+	_, err := sparkwing.ResolvePipelineConfig(reg, &pipelines.Pipeline{}, "", "")
 	if err == nil || !strings.Contains(err.Error(), "image_repo") {
 		t.Fatalf("expected required-error for image_repo, got %v", err)
 	}
@@ -111,7 +167,7 @@ func TestResolvePipelineConfig_TypeMismatchFails(t *testing.T) {
 			Base: map[string]any{"image_repo": "x", "replicas": "two"},
 		},
 	}
-	_, err := sparkwing.ResolvePipelineConfig(reg, yamlEntry, "")
+	_, err := sparkwing.ResolvePipelineConfig(reg, yamlEntry, "", "")
 	if err == nil || !strings.Contains(err.Error(), "Replicas") {
 		t.Fatalf("expected coercion error on Replicas, got %v", err)
 	}
@@ -137,7 +193,7 @@ func registerBadTagPipe(t *testing.T) *sparkwing.Registration {
 
 func TestResolvePipelineConfig_RequiredAndDefaultRejected(t *testing.T) {
 	reg := registerBadTagPipe(t)
-	_, err := sparkwing.ResolvePipelineConfig(reg, &pipelines.Pipeline{}, "")
+	_, err := sparkwing.ResolvePipelineConfig(reg, &pipelines.Pipeline{}, "", "")
 	if err == nil || !strings.Contains(err.Error(), "required and default") {
 		t.Fatalf("expected required+default error, got %v", err)
 	}
@@ -289,7 +345,7 @@ func registerPlainPipe(t *testing.T) *sparkwing.Registration {
 
 func TestResolvePipelineConfig_NoProviderReturnsNil(t *testing.T) {
 	reg := registerPlainPipe(t)
-	out, err := sparkwing.ResolvePipelineConfig(reg, &pipelines.Pipeline{}, "")
+	out, err := sparkwing.ResolvePipelineConfig(reg, &pipelines.Pipeline{}, "", "")
 	if err != nil || out != nil {
 		t.Fatalf("expected nil/nil, got %v/%v", out, err)
 	}

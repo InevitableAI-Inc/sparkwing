@@ -11,6 +11,56 @@ import (
 	"github.com/sparkwing-dev/sparkwing/pkg/pipelines"
 )
 
+func TestParse_PushTriggerValues_RoundTripsAlongsideEnv(t *testing.T) {
+	src := `
+pipelines:
+  - name: release
+    entrypoint: Release
+    on:
+      push:
+        branches: [main]
+        env:
+          DEPLOY_ENV: staging
+        values:
+          deploy_env: staging
+          replicas: 3
+`
+	cfg, err := pipelines.Parse(strings.NewReader(src))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	p := cfg.Pipelines[0]
+	if p.On.Push == nil {
+		t.Fatal("push trigger missing")
+	}
+	if p.On.Push.Env["DEPLOY_ENV"] != "staging" {
+		t.Errorf("legacy env not preserved: %+v", p.On.Push.Env)
+	}
+	if got := p.On.Push.Values["deploy_env"]; got != "staging" {
+		t.Errorf("values[deploy_env] = %v, want staging", got)
+	}
+	if got := p.On.Push.Values["replicas"]; got != 3 {
+		t.Errorf("values[replicas] = %v, want 3", got)
+	}
+	tv := p.TriggerValues("push")
+	if !reflect.DeepEqual(tv, p.On.Push.Values) {
+		t.Errorf("TriggerValues(push) = %v, want %v", tv, p.On.Push.Values)
+	}
+	if tv := p.TriggerValues("schedule"); tv != nil {
+		t.Errorf("TriggerValues(schedule) = %v, want nil (no spec)", tv)
+	}
+	if tv := p.TriggerValues("manual"); tv != nil {
+		t.Errorf("TriggerValues(manual) = %v, want nil (manual has no values block today)", tv)
+	}
+}
+
+func TestPipeline_TriggerValues_NilPipelineSafe(t *testing.T) {
+	var p *pipelines.Pipeline
+	if got := p.TriggerValues("push"); got != nil {
+		t.Errorf("nil pipeline.TriggerValues = %v, want nil", got)
+	}
+}
+
 func TestParse_LegacyBareStringSecrets(t *testing.T) {
 	src := `
 pipelines:

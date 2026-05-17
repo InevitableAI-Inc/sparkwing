@@ -239,9 +239,26 @@ type ManualTrigger struct{}
 
 // PushTrigger fires on git push events matching the rules.
 type PushTrigger struct {
-	Branches []string          `yaml:"branches"`
-	Paths    []string          `yaml:"paths"`
-	Env      map[string]string `yaml:"env"`
+	Branches []string `yaml:"branches"`
+	Paths    []string `yaml:"paths"`
+	// Values overlays onto the pipeline's typed Config struct for
+	// runs initiated by this trigger. Layered after the per-target
+	// values and consumed by sparkwing.ResolvePipelineConfig the same
+	// way values.base and targets.<name>.values are. Use this to
+	// flip typed Config fields per-trigger (e.g. push to main =>
+	// deploy_env: staging) without reaching for the deprecated Env
+	// map.
+	Values map[string]any `yaml:"values,omitempty"`
+	// Env is the legacy untyped trigger-environment map. Pipeline
+	// authors read individual entries via the deprecated
+	// RunContext.TriggerEnv accessor. New pipelines should declare
+	// fields under Values instead so the values flow through the
+	// typed Config struct.
+	//
+	// Deprecated: declare typed values under the Values block and
+	// read them via sparkwing.PipelineConfig[T](ctx). Env will be
+	// removed one release after the typed surface ships.
+	Env map[string]string `yaml:"env,omitempty"`
 }
 
 // WebhookTrigger exposes an HTTP path that fires the pipeline. The
@@ -374,6 +391,31 @@ func (p *Pipeline) TargetNames() []string {
 func (p *Pipeline) HasTarget(name string) bool {
 	_, ok := p.Targets[name]
 	return ok
+}
+
+// TriggerValues returns the values: block declared on the trigger
+// spec whose source matches the run's TriggerInfo.Source string
+// ("push", "webhook", "schedule", ...). Returns nil when no
+// matching spec is declared or the spec carries no Values.
+//
+// Used by sparkwing.ResolvePipelineConfig to layer per-trigger
+// typed values onto the Config struct.
+//
+// Trigger sources that don't carry a values block today (manual,
+// schedule, webhook, deploy, pre/post-hook) return nil. Adding
+// Values to those is a future addition once a concrete use case
+// lands.
+func (p *Pipeline) TriggerValues(source string) map[string]any {
+	if p == nil {
+		return nil
+	}
+	switch source {
+	case "push":
+		if p.On.Push != nil {
+			return p.On.Push.Values
+		}
+	}
+	return nil
 }
 
 // Find returns the pipeline with the given name, or nil if absent.

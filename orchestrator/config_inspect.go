@@ -63,7 +63,11 @@ func runPipelineConfigInspect(pipeline string, extra []string) error {
 		}
 	}
 
-	cfgFields, err := sparkwing.InspectPipelineConfig(reg, pipelineYAML, target)
+	// `run <pipeline> config` is a pure inspection: no Plan, no
+	// dispatch, no trigger. Pass an empty trigger source so the
+	// trigger-values layer always no-ops -- the operator sees the
+	// pre-trigger config that would resolve on a manual run.
+	cfgFields, err := sparkwing.InspectPipelineConfig(reg, pipelineYAML, target, "")
 	if err != nil {
 		return err
 	}

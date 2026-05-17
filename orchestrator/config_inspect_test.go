@@ -47,7 +47,7 @@ func TestInspectPipelineConfig_Layering(t *testing.T) {
 			"prod": {Values: map[string]any{"replicas": 5}},
 		},
 	}
-	fields, err := sparkwing.InspectPipelineConfig(reg, yamlEntry, "prod")
+	fields, err := sparkwing.InspectPipelineConfig(reg, yamlEntry, "prod", "")
 	if err != nil {
 		t.Fatalf("inspect: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestInspectPipelineConfig_Layering(t *testing.T) {
 
 func TestInspectPipelineConfig_UnsetField(t *testing.T) {
 	reg := ensureInspectPipe(t)
-	fields, err := sparkwing.InspectPipelineConfig(reg, nil, "")
+	fields, err := sparkwing.InspectPipelineConfig(reg, nil, "", "")
 	if err != nil {
 		t.Fatalf("inspect: %v", err)
 	}

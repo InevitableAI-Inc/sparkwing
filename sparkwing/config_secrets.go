@@ -297,6 +297,8 @@ func toFloat64(v any) (float64, error) {
 //  1. Defaults declared via the `default:"..."` struct tag.
 //  2. Pipeline.Values.Base (pipelines.yaml top-level values.base).
 //  3. Pipeline.Targets[target].Values (when target is non-empty).
+//  4. Trigger.Values for the matched trigger spec
+//     (e.g. push.values when triggerSource == "push").
 //
 // Pipeline.Values.Runners is parsed but not consumed here; the
 // per-runner overlay layers onto the chosen runner at dispatch time
@@ -307,7 +309,7 @@ func toFloat64(v any) (float64, error) {
 // Errors when a `required` field is missing across every layer, when
 // a yaml value can't coerce into the field's Go type, or when the
 // pipeline value is not a struct pointer.
-func ResolvePipelineConfig(reg *Registration, yamlEntry *pipelines.Pipeline, target string) (any, error) {
+func ResolvePipelineConfig(reg *Registration, yamlEntry *pipelines.Pipeline, target, triggerSource string) (any, error) {
 	if reg == nil || reg.instance == nil {
 		return nil, nil
 	}
@@ -341,7 +343,8 @@ func ResolvePipelineConfig(reg *Registration, yamlEntry *pipelines.Pipeline, tar
 		}
 	}
 
-	// Layer 2 + 3: base values, then per-target values.
+	// Layers 2 + 3 + 4: base values, per-target values, then the
+	// matched trigger's values.
 	if yamlEntry != nil {
 		if err := applyValueOverlay(elem, specs, yamlEntry.Values.Base, reg.Name); err != nil {
 			return nil, err
@@ -351,6 +354,11 @@ func ResolvePipelineConfig(reg *Registration, yamlEntry *pipelines.Pipeline, tar
 				if err := applyValueOverlay(elem, specs, t.Values, reg.Name); err != nil {
 					return nil, err
 				}
+			}
+		}
+		if triggerSource != "" {
+			if err := applyValueOverlay(elem, specs, yamlEntry.TriggerValues(triggerSource), reg.Name); err != nil {
+				return nil, err
 			}
 		}
 	}

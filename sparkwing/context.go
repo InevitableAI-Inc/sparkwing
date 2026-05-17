@@ -32,12 +32,29 @@ type RunContext struct {
 
 // TriggerInfo describes the trigger that started the run.
 type TriggerInfo struct {
-	Source string            // "manual", "push", "schedule", "webhook"
-	User   string            // invoker identity, when known
-	Env    map[string]string // trigger-supplied environment
+	Source string // "manual", "push", "schedule", "webhook"
+	User   string // invoker identity, when known
+
+	// Env is the legacy trigger-supplied environment map. Pipelines
+	// reading this via RunContext.TriggerEnv keep working during
+	// the deprecation cycle.
+	//
+	// Deprecated: declare typed values under the trigger's values:
+	// block in pipelines.yaml (e.g. on.push.values) and read them
+	// via sparkwing.PipelineConfig[T](ctx). Each value maps to one
+	// sw-tagged field on the pipeline's Config struct. Env is
+	// retained for backward compatibility and will be removed one
+	// release after the typed surface ships.
+	Env map[string]string
 }
 
 // TriggerEnv returns a trigger-supplied environment variable.
+//
+// Deprecated: read trigger-supplied values via
+// sparkwing.PipelineConfig[T](ctx) after declaring them under the
+// trigger's values: block in pipelines.yaml (e.g. on.push.values).
+// TriggerEnv is retained for backward compatibility and will be
+// removed one release after the typed surface ships.
 func (r RunContext) TriggerEnv(key string) string {
 	if r.Trigger.Env == nil {
 		return ""

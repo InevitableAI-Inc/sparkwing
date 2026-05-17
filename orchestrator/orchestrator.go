@@ -274,7 +274,7 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 	// are resolved later, after the SecretResolver is installed; Plan
 	// is not expected to read PipelineSecrets (the plan-time guard
 	// blocks Secret/Config calls anyway).
-	pipeCfg, err := sparkwing.ResolvePipelineConfig(reg, opts.PipelineYAML, opts.Target)
+	pipeCfg, err := sparkwing.ResolvePipelineConfig(reg, opts.PipelineYAML, opts.Target, trigger.Source)
 	if err != nil {
 		_ = backends.State.FinishRun(ctx, runID, "failed", err.Error())
 		return &Result{RunID: runID, Status: "failed", Error: err}, nil
@@ -708,9 +708,16 @@ func buildRunInvocation(opts Options, runID string) map[string]any {
 	if flags := buildRunFlags(opts); len(flags) > 0 {
 		inv["flags"] = flags
 	}
-	if len(opts.Trigger.Env) > 0 {
-		keys := make([]string, 0, len(opts.Trigger.Env))
-		for k := range opts.Trigger.Env {
+	// trigger_env_keys persists the names of legacy trigger.Env
+	// entries on the run record so dashboards can show "which env
+	// vars were live at dispatch" without the values themselves.
+	// Stays populated through the TriggerInfo.Env deprecation cycle
+	// because the run-record schema is the agreed wire surface for
+	// older trigger payloads; once Env removal lands, this block
+	// goes too.
+	if len(opts.Trigger.Env) > 0 { //nolint:staticcheck // see comment above
+		keys := make([]string, 0, len(opts.Trigger.Env)) //nolint:staticcheck
+		for k := range opts.Trigger.Env {                //nolint:staticcheck
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
