@@ -70,6 +70,19 @@ func TestDumpRunState_RoundTrip(t *testing.T) {
 	if err := st.FinishRun(ctx, runID, "succeeded", "non-fatal warning"); err != nil {
 		t.Fatalf("FinishRun: %v", err)
 	}
+	// Populate the annotation rollup columns directly: live runs get
+	// these via AppendNodeAnnotation, but the dump-format bijection
+	// cares about the fields surviving the round-trip, not the mutation
+	// path that set them.
+	if _, err := st.DB().ExecContext(ctx, `
+UPDATE runs SET annotation_count = ?, top_annotation = ?, annotations_json = ?
+ WHERE id = ?`,
+		2, "linked in 1.2s",
+		[]byte(`["compiled 14 MiB","linked in 1.2s"]`),
+		runID,
+	); err != nil {
+		t.Fatalf("populate run annotation rollup: %v", err)
+	}
 
 	if err := st.CreateNode(ctx, store.Node{
 		RunID:       runID,

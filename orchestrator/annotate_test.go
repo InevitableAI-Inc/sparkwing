@@ -25,7 +25,12 @@ func init() {
 	register("orch-annotate", func() sparkwing.Pipeline[sparkwing.NoInputs] { return &annotatingPipe{} })
 }
 
-func TestRun_AnnotatePersistsToNodeRow(t *testing.T) {
+// sparkwing.Annotate routing is disjoint: messages emitted inside a
+// step body land on the step row, messages emitted between steps land
+// on the node row. The func(ctx) error form passed to sparkwing.Job
+// is implicitly wrapped in a single step named "run", so annotations
+// fired from inside that closure land on that step's row.
+func TestRun_AnnotatePersistsToStepRow(t *testing.T) {
 	p := newPaths(t)
 	res, err := orchestrator.RunLocal(context.Background(), p,
 		orchestrator.Options{Pipeline: "orch-annotate"})
@@ -42,6 +47,22 @@ func TestRun_AnnotatePersistsToNodeRow(t *testing.T) {
 	}
 	defer st.Close()
 
+	steps, err := st.ListNodeSteps(context.Background(), res.RunID)
+	if err != nil {
+		t.Fatalf("ListNodeSteps: %v", err)
+	}
+	if len(steps) != 1 {
+		t.Fatalf("got %d steps, want 1", len(steps))
+	}
+	if steps[0].StepID != "run" {
+		t.Fatalf("step id = %q, want %q", steps[0].StepID, "run")
+	}
+	got := steps[0].Annotations
+	want := []string{"foo", "bar"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("annotations = %v, want %v", got, want)
+	}
+
 	nodes, err := st.ListNodes(context.Background(), res.RunID)
 	if err != nil {
 		t.Fatalf("ListNodes: %v", err)
@@ -49,9 +70,7 @@ func TestRun_AnnotatePersistsToNodeRow(t *testing.T) {
 	if len(nodes) != 1 {
 		t.Fatalf("got %d nodes, want 1", len(nodes))
 	}
-	got := nodes[0].Annotations
-	want := []string{"foo", "bar"}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("annotations = %v, want %v", got, want)
+	if len(nodes[0].Annotations) != 0 {
+		t.Fatalf("step-scoped annotations leaked onto node row: %v", nodes[0].Annotations)
 	}
 }
