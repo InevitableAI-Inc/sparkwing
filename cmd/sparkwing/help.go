@@ -245,11 +245,13 @@ func printHelpWithFlags(cmd Command, w io.Writer, flags []FlagSpec) {
 		fmt.Fprintln(w)
 	}
 
-	groups := groupFlagsForHelp(flags, cmd.GroupOrder)
-	for _, g := range groups {
-		fmt.Fprintln(w, strings.ToUpper(g.name))
+	// Flat flag list — no per-group section headers. With sw-prefix,
+	// pipeline-author flags (unprefixed) and sparkwing flags (--sw-*)
+	// distinguish themselves visually; section labels add noise.
+	if len(flags) > 0 {
+		fmt.Fprintln(w, "FLAGS")
 		tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-		for _, f := range g.flags {
+		for _, f := range flags {
 			fmt.Fprint(tw, "  ", formatFlagLHS(f), "\t", formatFlagTags(f), "\t", f.Desc, "\n")
 		}
 		_ = tw.Flush()

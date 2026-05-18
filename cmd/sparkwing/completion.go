@@ -763,38 +763,24 @@ _sparkwing_complete_flags() {
         _sw_absorb_flag_line
     done < <(sparkwing _complete-flags "$@" 2>/dev/null)
 
+    # Flatten every collected flag into one compadd call with no
+    # section header. Pipeline-author flags (unprefixed) sort before
+    # sparkwing flags (--sw-*) naturally; the prefix is the only
+    # visual cue an operator needs to tell them apart. No magic
+    # groupings.
     local g
-    local -a gnames gdescs
+    local -a allnames alldescs
     for g in "${_sw_group_order[@]}"; do
-        # Split the \n-joined buffers back into arrays. ${(f)...} on a
-        # trailing-newline string yields an empty tail element, so we
-        # drop it with the "(@)" parameter flag not-being-available
-        # workaround: slice off the trailing entry when it's empty.
+        local -a gnames gdescs
         gnames=( "${(@f)_sw_group_names[$g]}" )
         gdescs=( "${(@f)_sw_group_descs[$g]}" )
-        # Drop the trailing empty element that ${(@f)...} leaves
-        # behind when the source string ends in \n. Using [[ ]] here
-        # because -z is a string test, not an arithmetic operator --
-        # inside (( )) it never fires and the empty element leaks
-        # into compadd, which some zsh configs render as a blank
-        # selectable row (or silently drop the whole group).
         (( ${#gnames[@]} > 0 )) && [[ -z "${gnames[-1]}" ]] && gnames=( "${gnames[@]:0:-1}" )
         (( ${#gdescs[@]} > 0 )) && [[ -z "${gdescs[-1]}" ]] && gdescs=( "${gdescs[@]:0:-1}" )
-        (( ${#gnames[@]} == 0 )) && continue
-        # Sanitize group name into a zsh tag (spaces -> dashes, lower).
-        local tag="${(L)g// /-}"
-        # Bold + colored group header with a leading glyph so sections
-        # are visually distinct in the completion menu. "Pipeline Args"
-        # gets cyan (the group operators interact with most often);
-        # everything else gets a muted magenta. The %B/%F/%f/%b prompt
-        # escapes only render after the zstyle ':completion:*'
-        # descriptions format we set at source-time (see the top of
-        # this script); without that, compadd -X prints the raw
-        # explanation untouched.
-        local header_color="magenta"
-        [[ "$g" == "Pipeline Args" || "$g" == "Script Args" ]] && header_color="cyan"
-        compadd -l -X "%F{${header_color}}%B▸ ${g}%b%f" -J "$tag" -d gdescs -a gnames
+        allnames+=( "${gnames[@]}" )
+        alldescs+=( "${gdescs[@]}" )
     done
+    (( ${#allnames[@]} == 0 )) && return
+    compadd -l -J "flags" -d alldescs -a allnames
 }
 
 # _sparkwing_complete_pipelines is shared by 'sparkwing run <TAB>'
