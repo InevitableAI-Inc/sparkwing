@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -597,11 +598,11 @@ func loadPipelineYAML(pipeline string) (*pipelines.Pipeline, string) {
 	if err != nil {
 		return nil, ""
 	}
-	sparkwingDir, cfg, err := pipelines.Discover(cwd)
+	yamlPath, cfg, err := pipelines.Discover(cwd)
 	if err != nil || cfg == nil {
-		return nil, sparkwingDir
+		return nil, ""
 	}
-	return cfg.Find(pipeline), sparkwingDir
+	return cfg.Find(pipeline), filepath.Dir(yamlPath)
 }
 
 // parseJobOverridesEnv parses SPARKWING_JOB_OVERRIDES (semi-colon
