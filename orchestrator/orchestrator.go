@@ -420,7 +420,7 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 	}
 
 	emitRunStart(opts.Delegate, invocation)
-	emitRunPlan(opts.Delegate, plan)
+	emitRunPlan(opts.Delegate, plan, opts.Target)
 
 	r := opts.Runner
 	if r == nil {
@@ -918,8 +918,11 @@ func buildReproducer(opts Options, _ string) string {
 	return strings.Join(parts, " ")
 }
 
-// emitRunPlan sends a run_plan record carrying the DAG.
-func emitRunPlan(delegate sparkwing.Logger, plan *sparkwing.Plan) {
+// emitRunPlan sends a run_plan record carrying the DAG. The target
+// argument feeds OnTarget filtering metadata onto each node so
+// renderers can suppress (CLI) or label (dashboard) target-filtered
+// jobs without recomputing the effective-target walk.
+func emitRunPlan(delegate sparkwing.Logger, plan *sparkwing.Plan, target string) {
 	if delegate == nil {
 		return
 	}
@@ -927,6 +930,7 @@ func emitRunPlan(delegate sparkwing.Logger, plan *sparkwing.Plan) {
 	if len(nodes) == 0 {
 		return
 	}
+	effective := sparkwing.EffectiveJobTargets(plan)
 	rows := make([]any, 0, len(nodes))
 	for _, n := range nodes {
 		row := map[string]any{
@@ -949,6 +953,23 @@ func emitRunPlan(delegate sparkwing.Logger, plan *sparkwing.Plan) {
 		// preview draws the edge.
 		if srcs := plan.GroupSourceIDs(n.ID()); len(srcs) > 0 {
 			row["group_deps"] = srcs
+		}
+		// OnTarget metadata: explicit declaration plus the effective
+		// (post-inference) target-set lets the dashboard render a
+		// "[dev|staging|prod]" label on every job that participates
+		// in target filtering. skip_reason is set only when the
+		// active target excludes the job; the CLI renderer treats
+		// it as a hide signal so target-mismatched jobs don't clutter
+		// the log view, while the dashboard keeps showing them with
+		// a "skipped" badge.
+		if onT := n.OnTargetList(); len(onT) > 0 {
+			row["on_target"] = onT
+		}
+		if eff, ok := effective[n.ID()]; ok && len(eff) > 0 {
+			row["effective_targets"] = eff
+			if !sparkwing.JobAllowsTarget(eff, target) {
+				row["skip_reason"] = formatJobOnTargetSkip(eff, target)
+			}
 		}
 		if w := n.Work(); w != nil {
 			workSteps := w.Steps()

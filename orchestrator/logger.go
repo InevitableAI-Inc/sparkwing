@@ -450,6 +450,14 @@ func (p *PrettyRenderer) writePlan(w io.Writer, rec sparkwing.LogRecord) {
 		if !ok {
 			continue
 		}
+		// OnTarget-filtered jobs carry a skip_reason set by the
+		// orchestrator's plan emitter. Suppress them from the CLI
+		// plan render so target-mismatched jobs don't clutter the
+		// log view; the dashboard still receives them via the
+		// run_plan event and can render them with a "skipped" badge.
+		if reason, ok := m["skip_reason"].(string); ok && reason != "" {
+			continue
+		}
 		id, _ := m["id"].(string)
 		// deps is []string in-process, []any after JSON roundtrip.
 		var deps []string
