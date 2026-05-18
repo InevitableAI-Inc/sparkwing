@@ -71,6 +71,13 @@ func ApplyBackendsConfig(ctx context.Context, opts *Options) error {
 		spec := eff.State
 		if spec == nil && opts.DefaultStateDB != "" {
 			spec = &backends.Spec{Type: backends.TypeSQLite, Path: opts.DefaultStateDB}
+		} else if spec != nil && spec.Type == backends.TypeSQLite && spec.Path == "" && opts.DefaultStateDB != "" {
+			// User declared sqlite without an explicit path; fall back to the
+			// process default so `state: { type: sqlite }` round-trips to the
+			// historical ~/.sparkwing/state.db location.
+			filled := *spec
+			filled.Path = opts.DefaultStateDB
+			spec = &filled
 		}
 		if spec != nil {
 			st, err := storeurl.OpenStateStoreFromSpec(ctx, *spec)

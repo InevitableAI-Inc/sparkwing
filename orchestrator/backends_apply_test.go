@@ -213,6 +213,26 @@ func TestApplyBackendsConfig_DefaultStateDBSynthesizesSQLite(t *testing.T) {
 	}
 }
 
+func TestApplyBackendsConfig_StateSqliteWithoutPathFallsBackToDefault(t *testing.T) {
+	neutralizeEnv(t)
+	dir := writeBackendsYAML(t, t.TempDir(), `
+defaults:
+  state: { type: sqlite }
+`)
+	defaultDB := filepath.Join(t.TempDir(), "state.db")
+	opts := Options{SparkwingDir: dir, DefaultStateDB: defaultDB}
+	if err := ApplyBackendsConfig(context.Background(), &opts); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if opts.State == nil {
+		t.Fatal("State not populated when sqlite spec lacks a path")
+	}
+	defer opts.State.Close()
+	if _, err := os.Stat(defaultDB); err != nil {
+		t.Errorf("expected db file at default path: %v", err)
+	}
+}
+
 func TestApplyBackendsConfig_NoStateWhenUnconfigured(t *testing.T) {
 	neutralizeEnv(t)
 	dir := writeBackendsYAML(t, t.TempDir(), ``)
