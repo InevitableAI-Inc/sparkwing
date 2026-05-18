@@ -219,6 +219,22 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 		return nil, fmt.Errorf("pipeline %q is not registered", opts.Pipeline)
 	}
 
+	trigger := opts.Trigger
+	if trigger.Source == "" {
+		trigger.Source = "manual"
+	}
+
+	// Trigger-supplied --for default. The CLI (and webhook payloads
+	// that name a target) populate opts.Target explicitly; this
+	// fallback only applies when neither did. A pipeline declaring
+	// push: { target: prod } therefore dispatches release --for prod
+	// on a push event without an explicit override. Applied before
+	// target validation so a misconfigured trigger.target surfaces
+	// the same "undeclared target" error a misconfigured --for does.
+	if opts.Target == "" && opts.PipelineYAML != nil {
+		opts.Target = opts.PipelineYAML.TriggerTarget(trigger.Source)
+	}
+
 	// Pre-flight validation that doesn't need the plan or run row.
 	// These errors fire before CreateRun so the failure mode is
 	// loud, fast, and leaves no orphan run state behind.
@@ -229,11 +245,6 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 	runID := opts.RunID
 	if runID == "" {
 		runID = newRunID()
-	}
-
-	trigger := opts.Trigger
-	if trigger.Source == "" {
-		trigger.Source = "manual"
 	}
 
 	// Untracked dispatches pass nil; ensure RunContext.Git is non-nil
@@ -293,6 +304,14 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 		masker.Register(v)
 	}
 
+	// Publish the resolved target on the run-wide ctx so pipeline
+	// Plan bodies and step bodies can read it via sparkwing.Target(ctx).
+	// OnTarget verbs on Job/WorkStep encode the same value at the
+	// scheduler level; this accessor is for diagnostics and the rare
+	// case where neither OnTarget nor a typed Config field is a clean
+	// fit.
+	ctx = sparkwing.WithTarget(ctx, opts.Target)
+
 	// Resolve the typed Config struct before Plan runs so pipelines
 	// can read PipelineConfig[T](ctx) from their Plan() body. Secrets
 	// are resolved later, after the SecretResolver is installed; Plan
@@ -320,6 +339,16 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 	// Requires terms. Fails before the snapshot persists so the
 	// run record never reflects an unreachable selection.
 	if err := validateJobOverrides(opts, plan); err != nil {
+		_ = backends.State.FinishRun(ctx, runID, "failed", err.Error())
+		return &Result{RunID: runID, Status: "failed", Error: err}, nil
+	}
+
+	// OnTarget validation: every Job/WorkStep OnTarget(...) value must
+	// name a declared target; a pipeline with no targets block can't
+	// carry OnTarget at all. Fails before dispatch so authoring
+	// mistakes (typos, leftover OnTarget after a targets-block
+	// removal) surface loudly.
+	if err := validateOnTargetSelection(opts, plan); err != nil {
 		_ = backends.State.FinishRun(ctx, runID, "failed", err.Error())
 		return &Result{RunID: runID, Status: "failed", Error: err}, nil
 	}
@@ -614,6 +643,7 @@ func dispatch(ctx context.Context, backends Backends, r runner.Runner, runID str
 
 	state := newDispatchState(ctx, backends, r, runID, plan, delegate, debug, retryOf, masker, maxParallel)
 	state.snapMeta = snapMeta
+	state.onTargetSkip = computeOnTargetSkip(plan, snapMeta.Target)
 
 	// Skip-passed: pre-seed succeeded nodes from the prior run so
 	// runOneNode short-circuits them.
@@ -1121,6 +1151,12 @@ type dispatchState struct {
 	// expansion) preserves these fields.
 	snapMeta planSnapshotMeta
 
+	// onTargetSkip captures the plan-finalize OnTarget filter:
+	// nodes whose effective target-set does not contain the active
+	// target are recorded here with a human-readable reason. The
+	// dispatch loop short-circuits these nodes via markSkipped.
+	onTargetSkip map[string]string
+
 	wg sync.WaitGroup
 }
 
@@ -1529,6 +1565,18 @@ func (s *dispatchState) runOneNode(node *sparkwing.JobNode) {
 	// Skip-passed short-circuit; rehydrateFromRetry already seeded.
 	if _, prerendered := s.getOutcome(node.ID()); prerendered {
 		return
+	}
+	// OnTarget filter: nodes whose effective target-set does not
+	// include the active target are skipped immediately. Downstream
+	// Needs treats the skip as satisfied, mirroring the
+	// WhenRunner-skip path. Recovery nodes (handled below) are
+	// reached via their parent's claimedBy map and shouldn't be
+	// filtered here -- they participate via the parent's outcome.
+	if _, claimed := s.claimedBy[node.ID()]; !claimed {
+		if reason, ok := s.onTargetSkip[node.ID()]; ok {
+			s.markSkipped(node.ID(), reason)
+			return
+		}
 	}
 	// Recovery nodes wait for parent failure and bypass cache/SkipIf/
 	// Exclusive — the runner gets the job-only path.
@@ -2302,6 +2350,7 @@ type snapshotModifiers struct {
 	RunsOn          []string `json:"runs_on,omitempty"`
 	Prefers         []string `json:"prefers,omitempty"`
 	WhenRunner      []string `json:"when_runner,omitempty"`
+	OnTarget        []string `json:"on_target,omitempty"`
 	CacheKey        string   `json:"cache_key,omitempty"`
 	CacheMax        int      `json:"cache_max,omitempty"`
 	CacheOnLimit    string   `json:"cache_on_limit,omitempty"`
@@ -2489,6 +2538,7 @@ func nodeModifiersSnapshot(n *sparkwing.JobNode) *snapshotModifiers {
 		RunsOn:          n.RequiresLabels(),
 		Prefers:         n.PrefersLabels(),
 		WhenRunner:      n.WhenRunnerLabels(),
+		OnTarget:        n.OnTargetList(),
 		Inline:          n.IsInline(),
 		Optional:        n.IsOptional(),
 		ContinueOnError: n.IsContinueOnError(),
@@ -2519,6 +2569,7 @@ func isZeroModifiers(m snapshotModifiers) bool {
 		len(m.RunsOn) == 0 &&
 		len(m.Prefers) == 0 &&
 		len(m.WhenRunner) == 0 &&
+		len(m.OnTarget) == 0 &&
 		m.CacheKey == "" &&
 		m.CacheMax == 0 &&
 		m.CacheOnLimit == "" &&

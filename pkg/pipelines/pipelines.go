@@ -247,12 +247,23 @@ type PushTrigger struct {
 	// deploy_env: staging) and read them via
 	// sparkwing.PipelineConfig[T](ctx).
 	Values map[string]any `yaml:"values,omitempty"`
+	// Target defaults the run's --for selection when the trigger
+	// fires without an explicit override. Closes the "push to main
+	// with no --for skips every OnTarget job" gap: declare
+	// push: { branches: [main], target: prod } and the trigger
+	// dispatches release --for prod. A CLI --for still wins when
+	// both are set.
+	Target string `yaml:"target,omitempty"`
 }
 
 // WebhookTrigger exposes an HTTP path that fires the pipeline. The
 // controller assembles a RunContext from the incoming request.
 type WebhookTrigger struct {
 	Path string `yaml:"path"`
+	// Target defaults the run's --for selection for webhook-fired
+	// runs. Same precedence as PushTrigger.Target: CLI / payload
+	// override wins, this value is the fallback.
+	Target string `yaml:"target,omitempty"`
 }
 
 // DeployTrigger is the implicit trigger for deployment pipelines that
@@ -320,6 +331,45 @@ func (c *Config) Validate() error {
 				return err
 			}
 		}
+		if err := p.validateTriggerTargets(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateTriggerTargets rejects trigger spec defaults that name an
+// undeclared target. Surfaces the misconfiguration at parse rather
+// than at the first push event.
+func (p *Pipeline) validateTriggerTargets() error {
+	checks := []struct {
+		trigger string
+		target  string
+	}{}
+	if p.On.Push != nil {
+		checks = append(checks, struct {
+			trigger string
+			target  string
+		}{"push", p.On.Push.Target})
+	}
+	if p.On.Webhook != nil {
+		checks = append(checks, struct {
+			trigger string
+			target  string
+		}{"webhook", p.On.Webhook.Target})
+	}
+	for _, c := range checks {
+		if c.target == "" {
+			continue
+		}
+		if len(p.Targets) == 0 {
+			return fmt.Errorf("pipeline %q: %s trigger declares target %q but pipeline declares no targets; declare a targets block or remove the trigger target",
+				p.Name, c.trigger, c.target)
+		}
+		if !p.HasTarget(c.target) {
+			return fmt.Errorf("pipeline %q: %s trigger target %q is not a declared target; declared: %v",
+				p.Name, c.trigger, c.target, p.TargetNames())
+		}
 	}
 	return nil
 }
@@ -379,6 +429,31 @@ func (p *Pipeline) TargetNames() []string {
 func (p *Pipeline) HasTarget(name string) bool {
 	_, ok := p.Targets[name]
 	return ok
+}
+
+// TriggerTarget returns the default --for selection declared on the
+// trigger spec whose source matches the run's TriggerInfo.Source
+// string ("push", "webhook"). Returns "" when no matching spec is
+// declared or the spec carries no Target.
+//
+// Used by the orchestrator at run start to apply a per-trigger
+// default when the CLI / payload didn't pass an explicit --for. CLI
+// --for overrides this value.
+func (p *Pipeline) TriggerTarget(source string) string {
+	if p == nil {
+		return ""
+	}
+	switch source {
+	case "push":
+		if p.On.Push != nil {
+			return p.On.Push.Target
+		}
+	case "webhook":
+		if p.On.Webhook != nil {
+			return p.On.Webhook.Target
+		}
+	}
+	return ""
 }
 
 // TriggerValues returns the values: block declared on the trigger

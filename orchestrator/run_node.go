@@ -162,6 +162,16 @@ func RunNodeOnce(
 		ctx = sparkwing.WithPipelineConfig(ctx, cfg)
 	}
 
+	// Pod-side install of the run's active target so step bodies see
+	// the same sparkwing.Target(ctx) value as the orchestrator side.
+	// The snapshot carries the value; we read it back without
+	// re-resolving --for on the pod.
+	if t, terr := rehydrateTarget(run.PlanSnapshot); terr != nil {
+		logger.Warn("pod: rehydrate target", "err", terr)
+	} else if t != "" {
+		ctx = sparkwing.WithTarget(ctx, t)
+	}
+
 	// Pod-side re-resolution of PipelineSecrets via the controller's
 	// HTTP secret store (the resolver installed above). Reads the
 	// SecretsField the orchestrator persisted in the snapshot; the
