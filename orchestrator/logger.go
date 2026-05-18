@@ -434,28 +434,21 @@ func (p *PrettyRenderer) writePlan(w io.Writer, rec sparkwing.LogRecord) {
 		groups []string
 	}
 	type node struct {
-		id        string
-		deps      []string
-		groupDeps []string
-		inline    bool
-		dynamic   bool
-		approval  bool
-		groups    []string
-		steps     []stepRow
+		id         string
+		deps       []string
+		groupDeps  []string
+		inline     bool
+		dynamic    bool
+		approval   bool
+		groups     []string
+		steps      []stepRow
+		skipReason string // non-empty when filtered by OnTarget for the active target
 	}
 	byID := make(map[string]*node, len(raw))
 	order := make([]*node, 0, len(raw))
 	for _, r := range raw {
 		m, ok := r.(map[string]any)
 		if !ok {
-			continue
-		}
-		// OnTarget-filtered jobs carry a skip_reason set by the
-		// orchestrator's plan emitter. Suppress them from the CLI
-		// plan render so target-mismatched jobs don't clutter the
-		// log view; the dashboard still receives them via the
-		// run_plan event and can render them with a "skipped" badge.
-		if reason, ok := m["skip_reason"].(string); ok && reason != "" {
 			continue
 		}
 		id, _ := m["id"].(string)
@@ -535,7 +528,8 @@ func (p *PrettyRenderer) writePlan(w io.Writer, rec sparkwing.LogRecord) {
 			}
 			steps = append(steps, sr)
 		}
-		n := &node{id: id, deps: deps, groupDeps: groupDeps, inline: inline, dynamic: dynamic, approval: approval, groups: groups, steps: steps}
+		skipReason, _ := m["skip_reason"].(string)
+		n := &node{id: id, deps: deps, groupDeps: groupDeps, inline: inline, dynamic: dynamic, approval: approval, groups: groups, steps: steps, skipReason: skipReason}
 		byID[id] = n
 		order = append(order, n)
 	}
@@ -598,15 +592,33 @@ func (p *PrettyRenderer) writePlan(w io.Writer, rec sparkwing.LogRecord) {
 
 	fmt.Fprintln(w, p.color(fmt.Sprintf("Plan (%d nodes)", len(sorted)), ansiBold))
 	for _, n := range sorted {
-		name := p.color(fmt.Sprintf("%-*s", maxName, n.id), p.hueFor(n.id))
+		var name, bullet string
+		if n.skipReason != "" {
+			// Dim everything for nodes that won't run, so the operator
+			// sees the full DAG topology but immediately recognizes
+			// which jobs are inactive for the active target.
+			name = p.color(fmt.Sprintf("%-*s", maxName, n.id), ansiDim)
+			bullet = p.color("○", ansiDim)
+		} else {
+			name = p.color(fmt.Sprintf("%-*s", maxName, n.id), p.hueFor(n.id))
+			bullet = p.color("●", p.hueFor(n.id))
+		}
 		var arrow string
 		// Group deps get a trailing `*`.
 		depParts := make([]string, 0, len(n.deps)+len(n.groupDeps))
 		for _, d := range n.deps {
-			depParts = append(depParts, p.color(d, p.hueFor(d)))
+			if n.skipReason != "" {
+				depParts = append(depParts, p.color(d, ansiDim))
+			} else {
+				depParts = append(depParts, p.color(d, p.hueFor(d)))
+			}
 		}
 		for _, d := range n.groupDeps {
-			depParts = append(depParts, p.color(d+"*", p.hueFor(d)))
+			if n.skipReason != "" {
+				depParts = append(depParts, p.color(d+"*", ansiDim))
+			} else {
+				depParts = append(depParts, p.color(d+"*", p.hueFor(d)))
+			}
 		}
 		if len(depParts) > 0 {
 			arrow = "  " + p.color("←", ansiDim) + " " + strings.Join(depParts, p.color(", ", ansiDim))
@@ -624,7 +636,10 @@ func (p *PrettyRenderer) writePlan(w io.Writer, rec sparkwing.LogRecord) {
 		if len(n.groups) > 0 {
 			tags += "  " + p.color("(group: "+strings.Join(n.groups, ",")+")", ansiDim)
 		}
-		fmt.Fprintln(w, "  "+p.color("●", p.hueFor(n.id))+" "+name+arrow+tags)
+		if n.skipReason != "" {
+			tags += "  " + p.color("[skip: target]", ansiDim)
+		}
+		fmt.Fprintln(w, "  "+bullet+" "+name+arrow+tags)
 		if len(n.steps) > 0 {
 			stepMaxName := 0
 			for _, s := range n.steps {
