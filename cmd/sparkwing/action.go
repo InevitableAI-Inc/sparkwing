@@ -26,7 +26,6 @@ import (
 // (`sparkwing run <name>` / `wing <name>`).
 type Pipeline struct {
 	Name       string                  `json:"name"`
-	Group      string                  `json:"group,omitempty"`
 	Short      string                  `json:"short,omitempty"`
 	Help       string                  `json:"help,omitempty"`
 	Hidden     bool                    `json:"hidden,omitempty"`
@@ -237,7 +236,6 @@ func scorePipeline(a Pipeline, tokens []string) int {
 	}{
 		{100, a.Name},
 		{40, a.Short},
-		{25, a.Group},
 		{25, strings.Join(a.Tags, " ")},
 		{20, a.Help},
 		{20, strings.Join(a.Triggers, " ")},
@@ -368,7 +366,6 @@ func gatherPipelinesCatalog(includeHidden bool) ([]Pipeline, error) {
 			}
 			a := Pipeline{
 				Name:       p.Name,
-				Group:      p.Group,
 				Hidden:     p.Hidden,
 				Tags:       p.Tags,
 				Entrypoint: p.Entrypoint,
@@ -423,35 +420,14 @@ func summarizeTriggerList(t pipelines.Triggers) []string {
 	return out
 }
 
-// printPipelineTable renders the catalog as a grouped, aligned table.
-// Mirrors the shape of `wing <TAB>` so switching between shell
-// completion and explicit `sparkwing pipeline list` doesn't feel like
-// two different worlds.
+// printPipelineTable renders the catalog as a flat, aligned table.
+// Sorted by name; no grouping. Switching between shell completion and
+// `sparkwing pipeline list` is intentionally one mental model now.
 func printPipelineTable(pipelineList []Pipeline) {
 	if len(pipelineList) == 0 {
 		fmt.Println("(no pipelines)")
 		return
 	}
-	// Group preserving first-seen order -- we already sorted by name,
-	// so within each group entries stay alphabetical.
-	var groupOrder []string
-	byGroup := map[string][]Pipeline{}
-	for _, a := range pipelineList {
-		g := a.Group
-		if g == "" {
-			if len(a.Triggers) > 0 {
-				g = "Triggered"
-			} else {
-				g = "Manual"
-			}
-		}
-		if _, seen := byGroup[g]; !seen {
-			groupOrder = append(groupOrder, g)
-		}
-		byGroup[g] = append(byGroup[g], a)
-	}
-	// Compute global name column width (capped) so alignment is
-	// consistent across groups.
 	const widthCap = 30
 	nameWidth := 0
 	for _, a := range pipelineList {
@@ -460,15 +436,12 @@ func printPipelineTable(pipelineList []Pipeline) {
 		}
 	}
 	nameWidth = min(nameWidth, widthCap)
-	for _, g := range groupOrder {
-		fmt.Printf("▸ %s\n", g)
-		for _, a := range byGroup[g] {
-			short := a.Short
-			if short == "" {
-				short = a.Help
-			}
-			fmt.Printf("  %-*s  %s\n", nameWidth, a.Name, short)
+	for _, a := range pipelineList {
+		short := a.Short
+		if short == "" {
+			short = a.Help
 		}
+		fmt.Printf("  %-*s  %s\n", nameWidth, a.Name, short)
 	}
 }
 
@@ -477,9 +450,6 @@ func printPipelineTable(pipelineList []Pipeline) {
 // fallback when --json is absent.
 func printPipelineDetail(a *Pipeline) {
 	fmt.Printf("name:  %s\n", a.Name)
-	if a.Group != "" {
-		fmt.Printf("group: %s\n", a.Group)
-	}
 	if a.Entrypoint != "" {
 		fmt.Printf("entrypoint: %s\n", a.Entrypoint)
 	}

@@ -98,40 +98,21 @@ func runInternalCompletePipelines(_ []string) error {
 			if p.Hidden {
 				continue
 			}
-			defaultGroup := "Manual"
-			if hasAutoTrigger(p.On) {
-				defaultGroup = "Triggered"
-			}
-			group := p.Group
-			if group == "" {
-				group = defaultGroup
-			}
 			rows = append(rows, completionRow{
-				name:  p.Name,
-				group: group,
-				desc:  shortPipelineHint(shortByName[p.Name], helpByName[p.Name], p),
+				name: p.Name,
+				desc: shortPipelineHint(shortByName[p.Name], helpByName[p.Name], p),
 			})
 		}
 	}
-	// First-seen group order; alphabetic within each group.
-	groupOrder := []string{}
-	byGroup := map[string][]completionRow{}
+	// Flat list, alphabetical. No group bucketing — the completion menu
+	// stays one section; agents and humans both scan it as one list.
+	sort.Slice(rows, func(i, j int) bool { return rows[i].name < rows[j].name })
 	for _, r := range rows {
-		if _, seen := byGroup[r.group]; !seen {
-			groupOrder = append(groupOrder, r.group)
-		}
-		byGroup[r.group] = append(byGroup[r.group], r)
-	}
-	for _, g := range groupOrder {
-		list := byGroup[g]
-		sort.Slice(list, func(i, j int) bool { return list[i].name < list[j].name })
-		for _, r := range list {
-			fmt.Printf("%s\t%s\t%s\t%s\n",
-				strings.ReplaceAll(r.name, "\t", " "),
-				r.group,
-				r.kind,
-				strings.ReplaceAll(r.desc, "\t", " "))
-		}
+		fmt.Printf("%s\t%s\t%s\t%s\n",
+			strings.ReplaceAll(r.name, "\t", " "),
+			"",
+			r.kind,
+			strings.ReplaceAll(r.desc, "\t", " "))
 	}
 	return nil
 }

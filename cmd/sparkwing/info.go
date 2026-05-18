@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"sort"
 	"strings"
 
 	flag "github.com/spf13/pflag"
@@ -64,10 +63,9 @@ type InfoProject struct {
 }
 
 type InfoPipelinesSum struct {
-	Total     int      `json:"total"`
-	Triggered int      `json:"triggered"`
-	Manual    int      `json:"manual"`
-	Groups    []string `json:"groups,omitempty"`
+	Total     int `json:"total"`
+	Triggered int `json:"triggered"`
+	Manual    int `json:"manual"`
 }
 
 type InfoToolchain struct {
@@ -545,21 +543,13 @@ func goToolchainVersion() string {
 
 func summarizePipelines(list []Pipeline) InfoPipelinesSum {
 	out := InfoPipelinesSum{Total: len(list)}
-	groupSet := map[string]struct{}{}
 	for _, p := range list {
 		if len(p.Triggers) > 0 {
 			out.Triggered++
 		} else {
 			out.Manual++
 		}
-		if p.Group != "" {
-			groupSet[p.Group] = struct{}{}
-		}
 	}
-	for g := range groupSet {
-		out.Groups = append(out.Groups, g)
-	}
-	sort.Strings(out.Groups)
 	return out
 }
 
@@ -638,9 +628,6 @@ func printInfoTable(info Info) {
 			noun = "pipeline"
 		}
 		row("project", ".sparkwing/ at "+info.Project.SparkwingDir, fmt.Sprintf("(%d %s: %d triggered, %d manual)", p.Total, noun, p.Triggered, p.Manual))
-		if len(p.Groups) > 0 {
-			row("groups", strings.Join(p.Groups, ", "), "")
-		}
 	} else {
 		row("project", color.Dim("no .sparkwing/ in this directory or any parent"), "")
 	}

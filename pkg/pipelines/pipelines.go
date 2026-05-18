@@ -37,11 +37,6 @@ type Pipeline struct {
 	// rarely-used tools (demos, scaffolding, one-shot utilities)
 	// that would otherwise clutter the completion menu.
 	Hidden bool `yaml:"hidden,omitempty"`
-	// Group is the section header this entry appears under in
-	// `wing <TAB>`. Free-form (e.g. "CI", "Release", "Build"). When
-	// empty, falls back to "Pipelines" for triggered entries and
-	// "Commands" for manual-only entries.
-	Group string `yaml:"group,omitempty"`
 
 	// Runners is the pipeline-level runner allowlist. Jobs default
 	// to this set; per-target Runners narrows it (intersection);
