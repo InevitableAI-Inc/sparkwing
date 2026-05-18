@@ -14,9 +14,9 @@ package sparkwing
 // time a new wing flag landed. Sourcing from one list keeps the
 // surfaces in lockstep.
 //
-// The flag NAME set is pinned to ReservedFlagNames() via
-// TestWingFlagDocsCoverReservedFlags so a future wing flag added to
-// reservedFlagNames without a corresponding doc fails the test.
+// Every wing flag is prefixed `sw-`. Pipeline-author Inputs flags
+// occupy the full unprefixed namespace; there is no reserved-name
+// collision check because none can happen.
 type WingFlagDoc struct {
 	// Name is the long flag name without the leading "--".
 	Name string
@@ -45,33 +45,30 @@ type WingFlagDoc struct {
 // footer simultaneously.
 //
 // Subsumes `cmd/sparkwing/help_registry.go`'s wingFlagSpecs (which
-// derives from this list). The reservedFlagNames set is stricter
-// (includes infra-only flags like --secrets / --mode / --workers /
-// --no-update that are intentionally undocumented in user-facing
-// help); WingFlagDocs is the documented subset.
+// derives from this list).
+// All sparkwing-owned flags are prefixed `sw-` so pipeline authors
+// have the full unprefixed namespace for their typed Inputs flags.
+// The previous reserved-name list (--from / --on / --for / ...) is
+// retired: a pipeline can now declare `flag:"from"` or `flag:"on"`
+// without colliding with anything wing-owned.
 var wingFlagDocs = []WingFlagDoc{
-	// Source: where + what to compile.
-	{Name: "change-directory", Short: "C", Argument: "PATH", Desc: "Re-anchor .sparkwing/ discovery to PATH (mirrors `git -C` / `make -C`)", Group: "Source"},
-	{Name: "from", Argument: "REF", Desc: "Compile from a git ref (branch/tag/SHA) instead of the working tree", Group: "Source", Hot: true},
-	{Name: "config", Argument: "PRESET", Desc: "Apply a named preset from .sparkwing/config.yaml or ~/.config/sparkwing/config.yaml", Group: "Source"},
-	{Name: "retry-of", Argument: "RUN_ID", Desc: "Retry a prior run: skip nodes that passed, re-run the rest", Group: "Source", Hot: true},
-	{Name: "full", Desc: "With --retry-of, disable skip-passed so every node re-runs from scratch", Group: "Source"},
-	{Name: "verbose", Short: "v", Desc: "Enable debug logging from the orchestrator (equivalent to SPARKWING_LOG_LEVEL=debug)", Group: "Source"},
-	// Range: which subset of the DAG runs.
-	{Name: "start-at", Argument: "STEP", Desc: "Start the run at STEP, skipping every step before it", Group: "Range", Hot: true},
-	{Name: "stop-at", Argument: "STEP", Desc: "Stop the run after STEP, skipping every step beyond it", Group: "Range", Hot: true},
-	// Safety: blast-radius gates + dry-run.
-	{Name: "dry-run", Desc: "Run each step's dry-run probe instead of its apply Fn; no mutation", Group: "Safety", Hot: true},
-	{Name: "allow-destructive", Desc: "Authorize dispatch when the plan reaches a Destructive-marked step", Group: "Safety"},
-	{Name: "allow-prod", Desc: "Authorize dispatch when the plan reaches a AffectsProduction-marked step", Group: "Safety"},
-	{Name: "allow-money", Desc: "Authorize dispatch when the plan reaches a CostsMoney-marked step", Group: "Safety"},
-	// Selection: which target / runner / preferences resolve this run.
-	{Name: "for", Argument: "TARGET", Desc: "Pick the pipeline target to run against (Config + Source binding follow)", Group: "Selection", Hot: true},
-	{Name: "job", Argument: "ID=RUNNER", Desc: "Force one job to a specific runner (repeatable; must satisfy that job's Requires)", Group: "Selection"},
-	{Name: "prefer", Argument: "LABEL", Desc: "Bias runner selection by label across the run (repeatable; loses to a job's own Prefers)", Group: "Selection"},
-	// System: where the work runs.
-	{Name: "on", Argument: "NAME", Desc: "Dispatch on a remote controller instead of running locally", Group: "System", Hot: true},
-	{Name: "backends-env", Argument: "NAME", Desc: "Force a specific environments: entry from backends.yaml (skips auto-detect)", Group: "System"},
+	{Name: "sw-change-directory", Short: "C", Argument: "PATH", Desc: "Re-anchor .sparkwing/ discovery to PATH (mirrors `git -C` / `make -C`)", Group: "System"},
+	{Name: "sw-from", Argument: "REF", Desc: "Compile from a git ref (branch/tag/SHA) instead of the working tree", Group: "System", Hot: true},
+	{Name: "sw-config", Argument: "PRESET", Desc: "Apply a named preset from .sparkwing/config.yaml or ~/.config/sparkwing/config.yaml", Group: "System"},
+	{Name: "sw-retry-of", Argument: "RUN_ID", Desc: "Retry a prior run: skip nodes that passed, re-run the rest", Group: "System", Hot: true},
+	{Name: "sw-full", Desc: "With --sw-retry-of, disable skip-passed so every node re-runs from scratch", Group: "System"},
+	{Name: "sw-verbose", Short: "v", Desc: "Enable debug logging from the orchestrator (equivalent to SPARKWING_LOG_LEVEL=debug)", Group: "System"},
+	{Name: "sw-start-at", Argument: "STEP", Desc: "Start the run at STEP, skipping every step before it", Group: "System", Hot: true},
+	{Name: "sw-stop-at", Argument: "STEP", Desc: "Stop the run after STEP, skipping every step beyond it", Group: "System", Hot: true},
+	{Name: "sw-dry-run", Desc: "Run each step's dry-run probe instead of its apply Fn; no mutation", Group: "System", Hot: true},
+	{Name: "sw-allow-destructive", Desc: "Authorize dispatch when the plan reaches a Destructive-marked step", Group: "System"},
+	{Name: "sw-allow-prod", Desc: "Authorize dispatch when the plan reaches a AffectsProduction-marked step", Group: "System"},
+	{Name: "sw-allow-money", Desc: "Authorize dispatch when the plan reaches a CostsMoney-marked step", Group: "System"},
+	{Name: "sw-for", Argument: "TARGET", Desc: "Pick the pipeline target to run against (Config + Source binding follow)", Group: "System", Hot: true},
+	{Name: "sw-job", Argument: "ID=RUNNER", Desc: "Force one job to a specific runner (repeatable; must satisfy that job's Requires)", Group: "System"},
+	{Name: "sw-prefer", Argument: "LABEL", Desc: "Bias runner selection by label across the run (repeatable; loses to a job's own Prefers)", Group: "System"},
+	{Name: "sw-on", Argument: "NAME", Desc: "Dispatch on a remote controller instead of running locally", Group: "System", Hot: true},
+	{Name: "sw-backends-env", Argument: "NAME", Desc: "Force a specific environments: entry from backends.yaml (skips auto-detect)", Group: "System"},
 }
 
 // WingFlagDocs returns the canonical wing-owned flag documentation.

@@ -19,37 +19,44 @@ func TestPrintWingFlagsSection_ContainsArcFlags(t *testing.T) {
 	out := buf.String()
 
 	// range-resume.
-	mustContain(t, out, "--start-at")
-	mustContain(t, out, "--stop-at")
+	mustContain(t, out, "--sw-start-at")
+	mustContain(t, out, "--sw-stop-at")
 	// dry-run.
-	mustContain(t, out, "--dry-run")
+	mustContain(t, out, "--sw-dry-run")
 	// blast-radius escape hatches.
-	mustContain(t, out, "--allow-destructive")
-	mustContain(t, out, "--allow-prod")
-	mustContain(t, out, "--allow-money")
+	mustContain(t, out, "--sw-allow-destructive")
+	mustContain(t, out, "--sw-allow-prod")
+	mustContain(t, out, "--sw-allow-money")
 
 	// Older staples must still appear -- the regression we want to
 	// avoid is REPLACING the old hand-coded list with an equally stale
 	// newer one.
-	mustContain(t, out, "--on")
-	mustContain(t, out, "--from")
-	mustContain(t, out, "--config")
-	mustContain(t, out, "--retry-of")
+	mustContain(t, out, "--sw-on")
+	mustContain(t, out, "--sw-from")
+	mustContain(t, out, "--sw-config")
+	mustContain(t, out, "--sw-retry-of")
 
 	// The header label keeps the section discoverable.
 	mustContain(t, out, "WING FLAGS")
 }
 
-// TestPrintWingFlagsSection_GroupsRender pins the section structure:
-// each Group from WingFlagDocs gets its own header so the reader can
-// tell --start-at apart from --on at a glance.
+// TestPrintWingFlagsSection_GroupsRender pins that every wing flag
+// renders under a single [System] group header. The pre-sw-prefix
+// rename used Source/Range/Safety/Selection sub-groups; after the
+// rename, pipeline-author flag namespace is fully unprefixed and
+// wing flags live under one unified [System] label so the operator
+// only sees two top-level groupings: pipeline args (unprefixed) and
+// sparkwing args (--sw-* under System).
 func TestPrintWingFlagsSection_GroupsRender(t *testing.T) {
 	var buf bytes.Buffer
 	printWingFlagsSection(&buf)
 	out := buf.String()
-	for _, label := range []string{"[Source]", "[Range]", "[Safety]", "[System]"} {
-		if !strings.Contains(out, label) {
-			t.Errorf("expected group label %q in output:\n%s", label, out)
+	if !strings.Contains(out, "[System]") {
+		t.Errorf("expected group label [System] in output:\n%s", out)
+	}
+	for _, label := range []string{"[Source]", "[Range]", "[Safety]", "[Selection]"} {
+		if strings.Contains(out, label) {
+			t.Errorf("did not expect sub-group label %q in output (collapsed under [System]):\n%s", label, out)
 		}
 	}
 }

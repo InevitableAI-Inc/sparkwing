@@ -11,7 +11,7 @@ import (
 // flag must appear BEFORE the positional, otherwise the parser
 // would silently treat `-C` as the pipeline name (the regression:
 // `wing run -C /path lint --on prod` dispatched
-// "--change-directory" against the wrong repo).
+// "--sw-change-directory" against the wrong repo).
 func TestExtractPipelineName_StrictOrderC(t *testing.T) {
 	cases := []struct {
 		name      string
@@ -28,21 +28,21 @@ func TestExtractPipelineName_StrictOrderC(t *testing.T) {
 		},
 		{
 			name:     "long --change-directory before pipeline name",
-			in:       []string{"--change-directory", "/path", "foo"},
+			in:       []string{"--sw-change-directory", "/path", "foo"},
 			wantName: "foo",
-			wantRest: []string{"--change-directory", "/path"},
+			wantRest: []string{"--sw-change-directory", "/path"},
 		},
 		{
-			name:     "--change-directory=value form before name",
-			in:       []string{"--change-directory=/path", "foo"},
+			name:     "--sw-change-directory=value form before name",
+			in:       []string{"--sw-change-directory=/path", "foo"},
 			wantName: "foo",
-			wantRest: []string{"--change-directory=/path"},
+			wantRest: []string{"--sw-change-directory=/path"},
 		},
 		{
 			name:     "-C composes with other wing flag before name",
-			in:       []string{"-C", "/path", "--on", "prod", "foo"},
+			in:       []string{"-C", "/path", "--sw-on", "prod", "foo"},
 			wantName: "foo",
-			wantRest: []string{"-C", "/path", "--on", "prod"},
+			wantRest: []string{"-C", "/path", "--sw-on", "prod"},
 		},
 		{
 			name:     "-C with pipeline flags after the name",
@@ -56,14 +56,14 @@ func TestExtractPipelineName_StrictOrderC(t *testing.T) {
 			wantErrIn: "ambiguous flag position: -C must precede the pipeline name \"foo\"",
 		},
 		{
-			name:      "rejects --change-directory after pipeline name",
-			in:        []string{"foo", "--change-directory", "/path"},
-			wantErrIn: "ambiguous flag position: --change-directory must precede",
+			name:      "rejects --sw-change-directory after pipeline name",
+			in:        []string{"foo", "--sw-change-directory", "/path"},
+			wantErrIn: "ambiguous flag position: --sw-change-directory must precede",
 		},
 		{
-			name:      "rejects --change-directory=value after pipeline name",
-			in:        []string{"foo", "--change-directory=/path"},
-			wantErrIn: "ambiguous flag position: --change-directory=/path must precede",
+			name:      "rejects --sw-change-directory=value after pipeline name",
+			in:        []string{"foo", "--sw-change-directory=/path"},
+			wantErrIn: "ambiguous flag position: --sw-change-directory=/path must precede",
 		},
 		{
 			name:     "-- delimiter passes pipeline-flag-looking tokens through",
@@ -83,15 +83,15 @@ func TestExtractPipelineName_StrictOrderC(t *testing.T) {
 		},
 		{
 			name:     "non-strict-order wing flag after name still allowed (preserves wing build --on prod muscle memory)",
-			in:       []string{"foo", "--on", "prod"},
+			in:       []string{"foo", "--sw-on", "prod"},
 			wantName: "foo",
-			wantRest: []string{"--on", "prod"},
+			wantRest: []string{"--sw-on", "prod"},
 		},
 		{
 			name:     "non-strict-order wing flag before name composes with -C",
-			in:       []string{"--on", "prod", "-C", "/path", "foo"},
+			in:       []string{"--sw-on", "prod", "-C", "/path", "foo"},
 			wantName: "foo",
-			wantRest: []string{"--on", "prod", "-C", "/path"},
+			wantRest: []string{"--sw-on", "prod", "-C", "/path"},
 		},
 	}
 	for _, tc := range cases {
@@ -124,7 +124,7 @@ func TestExtractPipelineName_StrictOrderC(t *testing.T) {
 // the strict-order rule for -C). This pins the integration so a
 // refactor of either side is caught.
 func TestExtractPipelineName_ComposesWithParseWingFlags(t *testing.T) {
-	args := []string{"-C", "/path", "--on", "prod", "deploy", "--target", "v1"}
+	args := []string{"-C", "/path", "--sw-on", "prod", "deploy", "--target", "v1"}
 	name, rest, err := extractPipelineName(args)
 	if err != nil {
 		t.Fatalf("extractPipelineName: %v", err)

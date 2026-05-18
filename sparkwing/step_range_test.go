@@ -200,7 +200,7 @@ func TestValidateStepRange_UnknownIDSuggests(t *testing.T) {
 	if got == nil {
 		t.Fatal("expected error for unknown step id")
 	}
-	for _, want := range []string{"--start-at", `"fetchh"`, `did you mean "fetch"`} {
+	for _, want := range []string{"--sw-start-at", `"fetchh"`, `did you mean "fetch"`} {
 		if !strings.Contains(got.Error(), want) {
 			t.Errorf("error missing %q\nfull: %s", want, got.Error())
 		}

@@ -197,7 +197,7 @@ func TestPreviewPlan_UnknownStartAtSuggestsNearMatch(t *testing.T) {
 	if previewExecCounter.Load() != 0 {
 		t.Fatalf("step body executed during failed preview (counter = %d)", previewExecCounter.Load())
 	}
-	for _, want := range []string{"--start-at", `"instal-argocd"`, `did you mean "install-argocd"`} {
+	for _, want := range []string{"--sw-start-at", `"instal-argocd"`, `did you mean "install-argocd"`} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error missing %q\nfull: %s", want, err.Error())
 		}
@@ -226,7 +226,7 @@ func TestPreviewPlan_UnknownStartAtFarMissListsAvailable(t *testing.T) {
 	}
 	// Far miss: no Levenshtein suggestion, but the available step ids
 	// should appear so the operator can pick one.
-	for _, want := range []string{"--start-at", `"completely-unrelated-name"`, "install-argocd", "install-karpenter"} {
+	for _, want := range []string{"--sw-start-at", `"completely-unrelated-name"`, "install-argocd", "install-karpenter"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error missing %q\nfull: %s", want, err.Error())
 		}

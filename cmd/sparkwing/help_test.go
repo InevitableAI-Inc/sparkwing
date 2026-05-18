@@ -98,17 +98,17 @@ func TestWingHelpListsArcFlags(t *testing.T) {
 	}
 	// Hot flags: must appear in default --help output.
 	hotFlags := []string{
-		"--from", "--retry-of",
-		"--start-at", "--stop-at",
-		"--dry-run",
-		"--for", "--on",
+		"--sw-from", "--sw-retry-of",
+		"--sw-start-at", "--sw-stop-at",
+		"--sw-dry-run",
+		"--sw-for", "--sw-on",
 		"--help-all", // the escape hatch must be discoverable from --help
 	}
 	// Advanced flags: must NOT appear in default --help, must appear in --help-all.
 	advancedFlags := []string{
-		"--config", "--change-directory", "--verbose", "--full",
-		"--allow-destructive", "--allow-prod", "--allow-money",
-		"--job", "--prefer", "--backends-env",
+		"--sw-config", "--sw-change-directory", "--sw-verbose", "--sw-full",
+		"--sw-allow-destructive", "--sw-allow-prod", "--sw-allow-money",
+		"--sw-job", "--sw-prefer", "--sw-backends-env",
 	}
 	for _, tc := range cases {
 		t.Run(tc.name+" default", func(t *testing.T) {

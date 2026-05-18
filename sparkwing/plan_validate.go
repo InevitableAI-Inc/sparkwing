@@ -23,7 +23,7 @@ func ValidateStepRange(p *Plan, startAt, stopAt string) error {
 	if startAt != "" {
 		if _, ok := known[startAt]; !ok {
 			return fmt.Errorf("%s", unknownRefMessage(
-				fmt.Sprintf("--start-at %q", startAt),
+				fmt.Sprintf("--sw-start-at %q", startAt),
 				"step",
 				startAt,
 				known,
@@ -33,7 +33,7 @@ func ValidateStepRange(p *Plan, startAt, stopAt string) error {
 	if stopAt != "" {
 		if _, ok := known[stopAt]; !ok {
 			return fmt.Errorf("%s", unknownRefMessage(
-				fmt.Sprintf("--stop-at %q", stopAt),
+				fmt.Sprintf("--sw-stop-at %q", stopAt),
 				"step",
 				stopAt,
 				known,

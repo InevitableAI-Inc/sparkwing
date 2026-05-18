@@ -147,30 +147,30 @@ type wingTokenSpec struct {
 // new wing flag is a one-line change. The list mirrors the SDK's
 // ReservedFlagNames() set; tests pin them in lockstep.
 var wingTokenSpecs = []wingTokenSpec{
-	{tok: "--from", takesValue: true},
-	{tok: "--on", takesValue: true},
-	{tok: "--retry-of", takesValue: true},
-	{tok: "--full", takesValue: false},
-	{tok: "--config", takesValue: true},
-	{tok: "--no-update", takesValue: false},
-	{tok: "--verbose", takesValue: false},
+	{tok: "--sw-from", takesValue: true},
+	{tok: "--sw-on", takesValue: true},
+	{tok: "--sw-retry-of", takesValue: true},
+	{tok: "--sw-full", takesValue: false},
+	{tok: "--sw-config", takesValue: true},
+	{tok: "--sw-no-update", takesValue: false},
+	{tok: "--sw-verbose", takesValue: false},
 	{tok: "-v", takesValue: false},
-	{tok: "--secrets", takesValue: true},
-	{tok: "--mode", takesValue: true},
-	{tok: "--workers", takesValue: true},
-	{tok: "--start-at", takesValue: true},
-	{tok: "--stop-at", takesValue: true},
-	{tok: "--dry-run", takesValue: false},
-	{tok: "--allow-destructive", takesValue: false},
-	{tok: "--allow-prod", takesValue: false},
-	{tok: "--allow-money", takesValue: false},
+	{tok: "--sw-secrets", takesValue: true},
+	{tok: "--sw-mode", takesValue: true},
+	{tok: "--sw-workers", takesValue: true},
+	{tok: "--sw-start-at", takesValue: true},
+	{tok: "--sw-stop-at", takesValue: true},
+	{tok: "--sw-dry-run", takesValue: false},
+	{tok: "--sw-allow-destructive", takesValue: false},
+	{tok: "--sw-allow-prod", takesValue: false},
+	{tok: "--sw-allow-money", takesValue: false},
 	{tok: "-C", takesValue: true},
-	{tok: "--change-directory", takesValue: true},
-	{tok: "--for", takesValue: true},
-	{tok: "--job", takesValue: true},
-	{tok: "--prefer", takesValue: true},
-	{tok: "--backends-env", takesValue: true},
-	{tok: "--backends-config", takesValue: true},
+	{tok: "--sw-change-directory", takesValue: true},
+	{tok: "--sw-for", takesValue: true},
+	{tok: "--sw-job", takesValue: true},
+	{tok: "--sw-prefer", takesValue: true},
+	{tok: "--sw-backends-env", takesValue: true},
+	{tok: "--sw-backends-config", takesValue: true},
 }
 
 // classifyWingFlag returns (spec, ok) for a token that matches a
@@ -201,7 +201,7 @@ func classifyWingFlag(tok string) (wingTokenSpec, bool) {
 // covered by the existing test matrix.
 var strictOrderFlags = map[string]bool{
 	"-C":                 true,
-	"--change-directory": true,
+	"--sw-change-directory": true,
 }
 
 // isStrictOrderFlagToken returns true when tok is a strict-order
@@ -313,7 +313,7 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 	for i < len(args) {
 		a := args[i]
 		switch {
-		case a == "--from":
+		case a == "--sw-from":
 			if i+1 < len(args) {
 				wf.from = args[i+1]
 				i += 2
@@ -321,10 +321,10 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--from="):
-			wf.from = strings.TrimPrefix(a, "--from=")
+		case strings.HasPrefix(a, "--sw-from="):
+			wf.from = strings.TrimPrefix(a, "--sw-from=")
 			i++
-		case a == "--on":
+		case a == "--sw-on":
 			if i+1 < len(args) {
 				wf.on = args[i+1]
 				i += 2
@@ -332,10 +332,10 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--on="):
-			wf.on = strings.TrimPrefix(a, "--on=")
+		case strings.HasPrefix(a, "--sw-on="):
+			wf.on = strings.TrimPrefix(a, "--sw-on=")
 			i++
-		case a == "--retry-of":
+		case a == "--sw-retry-of":
 			if i+1 < len(args) {
 				wf.retryOf = args[i+1]
 				i += 2
@@ -343,13 +343,13 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--retry-of="):
-			wf.retryOf = strings.TrimPrefix(a, "--retry-of=")
+		case strings.HasPrefix(a, "--sw-retry-of="):
+			wf.retryOf = strings.TrimPrefix(a, "--sw-retry-of=")
 			i++
-		case a == "--full":
+		case a == "--sw-full":
 			wf.fullRetry = true
 			i++
-		case a == "--config":
+		case a == "--sw-config":
 			if i+1 < len(args) {
 				wf.config = args[i+1]
 				i += 2
@@ -357,16 +357,16 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--config="):
-			wf.config = strings.TrimPrefix(a, "--config=")
+		case strings.HasPrefix(a, "--sw-config="):
+			wf.config = strings.TrimPrefix(a, "--sw-config=")
 			i++
-		case a == "--no-update":
+		case a == "--sw-no-update":
 			wf.noUpdate = true
 			i++
-		case a == "--verbose", a == "-v":
+		case a == "--sw-verbose", a == "-v":
 			wf.verbose = true
 			i++
-		case a == "--secrets":
+		case a == "--sw-secrets":
 			if i+1 < len(args) {
 				wf.secrets = args[i+1]
 				i += 2
@@ -374,10 +374,10 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--secrets="):
-			wf.secrets = strings.TrimPrefix(a, "--secrets=")
+		case strings.HasPrefix(a, "--sw-secrets="):
+			wf.secrets = strings.TrimPrefix(a, "--sw-secrets=")
 			i++
-		case a == "--mode":
+		case a == "--sw-mode":
 			if i+1 < len(args) {
 				wf.mode = args[i+1]
 				i += 2
@@ -385,10 +385,10 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--mode="):
-			wf.mode = strings.TrimPrefix(a, "--mode=")
+		case strings.HasPrefix(a, "--sw-mode="):
+			wf.mode = strings.TrimPrefix(a, "--sw-mode=")
 			i++
-		case a == "--workers":
+		case a == "--sw-workers":
 			if i+1 < len(args) {
 				if n, err := atoiNonNeg(args[i+1]); err == nil {
 					wf.workers = n
@@ -398,12 +398,12 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--workers="):
-			if n, err := atoiNonNeg(strings.TrimPrefix(a, "--workers=")); err == nil {
+		case strings.HasPrefix(a, "--sw-workers="):
+			if n, err := atoiNonNeg(strings.TrimPrefix(a, "--sw-workers=")); err == nil {
 				wf.workers = n
 			}
 			i++
-		case a == "--start-at":
+		case a == "--sw-start-at":
 			if i+1 < len(args) {
 				wf.startAt = args[i+1]
 				i += 2
@@ -411,10 +411,10 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--start-at="):
-			wf.startAt = strings.TrimPrefix(a, "--start-at=")
+		case strings.HasPrefix(a, "--sw-start-at="):
+			wf.startAt = strings.TrimPrefix(a, "--sw-start-at=")
 			i++
-		case a == "--stop-at":
+		case a == "--sw-stop-at":
 			if i+1 < len(args) {
 				wf.stopAt = args[i+1]
 				i += 2
@@ -422,34 +422,34 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--stop-at="):
-			wf.stopAt = strings.TrimPrefix(a, "--stop-at=")
+		case strings.HasPrefix(a, "--sw-stop-at="):
+			wf.stopAt = strings.TrimPrefix(a, "--sw-stop-at=")
 			i++
-		case a == "--dry-run", a == "--dry-run=true":
+		case a == "--sw-dry-run", a == "--dry-run=true":
 			wf.dryRun = true
 			i++
 		case a == "--dry-run=false":
 			wf.dryRun = false
 			i++
-		case a == "--allow-destructive", a == "--allow-destructive=true":
+		case a == "--sw-allow-destructive", a == "--allow-destructive=true":
 			wf.allowDestructive = true
 			i++
 		case a == "--allow-destructive=false":
 			wf.allowDestructive = false
 			i++
-		case a == "--allow-prod", a == "--allow-prod=true":
+		case a == "--sw-allow-prod", a == "--allow-prod=true":
 			wf.allowProd = true
 			i++
 		case a == "--allow-prod=false":
 			wf.allowProd = false
 			i++
-		case a == "--allow-money", a == "--allow-money=true":
+		case a == "--sw-allow-money", a == "--allow-money=true":
 			wf.allowMoney = true
 			i++
 		case a == "--allow-money=false":
 			wf.allowMoney = false
 			i++
-		case a == "-C", a == "--change-directory":
+		case a == "-C", a == "--sw-change-directory":
 			if i+1 < len(args) {
 				wf.changeDir = args[i+1]
 				i += 2
@@ -457,10 +457,10 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--change-directory="):
-			wf.changeDir = strings.TrimPrefix(a, "--change-directory=")
+		case strings.HasPrefix(a, "--sw-change-directory="):
+			wf.changeDir = strings.TrimPrefix(a, "--sw-change-directory=")
 			i++
-		case a == "--for":
+		case a == "--sw-for":
 			if i+1 < len(args) {
 				wf.forTarget = args[i+1]
 				i += 2
@@ -468,10 +468,10 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--for="):
-			wf.forTarget = strings.TrimPrefix(a, "--for=")
+		case strings.HasPrefix(a, "--sw-for="):
+			wf.forTarget = strings.TrimPrefix(a, "--sw-for=")
 			i++
-		case a == "--job":
+		case a == "--sw-job":
 			if i+1 < len(args) {
 				wf.jobOverrides = append(wf.jobOverrides, args[i+1])
 				i += 2
@@ -479,10 +479,10 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--job="):
-			wf.jobOverrides = append(wf.jobOverrides, strings.TrimPrefix(a, "--job="))
+		case strings.HasPrefix(a, "--sw-job="):
+			wf.jobOverrides = append(wf.jobOverrides, strings.TrimPrefix(a, "--sw-job="))
 			i++
-		case a == "--prefer":
+		case a == "--sw-prefer":
 			if i+1 < len(args) {
 				wf.preferLabels = append(wf.preferLabels, args[i+1])
 				i += 2
@@ -490,10 +490,10 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--prefer="):
-			wf.preferLabels = append(wf.preferLabels, strings.TrimPrefix(a, "--prefer="))
+		case strings.HasPrefix(a, "--sw-prefer="):
+			wf.preferLabels = append(wf.preferLabels, strings.TrimPrefix(a, "--sw-prefer="))
 			i++
-		case a == "--backends-env":
+		case a == "--sw-backends-env":
 			if i+1 < len(args) {
 				wf.backendsEnv = args[i+1]
 				i += 2
@@ -501,10 +501,10 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--backends-env="):
-			wf.backendsEnv = strings.TrimPrefix(a, "--backends-env=")
+		case strings.HasPrefix(a, "--sw-backends-env="):
+			wf.backendsEnv = strings.TrimPrefix(a, "--sw-backends-env=")
 			i++
-		case a == "--backends-config":
+		case a == "--sw-backends-config":
 			if i+1 < len(args) {
 				wf.backendsConfig = args[i+1]
 				i += 2
@@ -512,8 +512,8 @@ func parseWingFlags(args []string) (wingFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--backends-config="):
-			wf.backendsConfig = strings.TrimPrefix(a, "--backends-config=")
+		case strings.HasPrefix(a, "--sw-backends-config="):
+			wf.backendsConfig = strings.TrimPrefix(a, "--sw-backends-config=")
 			i++
 		default:
 			pass = append(pass, a)

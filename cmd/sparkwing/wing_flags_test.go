@@ -18,31 +18,31 @@ func TestParseWingFlags_StartAtStopAt(t *testing.T) {
 	}{
 		{
 			name:      "separate values",
-			in:        []string{"--start-at", "compile", "--stop-at", "publish", "deploy"},
+			in:        []string{"--sw-start-at", "compile", "--sw-stop-at", "publish", "deploy"},
 			wantStart: "compile",
 			wantStop:  "publish",
 			wantPas:   []string{"deploy"},
 		},
 		{
 			name:      "= form",
-			in:        []string{"--start-at=compile", "--stop-at=publish", "deploy"},
+			in:        []string{"--sw-start-at=compile", "--sw-stop-at=publish", "deploy"},
 			wantStart: "compile",
 			wantStop:  "publish",
 			wantPas:   []string{"deploy"},
 		},
 		{
 			name:      "only --start-at",
-			in:        []string{"--start-at", "fetch", "deploy"},
+			in:        []string{"--sw-start-at", "fetch", "deploy"},
 			wantStart: "fetch",
 			wantStop:  "",
 			wantPas:   []string{"deploy"},
 		},
 		{
 			name:      "trailing --start-at without value falls through",
-			in:        []string{"--start-at"},
+			in:        []string{"--sw-start-at"},
 			wantStart: "",
 			wantStop:  "",
-			wantPas:   []string{"--start-at"},
+			wantPas:   []string{"--sw-start-at"},
 		},
 	}
 	for _, tc := range cases {
@@ -80,13 +80,13 @@ func TestParseWingFlags_ChangeDirectory(t *testing.T) {
 		},
 		{
 			name:    "long --change-directory with separate value",
-			in:      []string{"--change-directory", "/abs/path", "deploy", "--prod"},
+			in:      []string{"--sw-change-directory", "/abs/path", "deploy", "--prod"},
 			wantDir: "/abs/path",
 			wantPas: []string{"deploy", "--prod"},
 		},
 		{
 			name:    "long --change-directory=value form",
-			in:      []string{"--change-directory=../app2", "deploy"},
+			in:      []string{"--sw-change-directory=../app2", "deploy"},
 			wantDir: "../app2",
 			wantPas: []string{"deploy"},
 		},
@@ -104,7 +104,7 @@ func TestParseWingFlags_ChangeDirectory(t *testing.T) {
 		},
 		{
 			name:    "-C composes with --on",
-			in:      []string{"-C", "../app2", "--on", "prod", "deploy"},
+			in:      []string{"-C", "../app2", "--sw-on", "prod", "deploy"},
 			wantDir: "../app2",
 			wantPas: []string{"deploy"},
 		},

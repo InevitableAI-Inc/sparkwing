@@ -45,11 +45,11 @@ func TestWingFlagDocs_CoversSafetyFlags(t *testing.T) {
 	}
 	mustHave := []string{
 		// Range-resume.
-		"start-at", "stop-at",
+		"sw-start-at", "sw-stop-at",
 		// Dry-run.
-		"dry-run",
+		"sw-dry-run",
 		// Blast-radius escape hatches.
-		"allow-destructive", "allow-prod", "allow-money",
+		"sw-allow-destructive", "sw-allow-prod", "sw-allow-money",
 	}
 	for _, f := range mustHave {
 		if !have[f] {
@@ -58,27 +58,20 @@ func TestWingFlagDocs_CoversSafetyFlags(t *testing.T) {
 	}
 }
 
-// TestWingFlagDocs_SubsetOfReservedFlags pins the contract that every
-// documented wing flag is also reserved -- so an Args struct with
-// `flag:"start-at"` would still get rejected at Register time and
-// the documented surface is also the protected surface. The
-// converse is not required: reservedFlagNames includes infra-only
-// flags (--secrets, --mode, --workers, --no-update) that are
-// intentionally absent from public help.
-func TestWingFlagDocs_SubsetOfReservedFlags(t *testing.T) {
-	reserved := map[string]bool{}
-	for _, n := range ReservedFlagNames() {
-		reserved[n] = true
-	}
+// TestWingFlagDocs_AllSwPrefixed pins that every documented wing flag
+// carries the sw- prefix. The prefix is the entire reservation
+// mechanism — it lets pipeline-author Inputs flags occupy the
+// unprefixed namespace without collision.
+func TestWingFlagDocs_AllSwPrefixed(t *testing.T) {
 	for _, d := range WingFlagDocs() {
-		if !reserved[d.Name] {
-			t.Errorf("WingFlagDocs has --%s but reservedFlagNames does not (an Args struct with flag:%q would NOT panic at Register)", d.Name, d.Name)
+		if d.Name[:3] != "sw-" {
+			t.Errorf("--%s lacks sw- prefix; every wing-owned flag must be sw-prefixed so pipeline-author flags are collision-free", d.Name)
 		}
 	}
 }
 
-// TestWingFlagDocs_ReturnsCopy is the parallel of
-// TestReservedFlagNamesIsCopy: callers may mutate freely.
+// TestWingFlagDocs_ReturnsCopy ensures callers may mutate the returned
+// slice freely without affecting subsequent calls.
 func TestWingFlagDocs_ReturnsCopy(t *testing.T) {
 	a := WingFlagDocs()
 	if len(a) == 0 {
@@ -92,16 +85,14 @@ func TestWingFlagDocs_ReturnsCopy(t *testing.T) {
 }
 
 // TestWingFlagDocs_GroupsAreKnown pins the rendering buckets so a
-// rogue Group string ("Range " with trailing space, "safety" lower-
-// case) doesn't silently fall into a default bucket and visually
-// drift the help layout.
+// rogue Group string ("system " with trailing space, "System " with
+// capitalization drift) doesn't silently fall into a default bucket.
+// Post-sw-prefix rename, every wing flag belongs to a single "System"
+// bucket; pipeline-author flags get their own "Pipeline Args" bucket
+// in the render layer.
 func TestWingFlagDocs_GroupsAreKnown(t *testing.T) {
 	known := map[string]bool{
-		"Source":    true,
-		"Range":     true,
-		"Safety":    true,
-		"System":    true,
-		"Selection": true,
+		"System": true,
 	}
 	for _, d := range WingFlagDocs() {
 		if !known[d.Group] {

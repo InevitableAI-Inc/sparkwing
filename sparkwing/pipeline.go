@@ -96,13 +96,9 @@ func Register[T any](name string, factory func() Pipeline[T]) {
 	if err != nil {
 		panic(fmt.Sprintf("sparkwing.Register(%q): invalid Inputs schema on %s: %v", name, t, err))
 	}
-	// Reject `flag:"X"` tags that collide with wing-owned
-	// flag names (--from, --on, --start-at, etc.). The wing-flag
-	// parser consumes these before pipeline-flag parsing, so a
-	// collision would silently strip the value from the pipeline's
-	// Inputs and surface as a confusing downstream error. Fail at
-	// registration so the author sees the contract immediately.
-	validateReservedFlagCollisions(name, schema)
+	// Wing-owned flags are prefixed sw-* (--sw-from, --sw-on, --sw-start-at,
+	// ...), so pipeline `flag:"..."` tags have the full unprefixed
+	// namespace to themselves — no reserved-name collision check needed.
 
 	invoke := func(ctx context.Context, args map[string]string, rc RunContext) (*Plan, error) {
 		var in T

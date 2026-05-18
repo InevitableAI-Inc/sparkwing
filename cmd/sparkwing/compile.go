@@ -225,7 +225,7 @@ func resolveSparks(ctx context.Context, sparkwingDir string, opts compileOptions
 		return nil
 	}
 	if _, err := sparks.ResolveAndWrite(ctx, sparkwingDir); err != nil {
-		return fmt.Errorf("sparks resolve: %w (use --no-update to compile against existing go.mod pins)", err)
+		return fmt.Errorf("sparks resolve: %w (use --sw-no-update to compile against existing go.mod pins)", err)
 	}
 	return nil
 }
