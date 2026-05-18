@@ -39,7 +39,7 @@ either: start a runner with `--label` matching, or remove the
 `.Requires()` modifier and retry the run.
 
 **Where labels come from.** Runners advertise labels at claim time via
-the `wing runner --label` flag (repeatable), or the pod spec argv in
+the `sparkwing cluster worker --label` flag (repeatable), or the pod spec argv in
 `k8s/sparkwing/pool/deployment.yaml`. The controller's claim SQL
 filters candidate nodes whose `needs_labels` is a subset of the
 runner's advertised set.
@@ -158,9 +158,9 @@ You can override the default by setting `SPARKWING_AGENT_TAINTS` in the
 worker's environment (or `agent_taints` in the profile). Set it to an
 empty string to advertise no taints at all (and accept any job).
 
-## Direct invocations (`wing`) bypass taints
+## Direct invocations (`sparkwing`) bypass taints
 
-When you run a pipeline directly with `wing` (without `--on <cluster>`),
+When you run a pipeline directly with `sparkwing` (without `--on <cluster>`),
 sparkwing marks the job as **`Direct`**. Direct jobs:
 
 - Skip the taint check entirely — you've already chosen the agent (your
@@ -168,12 +168,12 @@ sparkwing marks the job as **`Direct`**. Direct jobs:
 - Skip the queue-timeout sweeper — you'll cancel manually if needed.
 
 This is the key distinction the user cares about: **webhook → controller
-→ scheduling matters; `wing build-deploy` → just run it here**.
+→ scheduling matters; `sparkwing run build-deploy` → just run it here**.
 
-`wing build-deploy --on prod` is *not* direct: you've explicitly chosen
+`sparkwing run build-deploy --on prod` is *not* direct: you've explicitly chosen
 to dispatch to a remote controller, which then schedules normally.
 
-`require` and `prefer` are still respected for `wing` invocations —
+`require` and `prefer` are still respected for `sparkwing` invocations —
 nothing forces a `linux` pipeline to compile on a Mac.
 
 ## Scoring (how ties are broken)
@@ -205,7 +205,7 @@ The controller's cleanup loop runs once a minute. When a queue-timeout
 fires, the job's logs explain *why* nothing claimed it (no matching
 labels, no toleration for taint X, etc.).
 
-Direct (`wing`) jobs are exempt — see above.
+Direct (`sparkwing`) jobs are exempt — see above.
 
 ## Worked examples
 

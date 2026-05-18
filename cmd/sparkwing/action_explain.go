@@ -209,15 +209,11 @@ func runPipelineExplain(args []string) error {
 		return err
 	}
 	jsonOut := format == "json"
-	pipelineArgs := append([]string{pipeline, "--explain"}, passthrough...)
-	// Reuse the compile+exec path by spawning 'wing' directly. `wing`
-	// lives on PATH after `wing install`; fall back to `sparkwing
-	// pipeline run <name> --explain` when it's not reachable so this
-	// works from environments that only installed the server binary.
-	binary := "wing"
-	if _, err := exec.LookPath(binary); err != nil {
+	pipelineArgs := []string{"pipeline", "run", pipeline, "--explain"}
+	pipelineArgs = append(pipelineArgs, passthrough...)
+	binary, err := os.Executable()
+	if err != nil {
 		binary = "sparkwing"
-		pipelineArgs = append([]string{"pipelines", "run"}, pipelineArgs...)
 	}
 	var stdout bytes.Buffer
 	cmd := exec.Command(binary, pipelineArgs...)
@@ -267,12 +263,11 @@ func runPipelineExplainAll(format string) error {
 	if len(catalog) == 0 {
 		return errors.New("explain --all: no pipelines found in .sparkwing/pipelines.yaml")
 	}
-	binary := "wing"
-	pipelinePrefix := []string{}
-	if _, err := exec.LookPath(binary); err != nil {
+	binary, err := os.Executable()
+	if err != nil {
 		binary = "sparkwing"
-		pipelinePrefix = []string{"pipelines", "run"}
 	}
+	pipelinePrefix := []string{"pipeline", "run"}
 	results := make([]allExplainResult, 0, len(catalog))
 	failed := 0
 	for _, p := range catalog {

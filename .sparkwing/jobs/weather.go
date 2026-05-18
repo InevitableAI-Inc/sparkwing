@@ -37,7 +37,7 @@ func (WeatherReport) Help() string {
 
 func (WeatherReport) Examples() []sparkwing.Example {
 	return []sparkwing.Example{
-		{Comment: "Trigger the toy pipeline directly", Command: "wing weather-report"},
+		{Comment: "Trigger the toy pipeline directly", Command: "sparkwing run weather-report"},
 	}
 }
 

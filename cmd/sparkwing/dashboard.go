@@ -18,6 +18,7 @@ import (
 
 	flag "github.com/spf13/pflag"
 
+	"github.com/sparkwing-dev/sparkwing/internal/web"
 	"github.com/sparkwing-dev/sparkwing/orchestrator"
 	"github.com/sparkwing-dev/sparkwing/pkg/localws"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage/storeurl"
@@ -117,6 +118,13 @@ func runDashboardStart(args []string) error {
 		if errors.Is(err, errHelpRequested) {
 			return nil
 		}
+		return err
+	}
+
+	// Fail loudly in the foreground if this binary was built without
+	// the dashboard bundle; otherwise the detached supervisor would
+	// crash into dashboard.log where the user is unlikely to look.
+	if err := web.VerifyBundleEmbedded(); err != nil {
 		return err
 	}
 

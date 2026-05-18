@@ -255,11 +255,11 @@ func registerRepoWithCache(gcURL, name, repoURL string) error {
 // nil if the cache acks 2xx, an error otherwise. Empty repoURL is a
 // programmer error and returns immediately.
 //
-// The dispatcher (cmd/sparkwing/wing_flags.go dispatchRemote) calls
+// The dispatcher (cmd/sparkwing/run_dispatch.go dispatchRemote) calls
 // this before CreateTrigger to close the
 //
 //	git push origin main
-//	wing X --on prod   # immediately
+//	sparkwing run X --on prod   # immediately
 //
 // race that surfaces as "fatal: remote error: upload-pack: not our
 // ref <sha>" when the cache's 30s background-fetch loop hasn't

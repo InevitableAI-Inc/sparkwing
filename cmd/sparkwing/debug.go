@@ -17,10 +17,10 @@ import (
 	"github.com/sparkwing-dev/sparkwing/orchestrator/store"
 )
 
-// runDebug dispatches `sparkwing debug <verb>`. 's interactive
-// debugging surface lives entirely under this namespace; wing stays
-// free of any pause / attach / release flag so production runs cannot
-// accidentally carry a debug directive.
+// runDebug dispatches `sparkwing debug <verb>`. The interactive
+// debugging surface lives entirely under this namespace; the regular
+// run dispatch stays free of any pause / attach / release flag so
+// production runs cannot accidentally carry a debug directive.
 func runDebug(args []string) error {
 	if handleParentHelp(cmdDebug, args) {
 		return nil
@@ -50,9 +50,9 @@ func runDebug(args []string) error {
 
 // runDebugRun parses debug-owned flags, converts them to env vars the
 // pipeline binary reads in orchestrator.Main, and then forwards the
-// pipeline name + remaining args through the normal wing code path.
-// Reusing runWing guarantees --from / --config / --on still work
-// alongside --pause-*.
+// pipeline name + remaining args through the normal run dispatch.
+// Reusing dispatchRun guarantees --sw-from / --sw-config / --sw-on
+// still work alongside --pause-*.
 func runDebugRun(args []string) error {
 	if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
 		PrintHelp(cmdDebugRun, os.Stdout)
@@ -114,7 +114,7 @@ func runDebugRun(args []string) error {
 		return errors.New("debug run: --pipeline is required")
 	}
 	if len(pauseBefore) == 0 && len(pauseAfter) == 0 && !pauseOnFailure {
-		return errors.New("debug run: need at least one of --pause-before / --pause-after / --pause-on-failure (use `wing` for unpaused runs)")
+		return errors.New("debug run: need at least one of --pause-before / --pause-after / --pause-on-failure (use `sparkwing run` for unpaused runs)")
 	}
 
 	if len(pauseBefore) > 0 {
@@ -139,7 +139,7 @@ func runDebugRun(args []string) error {
 	}
 	fmt.Fprintln(os.Stderr, "  release with: sparkwing debug release --run <id> --node <name>")
 
-	return runWing(append([]string{pipelineName}, remaining...))
+	return dispatchRun(append([]string{pipelineName}, remaining...))
 }
 
 // debugTargetFlags are the shared --run/--node/--on parse surface

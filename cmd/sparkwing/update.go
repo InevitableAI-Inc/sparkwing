@@ -223,31 +223,7 @@ func downloadAndInstall(version, currentBin string) error {
 		_ = os.Remove(stagedBin)
 		return fmt.Errorf("replace binary: %w", err)
 	}
-
-	// Windows wing.exe is a separate copy (no symlinks); refresh it.
-	if runtime.GOOS == "windows" {
-		refreshWingSibling(binPath, currentBin)
-	}
 	return nil
-}
-
-// refreshWingSibling refreshes wing.exe alongside sparkwing.exe; best-effort.
-func refreshWingSibling(newBinSrc, currentBin string) {
-	wingPath := filepath.Join(filepath.Dir(currentBin), "wing.exe")
-	if _, err := os.Stat(wingPath); err != nil {
-		return
-	}
-	staged := wingPath + ".update.tmp"
-	if err := copyFile(newBinSrc, staged); err != nil {
-		return
-	}
-	if err := os.Chmod(staged, 0o755); err != nil {
-		_ = os.Remove(staged)
-		return
-	}
-	if err := replaceRunningBinary(staged, wingPath); err != nil {
-		_ = os.Remove(staged)
-	}
 }
 
 // replaceRunningBinary atomically swaps in the new binary. Windows

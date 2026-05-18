@@ -158,7 +158,7 @@ type Options struct {
 
 	// BackendsConfig, when non-empty, names an extra backends.yaml
 	// fragment to layer underneath repo+user defaults. The outer
-	// wing CLI uses this to forward profile-derived storage settings
+	// sparkwing CLI uses this to forward profile-derived storage settings
 	// to the child without going through the deprecated env-var
 	// shim. The file is expected to be cleaned up by the caller.
 	BackendsConfig string
@@ -402,7 +402,7 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 	// --start-at / --stop-at must reference a real WorkStep id;
 	// reject with a Levenshtein-suggesting message before the
 	// orchestrator even emits run_start, so the operator's iteration
-	// loop is "save -> wing X -> see typo error" not "save -> dispatch
+	// loop is "save -> sparkwing run X -> see typo error" not "save -> dispatch
 	// -> watch run finish silently doing nothing useful."
 	if opts.StartAt != "" || opts.StopAt != "" {
 		if err := sparkwing.ValidateStepRange(plan, opts.StartAt, opts.StopAt); err != nil {
@@ -787,16 +787,16 @@ func emitRunStart(delegate sparkwing.Logger, invocation map[string]any) {
 	})
 }
 
-// buildRunFlags returns the operator-facing wing flags that influenced
+// buildRunFlags returns the operator-facing sparkwing flags that influenced
 // this run. Empty/zero-valued fields are omitted so the resulting map
 // reads as "what's non-default about this invocation". The shape
-// matches the wing CLI flag names so an agent can echo the map back
+// matches the sparkwing CLI flag names so an agent can echo the map back
 // into a re-invocation.
 //
 // Some flags (allow-destructive, allow-prod, allow-money) are
-// consumed by the wing wrapper itself for the blast-radius gate and
-// never reach Options. We pick those up via the SPARKWING_ALLOW_*
-// env vars the wrapper forwards specifically so they show up here.
+// consumed by the sparkwing run dispatcher itself for the blast-radius
+// gate and never reach Options. We pick those up via the SPARKWING_ALLOW_*
+// env vars the dispatcher forwards specifically so they show up here.
 func buildRunFlags(opts Options) map[string]any {
 	flags := map[string]any{}
 	if opts.RetryOf != "" {
@@ -826,9 +826,9 @@ func buildRunFlags(opts Options) map[string]any {
 	if os.Getenv("SPARKWING_ALLOW_MONEY") == "1" {
 		flags["allow_money"] = true
 	}
-	// Wing-side flags forwarded only for the run-record breadcrumb.
-	// `from` / `config` / `no_update` are consumed by the wing
-	// wrapper before exec, so the pipeline binary never lifts them
+	// Sparkwing-dispatch flags forwarded only for the run-record breadcrumb.
+	// `from` / `config` / `no_update` are consumed by the sparkwing run
+	// dispatcher before exec, so the pipeline binary never lifts them
 	// onto Options -- but knowing they were set is still load-bearing
 	// for reproducibility.
 	if v := os.Getenv("SPARKWING_FROM"); v != "" {
@@ -869,7 +869,7 @@ func hashCanonicalJSON(v any) string {
 	return "sha256:" + hex.EncodeToString(sum[:])
 }
 
-// buildReproducer assembles a `wing <pipeline> [flags] [args]` shell
+// buildReproducer assembles a `sparkwing run <pipeline> [flags] [args]` shell
 // command that re-runs this invocation. Args use --key=value form so
 // values containing spaces don't need extra escaping; consumers that
 // need shell-quoting can run the result through their own escaper.
@@ -877,7 +877,7 @@ func hashCanonicalJSON(v any) string {
 // retry (i.e. opts.RetryOf is set); a fresh agent reproducing should
 // pick whether to retry-of the failed run themselves.
 func buildReproducer(opts Options, _ string) string {
-	parts := []string{"wing", opts.Pipeline}
+	parts := []string{"sparkwing", "run", opts.Pipeline}
 	flagKeys := make([]string, 0)
 	flags := buildRunFlags(opts)
 	for k := range flags {
@@ -885,7 +885,7 @@ func buildReproducer(opts Options, _ string) string {
 	}
 	sort.Strings(flagKeys)
 	for _, k := range flagKeys {
-		// max_parallel maps to --workers (wing flag name); skip
+		// max_parallel maps to --workers (sparkwing flag name); skip
 		// when it equals NumCPU since that's the default and would
 		// make every reproducer noisy with the local machine's CPU
 		// count. Agents wanting a precise replay can read the

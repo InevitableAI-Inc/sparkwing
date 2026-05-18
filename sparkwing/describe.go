@@ -1,13 +1,13 @@
 package sparkwing
 
 // Describe surfaces a pipeline's typed-flag schema as a stable JSON
-// shape so the wing CLI can parse typed flags, render --help, drive
+// shape so the sparkwing CLI can parse typed flags, render --help, drive
 // tab completion, and feed shells without re-importing the SDK's
 // reflect machinery.
 //
 // DescribePipeline is the wire-format projection of the schema parsed
-// by Register[T]: the compiled pipeline binary emits JSON; wing reads
-// it.
+// by Register[T]: the compiled pipeline binary emits JSON; sparkwing
+// reads it.
 //
 // Pipelines opt into help / examples via the optional provider
 // interfaces below.
@@ -20,7 +20,7 @@ import (
 )
 
 // HelpProvider is optionally implemented by pipelines to contribute
-// a short description to `wing <name> --help`. One or two sentences
+// a short description to `sparkwing run <name> --help`. One or two sentences
 // explaining what the pipeline does and when to use it.
 type HelpProvider interface {
 	Help() string
@@ -35,7 +35,7 @@ type ShortHelpProvider interface {
 }
 
 // ExampleProvider is optionally implemented by pipelines to contribute
-// worked invocations to `wing <name> --help`. Each entry pairs a
+// worked invocations to `sparkwing run <name> --help`. Each entry pairs a
 // one-line comment (what it accomplishes) with the exact command a
 // user would type.
 type ExampleProvider interface {
@@ -50,7 +50,7 @@ type Example struct {
 }
 
 // DescribePipeline is one pipeline's CLI-facing schema. Emitted as
-// JSON by `<pipeline-binary> --describe`; consumed by the wing CLI
+// JSON by `<pipeline-binary> --describe`; consumed by the sparkwing CLI
 // for flag parsing, tab completion, and per-pipeline help output.
 type DescribePipeline struct {
 	Name     string        `json:"name"`
@@ -64,7 +64,7 @@ type DescribePipeline struct {
 	// BlastRadius is the union of per-step blast-radius markers
 	// declared anywhere in this pipeline's plan, stringified to the
 	// canonical wire tokens ("destructive" / "production" / "money").
-	// The wing dispatcher walks this set against the matching
+	// The sparkwing dispatcher walks this set against the matching
 	// --allow-* escape flags so an agent or operator dispatching a
 	// pipeline that calls a destructive Step gets a hard refusal
 	// until they pass the explicit acknowledgment (or --dry-run).
@@ -169,7 +169,7 @@ func DescribePipelineByName(name string) (DescribePipeline, bool, error) {
 	// Best-effort blast-radius union + per-step breakdown.
 	// We invoke Plan() with empty args to walk the DAG; pipelines
 	// with required Inputs (or that panic at Plan-time without args)
-	// gracefully degrade to empty markers. The wing dispatcher
+	// gracefully degrade to empty markers. The sparkwing dispatcher
 	// treats absent markers as "no gate fires" so a pipeline that
 	// can't be described stays dispatchable -- the next manual run
 	// will enforce the gate via the actual Plan walk.

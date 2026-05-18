@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# wing: status
+# sparkwing run: status
 # desc: Quick status check for sparkwing controller
 # arg: controller (optional, default: http://localhost:9001) Controller URL
 set -euo pipefail

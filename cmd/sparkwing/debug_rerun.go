@@ -291,7 +291,7 @@ func printRerunBanner(w io.Writer, snap *store.NodeDispatch, node *store.Node, r
 			fmt.Fprintf(w, "  reason:   %s\n", node.FailureReason)
 		}
 	}
-	fmt.Fprintln(w, "  exit shell to release. SPARKWING_RERUN=1 set so any wing/sparkwing")
+	fmt.Fprintln(w, "  exit shell to release. SPARKWING_RERUN=1 set so any sparkwing")
 	fmt.Fprintln(w, "  invocations in this shell can detect the rerun frame.")
 	fmt.Fprintln(w, "─────────────────────────────────────────────────────────")
 }

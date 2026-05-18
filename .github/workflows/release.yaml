@@ -4,8 +4,8 @@
 # Trigger: any tag matching v*. Release notes are auto-generated from
 # PR titles since the previous tag.
 #
-# To cut a release: push a v*-prefixed tag (e.g. via `wing release
-# --version vX.Y.Z`). This workflow takes it from there.
+# To cut a release: push a v*-prefixed tag (e.g. via `sparkwing run
+# release --version vX.Y.Z`). This workflow takes it from there.
 #
 # Shape: matrix-parallel build (one runner per binary × platform),
 # followed by a single release job that downloads every artifact and

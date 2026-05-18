@@ -14,7 +14,7 @@ import (
 //
 // Previously every "unknown pipeline" site returned a flat error and
 // forced the operator to re-read `sparkwing pipeline list` for the
-// right spelling. Now `wing claster-up` suggests "cluster-up"
+// right spelling. Now `sparkwing run claster-up` suggests "cluster-up"
 // inline, mirroring the `Needs("X")` typo suggestion. Far typos
 // ("totallyunrelated") fall through to the existing message without
 // a misleading suggestion.

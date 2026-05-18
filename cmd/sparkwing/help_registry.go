@@ -32,9 +32,9 @@ var cmdSparkwing = Command{
 	Synopsis: "sparkwing -- CI/CD pipelines written in Go",
 	Description: `Sparkwing is a self-hosted pipeline runner. Pipelines are Go
 programs in a repo's .sparkwing/ directory, triggered by git hooks,
-webhooks, schedules, or manual invocation. Use 'wing <pipeline>' as
-the shorthand for 'sparkwing pipeline run <pipeline>'. Use 'sparkwing
-pipeline list' / 'describe' for agent-facing discovery.`,
+webhooks, schedules, or manual invocation. Use 'sparkwing run
+<pipeline>' to invoke one; 'sparkwing pipeline list' / 'describe'
+for agent-facing discovery.`,
 	Subcommands: []SubcommandRef{
 		// Project flow (most-used)
 		{"info", "What is sparkwing, what's in this repo, what to run next"},
@@ -462,7 +462,7 @@ never in pipeline source. Pipelines stay production-clean.`,
 var cmdDebugRun = Command{
 	Path:     "sparkwing debug run",
 	Synopsis: "Run a pipeline with ephemeral pause directives",
-	Description: `Runs the named pipeline exactly as 'wing <pipeline>' would, with
+	Description: `Runs the named pipeline exactly as 'sparkwing run <pipeline>' would, with
 additional pause hooks the orchestrator honors before and after
 each matching node. Directives travel as env vars to the
 pipeline binary; they never land in git-tracked code.
@@ -568,7 +568,7 @@ var cmdDebugReplay = Command{
 	Synopsis: "Re-execute a single node headlessly using its dispatch snapshot",
 	Description: `Mints a new run row linked to the original via replay_of_run_id /
 replay_of_node_id, creates a single nodes row for the target, and
-exec's the wing pipeline binary to execute that one node. The
+exec's the pipeline binary to execute that one node. The
 node's input struct is reconstituted from the stored dispatch
 snapshot; upstream Refs resolve against the original
 run's outputs without re-executing them.
@@ -582,7 +582,7 @@ wrong results.
 With --on PROF, the original run + target node + dep outputs +
 dispatch snapshot are first fetched from the named controller via
 HTTP and side-loaded into the local store. Replay execution itself
-always runs locally because the user's wing binary owns the
+always runs locally because the user's sparkwing binary owns the
 registered pipeline factories.`,
 	Flags: []FlagSpec{
 		{Name: "run", Argument: "ID", Desc: "Run ID holding the original node", Required: true, Group: "Target"},
@@ -613,20 +613,21 @@ continuously.`,
 	},
 }
 
-// ---- sparkwing run / wing --------------------------------------
+// ---- sparkwing run flag specs ----------------------------------
 
-// wingFlagSpecs is shared between cmdWing (the `wing <pipeline>` help
+// runFlagSpecs is shared between cmdRun (the `sparkwing run` help
 // page) and cmdPipelineRun (the `sparkwing pipeline run` help page),
 // since the two invocation surfaces are the same execution path
-// under different names. Derived from sparkwing.WingFlagDocs() so
-// the per-pipeline footer (orchestrator/main.go's printPipelineHelp)
-// and the top-level `wing --help` enumerate from the same source.
-// Adding a flag in sparkwing/wing_flag_docs.go surfaces it in every
-// wing help page simultaneously.
-var wingFlagSpecs = wingFlagSpecsFromDocs()
+// under different names. Derived from sparkwing.SparkwingFlagDocs()
+// so the per-pipeline footer (orchestrator/main.go's
+// printPipelineHelp) and the top-level `sparkwing run --help`
+// enumerate from the same source. Adding a flag in
+// sparkwing/sparkwing_flag_docs.go surfaces it in every help page
+// simultaneously.
+var runFlagSpecs = runFlagSpecsFromDocs()
 
-func wingFlagSpecsFromDocs() []FlagSpec {
-	docs := sparkwing.WingFlagDocs()
+func runFlagSpecsFromDocs() []FlagSpec {
+	docs := sparkwing.SparkwingFlagDocs()
 	out := make([]FlagSpec, 0, len(docs))
 	for _, d := range docs {
 		out = append(out, FlagSpec{
@@ -641,71 +642,6 @@ func wingFlagSpecsFromDocs() []FlagSpec {
 	return out
 }
 
-var cmdWing = Command{
-	Path:     "wing",
-	Synopsis: "Run a pipeline from the nearest .sparkwing/",
-	Description: `Walks up from the current working directory to locate
-.sparkwing/main.go, compiles that binary (cached at
-~/.sparkwing/bin/<hash>), and exec's it with the pipeline name +
-forwarded args. Equivalent to 'sparkwing pipeline run <name>'.
-
-Pipeline-specific arguments are passed as typed flags named after
-the pipeline's Args fields, e.g. 'wing deploy --env prod --version
-v1.2.3'. Run 'wing <pipeline> --help' to see the typed flags a
-given pipeline accepts, or 'sparkwing pipeline describe <name>' for
-a machine-readable view.
-
---from <ref> checks out a different git ref (branch, tag, SHA)
-via 'git worktree add' and compiles the pipeline from there --
-no impact on your current working tree.
-
---retry-of <run-id> runs this invocation as a retry of the named
-run: nodes that passed in the prior run are rehydrated from the
-store (their outputs are reused without re-executing); nodes
-that failed, were cancelled, or weren't reached re-run. Pair
-with --full to force a complete re-execution instead.
-
-Args from the original run are preserved on retry: any args
-passed on this invocation are ignored. This keeps Plan() output
-deterministic across retries (e.g. an auto-bumped --version
-won't drift just because a new tag landed between runs). To run
-with different args, trigger fresh without --retry-of.
-
---on <profile> dispatches remotely: POST /api/v1/triggers on the
-profile's controller.
-
---config <preset> layers named flag bundles from config.yaml
-(repo-level at .sparkwing/config.yaml wins over user-level at
-~/.config/sparkwing/config.yaml). Explicit flags always override
-the preset.`,
-	PosArgs: []PosArg{
-		{Name: "<pipeline>", Desc: "Pipeline name registered in .sparkwing/pipelines.yaml", Required: true},
-	},
-	Flags: wingFlagSpecs,
-	// Source: which ref / config / cwd. Range: --start-at/--stop-at.
-	// Safety: --dry-run, --allow-*. System: where it runs (--on).
-	// The Range + Safety sections are absent from per-leaf help in
-	// much of the rest of the registry; here they're load-bearing
-	// because the wing-level flags are encountered on every
-	// invocation.
-	GroupOrder:  []string{"Pipeline Args", "Source", "Range", "Safety", "System", "Other"},
-	UsageSuffix: "[-- extra args]",
-	Examples: []Example{
-		{"Run with no arguments", "wing build-test-deploy"},
-		{"Pass typed arguments", "wing release --version v0.28.1"},
-		{"Run a specific branch without checking it out", "wing build-test-deploy --from feature/xyz"},
-		{"Retry a failed run (skip previously-passed nodes)", "wing build-test-deploy --retry-of run-a1b2c3"},
-		{"Long form via sparkwing", "sparkwing pipeline run --pipeline release --version v0.28.1"},
-	},
-	// Hidden from the default `sparkwing commands` listing because
-	// wing is the human shortcut, not a peer command. Agents should
-	// see the long form (`sparkwing pipeline run --pipeline <name>`)
-	// as the canonical run path; surfacing wing alongside it
-	// undermines that. `wing -h` still works; `sparkwing commands
-	// --include-hidden` still emits the spec.
-	Hidden: true,
-}
-
 // ---- sparkwing pipeline------------------------------------------
 
 var cmdPipeline = Command{
@@ -717,8 +653,8 @@ nearest .sparkwing/ walking up from the current directory.
 Discovery (list / describe / discover / explain) shows what
 pipelines this repo defines. 'new' scaffolds a fresh pipeline
 (auto-bootstraps .sparkwing/ on first use). 'run' invokes one
-(positional name; same as 'wing <name>' or 'sparkwing run
-<name>'). 'hooks' wires pipelines to git pre-commit / pre-push.
+(positional name; same as 'sparkwing run <name>'). 'hooks' wires
+pipelines to git pre-commit / pre-push.
 'sparks' manages reusable spark libraries declared in
 .sparkwing/sparks.yaml.
 
@@ -758,8 +694,8 @@ var cmdPipelineRun = Command{
 	Path:     "sparkwing pipeline run",
 	Synopsis: "Invoke a pipeline (canonical form of `sparkwing run <name>`)",
 	Description: `Compiles the nearest .sparkwing/ binary and exec's it
-with the named pipeline. Identical to 'wing <name>' and to
-the top-level shortcut 'sparkwing run <name>'.
+with the named pipeline. Identical to the top-level shortcut
+'sparkwing run <name>'.
 
 The pipeline name is the only positional in the sparkwing
 surface -- a deliberate exception, kept short because run is
@@ -772,7 +708,7 @@ Args.`,
 	PosArgs: []PosArg{
 		{Name: "<pipeline>", Desc: "Pipeline name registered in .sparkwing/pipelines.yaml", Required: true},
 	},
-	Flags:       wingFlagSpecs,
+	Flags:       runFlagSpecs,
 	GroupOrder:  []string{"Source", "Range", "Safety", "System", "Other"},
 	UsageSuffix: "[-- pipeline-flags...]",
 	Examples: []Example{
@@ -866,7 +802,7 @@ Templates:
     the Log("TODO") with real logic.
   - build-test-deploy: three-node Plan (build -> test -> deploy)
     with echo Run bodies that print a TODO line on each step.
-    The canonical CI shape; first 'wing <name>' surfaces three
+    The canonical CI shape; first 'sparkwing run <name>' surfaces three
     exec banners + three echoed lines so the structure is
     visible end-to-end.
 
@@ -963,8 +899,7 @@ show "would_run") but operators should design step bodies to
 lazy-load when state isn't populated, so resume-from-step is safe.
 
 Like 'explain', this is the read-only pre-flight surface; pair
-with 'wing <name>' (or 'sparkwing run <name>') to actually
-dispatch.`,
+with 'sparkwing run <name>' to actually dispatch.`,
 	Flags: []FlagSpec{
 		{Name: "name", Argument: "NAME", Desc: "Pipeline to plan", Group: "Target"},
 		{Name: "start-at", Argument: "STEP", Desc: "Skip every WorkStep upstream of STEP in the resulting plan", Group: "Range"},
@@ -1017,15 +952,12 @@ the pipeline binary handles the subverb directly.`,
 // Takes the pipeline name as a positional (the deliberate exception
 // to the otherwise-flag-only sparkwing surface) because typing the
 // pipeline name many times a day is the hot path; the symmetry cost
-// is worth the ergonomic win, and `wing <name>` already proves the
-// shape works.
+// is worth the ergonomic win.
 var cmdRun = Command{
 	Path:     "sparkwing run",
-	Synopsis: "Invoke a pipeline (positional shortcut, same as 'wing <name>')",
+	Synopsis: "Invoke a pipeline",
 	Description: `Compiles the nearest .sparkwing/ binary and exec's it
-with the named pipeline. Identical to 'wing <name>'; this top-
-level form exists so agents and scripts have a stable
-'sparkwing run X' verb without typing 'wing'.
+with the named pipeline.
 
 The pipeline name is the only positional in the sparkwing
 surface -- a deliberate exception, kept short because run is
@@ -1037,7 +969,7 @@ v1.2.3' passes --version through to the pipeline's Args.`,
 	PosArgs: []PosArg{
 		{Name: "<pipeline>", Desc: "Pipeline name registered in .sparkwing/pipelines.yaml", Required: true},
 	},
-	Flags:       wingFlagSpecs,
+	Flags:       runFlagSpecs,
 	GroupOrder:  []string{"Source", "Range", "Safety", "System", "Other"},
 	UsageSuffix: "[-- pipeline-flags...]",
 	Examples: []Example{
@@ -1166,7 +1098,7 @@ var cmdGC = Command{
 	Path:     "sparkwing cluster gc",
 	Synopsis: "Sweep stale warm-PVC state",
 	Description: `Operator-facing manual invocation of the warm-PVC sweep.
-Normally fires at 'wing runner' startup; exposed as a subcommand
+Normally fires at 'sparkwing cluster worker' startup; exposed as a subcommand
 so operators can trigger it against a running pod via kubectl
 exec during incident response.
 
@@ -1529,7 +1461,7 @@ var cmdJobs = Command{
 	Path:     "sparkwing runs",
 	Synopsis: "Inspect and control pipeline runs",
 	Description: `Runs are the per-invocation records of pipeline execution.
-Every 'wing <pipeline>' produces a run; cluster mode surfaces
+Every 'sparkwing run <pipeline>' produces a run; cluster mode surfaces
 the same runs remotely via the controller.
 
 Local-mode subcommands (list, status, logs, errors) read from
@@ -2067,7 +1999,7 @@ var cmdHooks = Command{
 	Path:     "sparkwing pipeline hooks",
 	Synopsis: "Install / uninstall git pre-commit + pre-push hooks",
 	Description: `Writes small git hook scripts into the repo's .git/hooks/
-directory that call 'wing <pipeline>' for every pipeline that
+directory that call 'sparkwing run <pipeline>' for every pipeline that
 declares pre_commit: or pre_push: in its .sparkwing/pipelines.yaml
 triggers block.
 
@@ -2130,7 +2062,7 @@ var cmdSecret = Command{
 	Description: `Without --on, reads/writes the laptop dotenv at
 ~/.config/sparkwing/secrets.env (masked) or
 ~/.config/sparkwing/config.env (--plain). Used by jobs invoked
-through 'wing <pipeline>' locally.
+through 'sparkwing run <pipeline>' locally.
 
 With --on PROF, reads/writes the named profile's controller.
 Used for prod / staging secrets that the cluster needs at run
@@ -2217,8 +2149,8 @@ var cmdTriggers = Command{
 	Path:     "sparkwing runs triggers",
 	Synopsis: "Fire, list, or inspect controller triggers",
 	Description: `Triggers are the controller's queue of pending work. Every
-pipeline run starts as a trigger (from a webhook, hook, 'wing
---on', or 'triggers fire') that a worker atomically claims and
+pipeline run starts as a trigger (from a webhook, hook, 'sparkwing
+run --on', or 'triggers fire') that a worker atomically claims and
 turns into a run.
 
 'fire' posts a synthetic trigger -- the sparkwing equivalent of
@@ -2619,7 +2551,7 @@ failure.`,
 var cmdSparksResolve = Command{
 	Path:     "sparkwing pipeline sparks resolve",
 	Synopsis: "Resolve versions and materialize the overlay modfile",
-	Description: `Runs the same pipeline as 'wing <name>' takes before compile:
+	Description: `Runs the same pipeline as 'sparkwing run <name>' takes before compile:
 load sparks.yaml, resolve each entry against the module proxy,
 and write .sparkwing/.resolved.mod + .resolved.sum. Idempotent
 -- a second run with no upstream change is a fast no-op that
@@ -2691,11 +2623,11 @@ var cmdSparksWarmup = Command{
 	Synopsis: "Pre-compile pipeline binaries after a sparks release",
 	Description: `Post-release optimization: resolve the latest versions, compile
 the pipeline binary for the current .sparkwing/ tree, and
-upload to gitcache so the next 'wing' run in-cluster or on a
+upload to gitcache so the next 'sparkwing run' in-cluster or on a
 fresh laptop gets a cache hit instead of paying the full
 compile cost.
 
-Uses the exact same build path as 'wing', so the cache key
+Uses the exact same build path as 'sparkwing run', so the cache key
 matches. Warmup is optional -- pipelines always resolve on
 build -- it just removes the first-run compile cost after a
 new sparks version is published.`,

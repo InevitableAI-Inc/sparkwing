@@ -17,7 +17,7 @@ import (
 // pipeline prefers the highest unreleased CHANGELOG.md entry, then
 // falls back to bumping --bump (default minor) off the latest tag.
 //
-// Preview / no-mutation mode is delivered through wing's reserved
+// Preview / no-mutation mode is delivered through sparkwing's reserved
 // `--dry-run` flag; each step below either marks itself
 // SafeWithoutDryRun (read-only checks) or provides a .DryRun(...)
 // body (the tag push), so the pipeline doesn't carry its own flag.
@@ -52,9 +52,9 @@ func (Release) Help() string {
 
 func (Release) Examples() []sparkwing.Example {
 	return []sparkwing.Example{
-		{Comment: "Auto-pick version from CHANGELOG / tag bump", Command: "wing release"},
-		{Comment: "Tag and push an explicit version", Command: "wing release --version v1.5.5"},
-		{Comment: "Preview without pushing", Command: "wing release --dry-run"},
+		{Comment: "Auto-pick version from CHANGELOG / tag bump", Command: "sparkwing run release"},
+		{Comment: "Tag and push an explicit version", Command: "sparkwing run release --version v1.5.5"},
+		{Comment: "Preview without pushing", Command: "sparkwing run release --dry-run"},
 	}
 }
 
@@ -94,7 +94,7 @@ func (r *Release) Plan(_ context.Context, plan *sparkwing.Plan, in ReleaseArgs, 
 	return nil
 }
 
-// repoRoot returns the working directory of the wing run. In the
+// repoRoot returns the working directory of the sparkwing run. In the
 // public sparkwing repo `.sparkwing/` lives at the module root, so
 // the SDK's WorkDir() is the right answer.
 func repoRoot() (string, error) {

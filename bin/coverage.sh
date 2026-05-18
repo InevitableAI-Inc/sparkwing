@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# wing: coverage
+# sparkwing run: coverage
 # desc: Run Go tests with coverage and generate HTML report
 set -euo pipefail
 

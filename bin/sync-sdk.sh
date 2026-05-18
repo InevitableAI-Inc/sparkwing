@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# wing: sync-sdk
+# sparkwing run: sync-sdk
 # desc: Push to GitHub and print the go.mod pseudo-version require line
 set -euo pipefail
 

@@ -31,7 +31,7 @@
 services:
   # -------- gitcache --------
   # In-cluster git server. Caches bare repos, serves tarballs, handles
-  # uploaded tarballs from `wing --from local`. Runners that can't reach
+  # uploaded tarballs from `sparkwing run --from local`. Runners that can't reach
   # GitHub directly (e.g. behind NAT) go through here.
   # TODO: pin -- :latest is intentional for install convenience;
   # pin to a specific release tag for production stability.

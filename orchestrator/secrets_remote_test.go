@@ -13,7 +13,7 @@ import (
 	"github.com/sparkwing-dev/sparkwing/secrets"
 )
 
-// wing --secrets PROF wires through to remoteSecretSource which
+// sparkwing run --secrets PROF wires through to remoteSecretSource which
 // reads the profile from
 // ~/.config/sparkwing/profiles.yaml and builds an HTTP-backed
 // secrets.Source. We verify both the happy path and the

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# wing: verify-replay
+# sparkwing run: verify-replay
 # desc: Quick verification of TOD-077 replay primitives. Runs the focused
 #       unit tests against the orchestrator + store packages so the
 #       substrate + lineage stamping are exercised against real SQLite.

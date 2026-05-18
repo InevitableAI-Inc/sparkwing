@@ -69,9 +69,10 @@ func Main() {
 
 	// `<pipeline> config` is a pure inspection subverb: print the
 	// layered Config + declared Secrets for the selected target,
-	// no Plan, no dispatch. Honors SPARKWING_FOR (the --for value
-	// the outer CLI forwarded). Recognized before --help so
-	// `wing X config --help` is a future extension point if needed.
+	// no Plan, no dispatch. Honors SPARKWING_FOR (the --sw-for
+	// value the outer CLI forwarded). Recognized before --help so
+	// `sparkwing run X config --help` is a future extension point
+	// if needed.
 	if len(rest) > 0 && rest[0] == "config" {
 		if err := runPipelineConfigInspect(pipeline, rest[1:]); err != nil {
 			fmt.Fprintln(os.Stderr, pipeline+":", err)
@@ -157,7 +158,7 @@ func Main() {
 	if v := os.Getenv("SPARKWING_JOB_OVERRIDES"); v != "" {
 		overrides, perr := parseJobOverridesEnv(v)
 		if perr != nil {
-			fmt.Fprintln(os.Stderr, "wing: --job:", perr)
+			fmt.Fprintln(os.Stderr, "sparkwing run: --sw-job:", perr)
 			os.Exit(2)
 		}
 		opts.JobRunnerOverrides = overrides
@@ -166,14 +167,14 @@ func Main() {
 		opts.GlobalPrefers = splitSemicolonClean(v)
 	}
 	if applyErr := applyCIEmbeddedEnv(&opts); applyErr != nil {
-		fmt.Fprintln(os.Stderr, "wing:", applyErr)
+		fmt.Fprintln(os.Stderr, "sparkwing run:", applyErr)
 		os.Exit(1)
 	}
 	// --secrets PROF: resolve via SPARKWING_SECRETS_PROFILE.
 	if prof := os.Getenv("SPARKWING_SECRETS_PROFILE"); prof != "" {
 		src, perr := remoteSecretSource(prof)
 		if perr != nil {
-			fmt.Fprintln(os.Stderr, "wing: --secrets:", perr)
+			fmt.Fprintln(os.Stderr, "sparkwing run: --sw-secrets:", perr)
 			os.Exit(1)
 		}
 		opts.SecretSource = src
@@ -269,7 +270,7 @@ func printPipelineHelp(pipeline string) error {
 		fmt.Fprintf(w, "  %s\n\n", schema.Help)
 	}
 	fmt.Fprintln(w, "USAGE")
-	fmt.Fprintf(w, "  wing %s", schema.Name)
+	fmt.Fprintf(w, "  sparkwing run %s", schema.Name)
 	for _, a := range schema.Args {
 		if a.Required {
 			fmt.Fprintf(w, " --%s <%s>", a.Name, a.Type)
@@ -326,29 +327,26 @@ func printPipelineHelp(pipeline string) error {
 		}
 		fmt.Fprintln(w)
 	}
-	// Enumerate wing-owned flags from sparkwing.WingFlagDocs() so
-	// this footer stays in lockstep with `wing --help` /
-	// `sparkwing run --help`. The previous hand-coded line
-	// (`-- only --on, --from, --config`) silently drifted whenever a
-	// new wing flag landed (--start-at, --dry-run, --allow-* were all
-	// invisible despite working end-to-end). Sourcing from one list
-	// future-proofs additions.
-	printWingFlagsSection(w)
+	// Enumerate sparkwing-owned flags from
+	// sparkwing.SparkwingFlagDocs() so this footer stays in lockstep
+	// with `sparkwing run --help`. Sourcing from one list future-
+	// proofs additions.
+	printSparkwingFlagsSection(w)
 	return nil
 }
 
-// printWingFlagsSection renders the "WING FLAGS" block of per-pipeline
-// help. Groups (Source / Range / Safety / System) section the output;
-// within each group, flags walk in WingFlagDocs order. The trailing
-// hint points users at the top-level help for prose detail.
+// printSparkwingFlagsSection renders the "SPARKWING FLAGS" block of
+// per-pipeline help. Within each group, flags walk in
+// SparkwingFlagDocs order. The trailing hint points users at the
+// top-level help for prose detail.
 //
 // Takes io.Writer (not *os.File) so tests can capture into a buffer.
-func printWingFlagsSection(w io.Writer) {
-	docs := sparkwing.WingFlagDocs()
+func printSparkwingFlagsSection(w io.Writer) {
+	docs := sparkwing.SparkwingFlagDocs()
 	if len(docs) == 0 {
 		return
 	}
-	fmt.Fprintln(w, "WING FLAGS")
+	fmt.Fprintln(w, "SPARKWING FLAGS")
 	// Order groups in declaration order: walk docs once and emit a
 	// blank-line separator the first time a new group appears. Keeps
 	// rendering deterministic without a hardcoded group list.
@@ -373,7 +371,7 @@ func printWingFlagsSection(w io.Writer) {
 		fmt.Fprintf(w, "    %-30s %s\n", head, d.Desc)
 	}
 	fmt.Fprintln(w)
-	fmt.Fprintln(w, "See `wing --help` for prose explanations of each wing flag.")
+	fmt.Fprintln(w, "See `sparkwing run --help` for prose explanations of each sparkwing flag.")
 }
 
 // printPipelinePlan emits the plan snapshot without dispatch. Missing
@@ -381,14 +379,14 @@ func printWingFlagsSection(w io.Writer) {
 // inspection.
 //
 // The inner pipeline binary is invoked with the user's full argv
-// (e.g. `wing X --explain --skip Y -o json`). `-o` / `--output` /
+// (e.g. `sparkwing run X --explain --skip Y -o json`). `-o` / `--output` /
 // `--json` are explain-output formatting flags owned by the wrapper,
 // not pipeline args -- they must be stripped before parseTypedFlags
 // sees them. Otherwise an unknown-flag error in parseTypedFlags falls
 // back to an empty argsMap, silently dropping `--skip` / `--only` /
 // any other typed pipeline flag the user passed alongside `-o`. The
 // result was a Plan rendered with no SkipFilter applied -- diverging
-// from `wing X --explain --skip Y` (no `-o`), which parsed cleanly.
+// from `sparkwing run X --explain --skip Y` (no `-o`), which parsed cleanly.
 func printPipelinePlan(pipeline string, rest []string) error {
 	reg, ok := sparkwing.Lookup(pipeline)
 	if !ok {
@@ -430,7 +428,7 @@ func filterTok(args []string, drop string) []string {
 // stripExplainOutputFlags removes explain-output formatting flags
 // (`-o` / `--output` / `--json`) from args. The pipeline binary
 // always emits a JSON plan snapshot for `--explain`; the surrounding
-// `sparkwing pipeline explain` / `wing` wrapper is responsible for
+// `sparkwing pipeline explain` / `sparkwing run` wrapper is responsible for
 // any pretty-printing, so these flags are noise to the inner Plan-
 // builder. Stripping them keeps parseTypedFlags from rejecting them
 // as unknown -- which used to drop *all* typed flags (including
@@ -527,7 +525,7 @@ func parseTypedFlags(pipeline string, args []string) (map[string]string, error) 
 				out[name] = value
 				continue
 			}
-			return nil, fmt.Errorf("unknown flag --%s (run `wing %s --help` for valid flags)", name, pipeline)
+			return nil, fmt.Errorf("unknown flag --%s (run `sparkwing run %s --help` for valid flags)", name, pipeline)
 		}
 		if arg.Type == "bool" {
 			if !hasEq {

@@ -2,7 +2,7 @@
 // slice of /api/v1/* (logs, events SSE), a reverse proxy of the rest
 // to the controller, and the embedded Next.js bundle at /. The bundle
 // lives under pkg/orchestrator/web/next-out/ and is populated by
-// `wing install` (or the Dockerfile) before `go build` runs.
+// `bin/install.sh` (or the Dockerfile) before `go build` runs.
 package web
 
 import (
@@ -31,6 +31,46 @@ import (
 
 //go:embed all:next-out
 var nextBundle embed.FS
+
+// VerifyBundleEmbedded reports an error when this binary was built
+// without the Next.js dashboard bundle. The bundle is generated and
+// gitignored, so a plain "go install" or "go build" produces a binary
+// that compiles cleanly but serves a 404 on every dashboard page —
+// this guard surfaces that condition at startup instead.
+func VerifyBundleEmbedded() error {
+	if _, err := fs.Stat(nextBundle, "next-out/index.html"); err != nil {
+		return errors.New(missingBundleMessage)
+	}
+	return nil
+}
+
+const missingBundleMessage = `dashboard assets are missing from this binary.
+
+The Next.js dashboard bundle is a generated artifact and is not checked
+into the sparkwing repository, so "go install" or a source build without
+running bin/build-web.sh first produces a binary that compiles cleanly
+but serves a silent 404 on every dashboard page.
+
+To run the dashboard locally, install the sparkwing release binary and
+use the dashboard subcommand — not "go install":
+
+  curl -L -o sparkwing \
+    https://github.com/sparkwing-dev/sparkwing/releases/latest/download/sparkwing-linux-amd64
+  chmod +x sparkwing && sudo mv sparkwing /usr/local/bin/sparkwing
+  sparkwing dashboard start
+
+Release binaries for every platform are listed at:
+
+  https://github.com/sparkwing-dev/sparkwing/releases/latest
+
+To run sparkwing-web in a cluster, use the container image rather than a
+source build — it already has the dashboard bundle baked in.
+
+If you are building from a sparkwing checkout, generate the dashboard
+bundle first, then reinstall:
+
+  bash bin/build-web.sh
+  go install ./cmd/sparkwing`
 
 // HandlerOptions bundles everything the dashboard handler needs.
 // Zero value is the local-mode default.
@@ -68,6 +108,9 @@ func Serve(ctx context.Context, paths orchestrator.Paths, addr string) error {
 
 // ServeWithOptions is the cluster-mode entry point.
 func ServeWithOptions(ctx context.Context, opts HandlerOptions, addr string) error {
+	if err := VerifyBundleEmbedded(); err != nil {
+		return err
+	}
 	if err := opts.Paths.EnsureRoot(); err != nil {
 		return err
 	}

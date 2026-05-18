@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# wing: verify-rerun
+# sparkwing run: verify-rerun
 # desc: End-to-end check for sparkwing debug rerun against the local stack.
 #       Exercises a fresh laptop store: drives a small pipeline, picks a
 #       node, fetches its dispatch snapshot, and verifies the rerun env
@@ -23,11 +23,10 @@ trap 'rm -rf "$WORK"' EXIT
 export SPARKWING_HOME="$WORK"
 mkdir -p "$WORK"
 
-# 1. Build wing/sparkwing so the test exercises the binaries the user
+# 1. Build sparkwing so the test exercises the binary the user
 # would actually invoke.
 echo "==> building binaries"
 go build -o "$WORK/sparkwing" ./cmd/sparkwing
-go build -o "$WORK/wing"      ./cmd/wing
 export PATH="$WORK:$PATH"
 
 # 2. Run a tiny pipeline so we have a real dispatch snapshot to read.
@@ -37,14 +36,14 @@ export PATH="$WORK:$PATH"
 #
 # For v1 we keep this script narrowly focused: it requires the user
 # to have already produced a run+node in the local store (e.g. via
-# `wing test --config local` once). The script then reads the most
+# `sparkwing run test --config local` once). The script then reads the most
 # recent run and confirms a snapshot was captured + can be fetched
 # via sparkwing CLI plumbing.
 
 echo "==> looking for a recent local run"
 LATEST_RUN="$(sparkwing runs list --limit 1 -o json | python3 -c 'import json,sys; rs=json.load(sys.stdin).get("runs", []); print(rs[0]["id"]) if rs else None' 2>/dev/null || true)"
 if [[ -z "$LATEST_RUN" || "$LATEST_RUN" == "None" ]]; then
-  echo "no runs in local store -- run a pipeline first (e.g. wing test) and re-run this script"
+  echo "no runs in local store -- run a pipeline first (e.g. sparkwing run test) and re-run this script"
   exit 0
 fi
 pass "found latest run: $LATEST_RUN"

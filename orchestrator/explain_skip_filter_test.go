@@ -1,7 +1,7 @@
 package orchestrator
 
-// `wing X --explain --skip Y -o json` must produce a Plan snapshot
-// identical (modulo formatting) to `wing X --explain --skip Y`. The
+// `sparkwing run X --explain --skip Y -o json` must produce a Plan snapshot
+// identical (modulo formatting) to `sparkwing run X --explain --skip Y`. The
 // bug was that explain-output flags (-o / --output / --json) were
 // forwarded into parseTypedFlags, which rejected them as unknown and
 // silently dropped *every* parsed flag (including --skip / --only)

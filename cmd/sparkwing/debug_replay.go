@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
-	"syscall"
 
 	flag "github.com/spf13/pflag"
 
@@ -16,7 +14,8 @@ import (
 )
 
 // runDebugReplay mints a new replay run row + single nodes row and
-// hands off to `wing replay-node` for the actual single-node execution.
+// hands off to the pipeline binary's `replay-node` entrypoint for the
+// actual single-node execution.
 func runDebugReplay(args []string) error {
 	t, err := parseReplayFlags(args)
 	if err != nil {
@@ -54,23 +53,25 @@ func runDebugReplay(args []string) error {
 		}
 	}
 
-	// Don't defer close: we exec wing below, which opens the store
-	// itself. Closing here releases the file lock cleanly before
-	// syscall.Exec replaces the process.
+	// Don't defer close: we exec the pipeline binary below, which opens
+	// the store itself. Closing here releases the file lock cleanly
+	// before exec replaces the process.
 	newRunID, err := orchestrator.MintReplayRun(ctx, st, t.run, t.node)
 	_ = st.Close()
 	if err != nil {
 		return fmt.Errorf("mint replay run: %w", err)
 	}
 
-	fmt.Fprintf(os.Stderr, "minted replay run %s (replay of %s/%s)\n", newRunID, t.run, t.node)
-	fmt.Fprintf(os.Stderr, "exec'ing: wing replay-node %s %s\n", newRunID, t.node)
-
-	bin, err := exec.LookPath("wing")
+	sparkwingDir, err := findSparkwingDir()
 	if err != nil {
-		return fmt.Errorf("wing not found in PATH: %w (the replay needs the user's pipeline binary to reconstruct the input struct)", err)
+		return fmt.Errorf("locate .sparkwing/: %w (replay needs the user's pipeline binary to reconstruct the input struct)", err)
 	}
-	return syscall.Exec(bin, []string{"wing", "replay-node", newRunID, t.node}, os.Environ())
+
+	fmt.Fprintf(os.Stderr, "minted replay run %s (replay of %s/%s)\n", newRunID, t.run, t.node)
+	fmt.Fprintf(os.Stderr, "exec'ing pipeline binary: replay-node %s %s\n", newRunID, t.node)
+
+	return compileAndExec(sparkwingDir,
+		[]string{"replay-node", newRunID, t.node}, os.Environ(), compileOptions{})
 }
 
 type replayFlags struct {

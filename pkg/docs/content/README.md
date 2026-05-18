@@ -25,7 +25,7 @@ docs/
   getting-started.md     install, quick start, run targets
   sdk.md                 Go DSL: Plan, Job, Work, Step, modifiers
   pipelines.md           pipeline YAML, registration, triggers
-  cli.md                 sparkwing + wing CLI reference
+  cli.md                 sparkwing + sparkwing CLI reference
   api.md                 controller HTTP API reference
   architecture.md        in-cluster deployment architecture
   deployment.md          deploy targets, gitops, ArgoCD, registries

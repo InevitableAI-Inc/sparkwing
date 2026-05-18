@@ -24,7 +24,7 @@ type stepRange struct {
 // actually contain the named bound, so multi-Job pipelines that
 // pass the range globally degrade gracefully on Works that don't.
 //
-// Lets `wing <pipeline> --start-at STEP` skip every step upstream
+// Lets `sparkwing run <pipeline> --start-at STEP` skip every step upstream
 // of STEP and resume from there without authors having to hand-roll
 // a stepOrder slice + skipBefore predicate per pipeline.
 func WithStepRange(ctx context.Context, startAt, stopAt string) context.Context {
@@ -198,7 +198,7 @@ func stepRangeReasonString(r stepRange) string {
 
 // emitStepSkippedWithReason emits the `step_skipped` event with the
 // range-skip reason on Attrs so renderers can distinguish a user
-// SkipIf predicate from a wing-level --start-at/--stop-at filter.
+// SkipIf predicate from a sparkwing-level --start-at/--stop-at filter.
 func emitStepSkippedWithReason(ctx context.Context, stepID, reason string) {
 	LoggerFromContext(ctx).Emit(recordEnvelope(ctx, LogRecord{
 		TS:    time.Now(),

@@ -163,7 +163,7 @@ webhook. Set `SPARKWING_ALLOWED_REPO_HOSTS` (e.g., `github.com`) to
 reject webhook payloads from unknown hosts. This prevents an attacker
 from configuring a webhook that clones from a malicious repository.
 
-Local triggers (`wing ... --on prod`) are not affected by this
+Local triggers (`sparkwing ... --on prod`) are not affected by this
 restriction — they go through the `/trigger` endpoint which serves
 authenticated users only.
 

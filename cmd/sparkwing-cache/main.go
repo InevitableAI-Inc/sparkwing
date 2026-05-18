@@ -1153,7 +1153,7 @@ func handleIncrementalUpload(diffData []byte, repoURL, base string) (string, int
 	}
 
 	// Create temp work dir
-	workDir, err := os.MkdirTemp("", "wing-incremental-*")
+	workDir, err := os.MkdirTemp("", "sparkwing-incremental-*")
 	if err != nil {
 		return "", 0, err
 	}
@@ -1165,7 +1165,7 @@ func handleIncrementalUpload(diffData []byte, repoURL, base string) (string, int
 	}
 
 	// Write diff tarball to temp file
-	tmpDiff, err := os.CreateTemp("", "wing-diff-*.tar.gz")
+	tmpDiff, err := os.CreateTemp("", "sparkwing-diff-*.tar.gz")
 	if err != nil {
 		return "", 0, err
 	}
@@ -1183,7 +1183,7 @@ func handleIncrementalUpload(diffData []byte, repoURL, base string) (string, int
 	}
 
 	// Create combined tarball
-	tmpCombined, err := os.CreateTemp("", "wing-combined-*.tar.gz")
+	tmpCombined, err := os.CreateTemp("", "sparkwing-combined-*.tar.gz")
 	if err != nil {
 		return "", 0, err
 	}
@@ -1255,7 +1255,7 @@ func handleUploadDownload(w http.ResponseWriter, r *http.Request) {
 
 // --- Sync negotiation ---
 
-// POST /sync/negotiate — find common ancestor between wing's local commits and gitcache's repo.
+// POST /sync/negotiate — find common ancestor between sparkwing's local commits and gitcache's repo.
 // Request: {"repo": "git@...", "commits": ["abc123", "def456", ...]}
 // Response: {"ancestor": "def456", "found": true} or {"ancestor": "", "found": false}
 func handleSyncNegotiate(w http.ResponseWriter, r *http.Request) {
@@ -1282,7 +1282,7 @@ func handleSyncNegotiate(w http.ResponseWriter, r *http.Request) {
 
 	// Check if we have this repo cached
 	if _, err := os.Stat(bareRepo); os.IsNotExist(err) {
-		// No cached repo — can't negotiate, wing should send full tarball
+		// No cached repo — can't negotiate, sparkwing should send full tarball
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{"ancestor": "", "found": false})
 		return

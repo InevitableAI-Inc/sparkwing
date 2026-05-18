@@ -34,13 +34,16 @@ go install github.com/sparkwing-dev/sparkwing/cmd/sparkwing@latest
 This installs the `sparkwing` binary, which is the single CLI for
 both admin / inspection (`sparkwing dashboard start`,
 `sparkwing pipeline list`) and pipeline invocation
-(`sparkwing run <pipeline>`). The `wing` shortcut some examples
-reference is a symlink to `sparkwing`; create it yourself if you
-want the shorter name:
+(`sparkwing run <pipeline>`).
 
-```bash
-ln -s /usr/local/bin/sparkwing /usr/local/bin/wing
-```
+> **Note:** `go install` does not include the Next.js dashboard
+> bundle, which is a generated artifact and not checked into the
+> repository. A source-built binary will refuse to start
+> `sparkwing dashboard` with a clear message pointing back to the
+> release binary. CLI-only commands (`run`, `pipeline`, `runs`, etc.)
+> work fine. If you want the dashboard from a source checkout, run
+> `bash bin/build-web.sh` first to generate the bundle, then
+> `go install ./cmd/sparkwing` from the repo root.
 
 ### Windows
 
@@ -53,8 +56,12 @@ plus a Go toolchain, then in a Git Bash terminal:
 go install github.com/sparkwing-dev/sparkwing/cmd/sparkwing@latest
 ```
 
-The `wing` shortcut is not installed on Windows -- invoke pipelines
-as `sparkwing run <pipeline>` instead.
+A source build like this does not include the Next.js dashboard
+bundle, so `sparkwing dashboard start` will refuse to run on a
+Windows source-built CLI. Windows users typically point at a remote
+dashboard (a Linux/macOS host running `sparkwing dashboard start`,
+or the cluster-mode `sparkwing-web` container) and use the local
+`sparkwing` binary for `run`, `pipeline`, and `runs` commands only.
 
 The cluster-mode runner Service (`sparkwing-runner`) is Linux/macOS
 only; Windows users dispatch pipelines to remote Linux/macOS runners
@@ -74,9 +81,6 @@ sparkwing run release
 sparkwing dashboard start    # detached local dashboard + API on :4343
 ```
 
-(If you symlinked `wing -> sparkwing` per the install instructions
-above, `wing release` is the same thing as `sparkwing run release`.)
-
 For a build/test/deploy DAG instead of a single node, pass
 `--template build-test-deploy`:
 
@@ -84,7 +88,7 @@ For a build/test/deploy DAG instead of a single node, pass
 sparkwing pipeline new --name release --template build-test-deploy
 ```
 
-Each `wing` invocation compiles `.sparkwing/` and runs the pipeline as a host
+Each `sparkwing` invocation compiles `.sparkwing/` and runs the pipeline as a host
 subprocess. Run state lives under `~/.sparkwing/` (SQLite + log files).
 `sparkwing dashboard start` spawns a detached local web server (`pkg/localws`,
 embedded in the CLI) against the same SQLite store, exposing the dashboard
@@ -136,7 +140,7 @@ PVC declares a class and no default exists on the cluster.
 
 ## The Model
 
-A **pipeline** is anything `wing` (or `sparkwing run`) can invoke. Two
+A **pipeline** is anything `sparkwing` (or `sparkwing run`) can invoke. Two
 shapes share the same surface:
 
 - **triggered pipeline** - a YAML entry with an `on:` trigger; runs itself on push / webhook / schedule. Implemented as a Go type whose factory is registered via `sparkwing.Register`.
@@ -226,11 +230,11 @@ Sparkwing tags itself via the in-repo `release` pipeline (no consumer
 repo involvement). From the sparkwing checkout:
 
 ```bash
-wing release                          # auto-bump from latest tag (default --bump minor),
+sparkwing run release                          # auto-bump from latest tag (default --bump minor),
                                       #   or pick the top unreleased CHANGELOG entry
-wing release --bump patch             # auto-bump patch instead
-wing release --version v0.55.0        # explicit version
-wing release --dry-run                # full validation chain, skip tag+push
+sparkwing run release --bump patch             # auto-bump patch instead
+sparkwing run release --version v0.55.0        # explicit version
+sparkwing run release --dry-run                # full validation chain, skip tag+push
 ```
 
 The pipeline runs four checks before pushing:
@@ -242,7 +246,7 @@ The pipeline runs four checks before pushing:
   heading
 - `push-tag` -- creates the annotated tag and pushes to origin
 
-`wing release` is the canonical sparkwing-side release path. Don't
+`sparkwing run release` is the canonical sparkwing-side release path. Don't
 hand-tag and `git push` -- it bypasses the validation gates and makes
 silent releases possible.
 
@@ -251,11 +255,11 @@ silent releases possible.
 Every pipeline supports `--on` and `--from` flags:
 
 ```bash
-wing build                          # run locally with local code
-wing build --on dev                 # run on the "dev" cluster with local code
-wing build --on prod                # run on the "prod" cluster with local code
-wing build --from main --on dev     # run main branch code on "dev" cluster
-wing build --from main --on prod    # run main branch code on "prod" cluster
+sparkwing run build                          # run locally with local code
+sparkwing run build --on dev                 # run on the "dev" cluster with local code
+sparkwing run build --on prod                # run on the "prod" cluster with local code
+sparkwing run build --from main --on dev     # run main branch code on "dev" cluster
+sparkwing run build --from main --on prod    # run main branch code on "prod" cluster
 ```
 
 Cluster names are profiles you configure with `sparkwing configure profiles

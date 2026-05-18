@@ -19,7 +19,7 @@ import (
 )
 
 // PoolLoopConfig is the parameter set shared by every caller of
-// RunPoolLoop: the in-cluster warm pool pod (`wing runner`), the
+// RunPoolLoop: the in-cluster warm pool pod (`sparkwing cluster worker`), the
 // off-cluster laptop agent (`sparkwing agent`), and anything else
 // that wants to claim node work off the controller queue and execute
 // it in-process via orchestrator.RunNodeOnce. Flag / YAML parsing lives
@@ -37,7 +37,7 @@ type PoolLoopConfig struct {
 	// MaxClaims bounds how many successful claims the loop will dispatch
 	// before returning nil. 0 = unlimited (laptop-agent default -- an
 	// agent with no kubelet supervisor should not silently stop accepting
-	// work). The in-cluster `wing runner` sets this to 25 so the kubelet
+	// work). The in-cluster `sparkwing cluster worker` sets this to 25 so the kubelet
 	// restarts the container periodically, shedding accumulated PVC state
 	// and any in-process drift.
 	MaxClaims int
@@ -62,7 +62,7 @@ type nodeClaimer interface {
 type poolExecFn func(ctx context.Context, n *store.Node, holderID string)
 
 // RunPoolLoop is the claim / execute / heartbeat loop shared by
-// `wing runner` (in-cluster warm pool) and `sparkwing agent` (laptop
+// `sparkwing cluster worker` (in-cluster warm pool) and `sparkwing agent` (laptop
 // agent). Blocks until ctx is cancelled or MaxClaims is reached.
 func RunPoolLoop(ctx context.Context, cfg PoolLoopConfig, logger *slog.Logger) error {
 	if cfg.ControllerURL == "" {
@@ -186,7 +186,7 @@ func runPoolLoop(ctx context.Context, cfg PoolLoopConfig, claimer nodeClaimer, e
 	}
 }
 
-// runRunnerCLI implements `wing runner` -- the long-lived warm pool
+// runRunnerCLI implements `sparkwing cluster worker` -- the long-lived warm pool
 // runner pod. Thin CLI wrapper around RunPoolLoop.
 func runRunnerCLI(args []string) error {
 	fs := flag.NewFlagSet("runner", flag.ExitOnError)

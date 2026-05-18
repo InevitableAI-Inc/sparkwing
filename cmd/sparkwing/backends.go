@@ -96,7 +96,7 @@ func renderSpec(s backends.Spec, indent string) string {
 	return out
 }
 
-// resolveEffectiveCacheSpec returns the cache backend spec the wing
+// resolveEffectiveCacheSpec returns the cache backend spec the sparkwing
 // CLI should consult before the orchestrator boots: backends.yaml
 // defaults plus the matched built-in environment, with no pipeline
 // or target context (compile runs before the pipeline-aware

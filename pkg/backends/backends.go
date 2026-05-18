@@ -375,7 +375,7 @@ func Resolve(sparkwingDir string) (File, error) {
 
 // ResolveWithOverlay extends Resolve with an extra File loaded from
 // overlayPath that sits ABOVE the repo+user merge but BELOW the
-// built-in environment detect rules. Used by the outer wing CLI to
+// built-in environment detect rules. Used by the outer sparkwing CLI to
 // forward profile-derived storage settings to the child via a
 // synthesized temp yaml file. Empty overlayPath behaves identically
 // to Resolve.

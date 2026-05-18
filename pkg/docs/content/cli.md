@@ -1,15 +1,15 @@
 # CLI Reference
 
-Sparkwing ships two on-path binaries: `sparkwing` (admin / inspection) and `wing` (the pipeline-runner shortcut — a symlink to `sparkwing` that dispatches by invocation name).
+Sparkwing ships two on-path binaries: `sparkwing` (admin / inspection) and `sparkwing` (the pipeline-runner shortcut — a symlink to `sparkwing` that dispatches by invocation name).
 
-The rule across the `sparkwing` tree: **every input is a named flag** — no positional args anywhere. `wing` is the intentional exception: it takes the pipeline name positionally because operators type it all day.
+The rule across the `sparkwing` tree: **every input is a named flag** — no positional args anywhere. `sparkwing` is the intentional exception: it takes the pipeline name positionally because operators type it all day.
 
 Every leaf command has a `--help` page with flags, examples, and the full description. This reference is a map, not a manual.
 
-## wing
+## sparkwing
 
 ```
-wing <pipeline> [flags...]
+sparkwing run <pipeline> [flags...]
 ```
 
 Runs a pipeline from the nearest `.sparkwing/`. Identical in behavior to `sparkwing run <name>`.
@@ -56,7 +56,7 @@ Per-project surface: list / describe / new pipelines plus the SDK pin (version /
 | `sparkwing pipeline discover --query TEXT [-o ...]` | Fuzzy search across names / descriptions / tags, ranked |
 | `sparkwing pipeline new --name NAME [--template minimal\|build-test-deploy] [--group ...] [--hidden] [--short ...]` | Scaffold a new pipeline (refuses to clobber; auto-bootstraps `.sparkwing/` on first use; default template is `minimal` -- pass `--template build-test-deploy` for a build/test/deploy DAG) |
 | `sparkwing pipeline explain --name NAME [--flag value ...] [-o ...]` | Render the Plan DAG without running; unknown flags forward to the pipeline |
-| `sparkwing pipeline run NAME [--flag value ...]` | Invoke the pipeline (canonical form). `sparkwing run NAME` and `wing NAME` are the positional shortcuts. |
+| `sparkwing pipeline run NAME [--flag value ...]` | Invoke the pipeline (canonical form). `sparkwing run NAME` and `sparkwing NAME` are the positional shortcuts. |
 | `sparkwing pipeline hooks {install\|uninstall\|status}` | Git pre-commit / pre-push hooks for triggers |
 | `sparkwing pipeline sparks ...` | Manage sparks libraries declared in `.sparkwing/sparks.yaml` (see "sparks" below) |
 
@@ -233,7 +233,7 @@ zsh + fish get per-entry descriptions; bash is name-only (compgen limitation).
 
 ## Conventions
 
-- **No positional args on `sparkwing`.** Every input is `--flag value`. `wing` is the exception.
+- **No positional args on `sparkwing`.** Every input is `--flag value`. `sparkwing` is the exception.
 - **Structured output.** Every list / describe / get verb accepts `-o table|json|plain` (default `table`). `--json` is a hidden alias for `-o json`.
 - **Remote dispatch.** `--on NAME` picks a profile. Absent, commands read local state (SQLite under `~/.sparkwing/`).
 - **Required flags.** Marked `[required]` in `--help`. Missing required flags fail before any side effect.

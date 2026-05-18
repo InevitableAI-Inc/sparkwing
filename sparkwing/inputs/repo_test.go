@@ -222,12 +222,11 @@ func TestFiles_EditWithinGlobBusts(t *testing.T) {
 // ── WorkDir = subdir must NOT silently drop tree ─────────────────────────
 
 // When WorkDir() points at a subdirectory of the repo (e.g. .sparkwing/
-// in a v0.41.0 SDK + v0.45+ wing CLI binding where the env-var handoff
-// was retired), `git ls-files` from that cwd default-scopes to the
-// subdir. The hash silently dropped every file outside .sparkwing/,
-// so edits to top-level tracked files (install.sh, source files,
-// CHANGELOG, ...) never busted the cache. This test pins the
-// regression.
+// after the env-var handoff was retired), `git ls-files` from that
+// cwd default-scopes to the subdir. The hash silently dropped every
+// file outside .sparkwing/, so edits to top-level tracked files
+// (install.sh, source files, CHANGELOG, ...) never busted the cache.
+// This test pins the regression.
 func TestRepoFiles_HashCoversWholeTreeFromSubdirWorkDir(t *testing.T) {
 	dir := repoTest(t, map[string]string{
 		"public/install.sh":      "#!/bin/sh\necho v1",

@@ -13,7 +13,7 @@ import (
 // in-process heartbeat fires every 5 seconds while a node is
 // executing, so 60 seconds of silence is unambiguous: either the
 // orchestrator process crashed, the user Ctrl+C'd it without
-// in-process cleanup, or `wing` was killed mid-run. Cluster runs use
+// in-process cleanup, or `sparkwing` was killed mid-run. Cluster runs use
 // their own controller-side lease enforcement and aren't touched
 // here.
 const localOrphanThreshold = 60 * time.Second

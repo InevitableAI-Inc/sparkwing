@@ -24,10 +24,10 @@ with Docker installed. This means:
 
 ```bash
 # Run locally -- uses your Docker, your caches, your machine
-wing build-deploy
+sparkwing run build-deploy
 
 # Run on a cluster -- triggers remote execution via the controller
-wing build-deploy --on prod
+sparkwing run build-deploy --on prod
 ```
 
 Both run the same pipeline code. The difference is where.
@@ -36,9 +36,9 @@ Both run the same pipeline code. The difference is where.
 
 ```
 Your laptop:
-  1. wing compiles the pipeline from .sparkwing/
+  1. sparkwing run compiles the pipeline from .sparkwing/
   2. Pipeline runs whatever its code says (test, build, deploy, etc.)
-  3. wing records the run to ~/.sparkwing/
+  3. sparkwing run records the run to ~/.sparkwing/
      (SQLite + per-run log files)
 ```
 
@@ -54,8 +54,8 @@ See [native-mode.md](native-mode.md) for the full local-mode design.
 
 ```
 Your laptop:
-  1. wing tarballs .sparkwing/ + working tree (incremental sync)
-  2. wing POSTs the upload + a trigger to the profile's controller
+  1. sparkwing run tarballs .sparkwing/ + working tree (incremental sync)
+  2. sparkwing POSTs the upload + a trigger to the profile's controller
 
 Cluster:
   3. Controller dispatches a runner Job
@@ -98,8 +98,8 @@ sparkwing to block them.
 
 | Mode | Where it runs | Speed | When to use |
 |------|--------------|-------|-------------|
-| `wing <pipeline>` | Your laptop | Fast (local caches) | Day-to-day development, fast iteration, local-only deploys |
-| `wing <pipeline> --on prof` | Cluster | Medium (remote build) | Production deploys, deploys requiring cluster credentials, parity with webhook flow |
+| `sparkwing run <pipeline>` | Your laptop | Fast (local caches) | Day-to-day development, fast iteration, local-only deploys |
+| `sparkwing run <pipeline> --on prof` | Cluster | Medium (remote build) | Production deploys, deploys requiring cluster credentials, parity with webhook flow |
 | Git push -> webhook | Cluster | Medium | Automated CI/CD on every commit |
 | `sparkwing pipeline run --pipeline X --on prof` | Cluster | Medium | Explicit (canonical) form of remote dispatch |
 
@@ -118,7 +118,7 @@ build-test-deploy:
   tags: [ci, deploy]
 ```
 
-If a pipeline is locally-runnable (most are), `wing build-test-deploy`
+If a pipeline is locally-runnable (most are), `sparkwing run build-test-deploy`
 just works. If a step needs cluster credentials it cannot reach from a
 laptop, the pipeline author either uses `--on` to dispatch the whole
 run remotely, or splits the deploy into a sub-pipeline that runs on

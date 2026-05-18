@@ -4,7 +4,7 @@ Pipelines fire from three places:
 
 1. **Webhooks** -- the controller matches an incoming GitHub event
    against `on:` blocks in `.sparkwing/pipelines.yaml`.
-2. **Manual / API invocation** -- `wing <pipeline>`, `sparkwing run
+2. **Manual / API invocation** -- `sparkwing run <pipeline>`, `sparkwing run
    <pipeline>`, `sparkwing run <pipeline> --on prof` for remote
    dispatch.
 3. **Git hooks** (optional) -- `sparkwing pipeline hooks install` writes
@@ -40,8 +40,8 @@ verification.
 ## Manual / API invocation
 
 ```bash
-wing build-deploy                                       # local
-wing build-deploy --on prod                             # remote dispatch
+sparkwing run build-deploy                                       # local
+sparkwing run build-deploy --on prod                             # remote dispatch
 sparkwing run build-deploy --on prod                    # canonical form
 sparkwing pipeline run --pipeline build-deploy --on prod  # explicit form
 ```
@@ -90,5 +90,5 @@ func (p *Lint) Plan(_ context.Context, plan *sw.Plan, _ sw.NoInputs, rc sw.RunCo
 ```
 
 ```bash
-wing lint        # runs locally; no git hook required
+sparkwing run lint        # runs locally; no git hook required
 ```

@@ -138,7 +138,7 @@ func surveyConfigFiles(configDir, profilesPath string) []ConfigureInitFile {
 	files := []ConfigureInitFile{
 		{Name: "profiles.yaml", Path: profilesPath, Summary: profileSummary(profilesPath)},
 		{Name: "repos.yaml", Path: reposPath, Summary: repoSummary(reposPath)},
-		{Name: "config.yaml", Path: configYAMLPath, Summary: "wing-flag presets (sparkwing.wingconfig)"},
+		{Name: "config.yaml", Path: configYAMLPath, Summary: "sparkwing-flag presets (sparkwing.wingconfig)"},
 		{Name: "secrets.env", Path: secretsEnvPath, Summary: "laptop-local masked secrets"},
 	}
 	for i := range files {

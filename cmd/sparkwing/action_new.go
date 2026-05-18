@@ -22,7 +22,7 @@ func runPipelineNew(args []string) error {
 	fs := flag.NewFlagSet(cmdPipelineNew.Path, flag.ContinueOnError)
 	pipelineName := fs.String("name", "", "new pipeline name (kebab-case, e.g. deploy-staging)")
 	template := fs.String("template", "minimal", "template: minimal (default) | build-test-deploy")
-	group := fs.String("group", "", "group name (surfaces in wing <TAB> section header)")
+	group := fs.String("group", "", "group name (surfaces in `sparkwing run <TAB>` section header)")
 	hidden := fs.Bool("hidden", false, "mark the entry hidden in tab-complete menus")
 	short := fs.String("short", "", "short one-line description (ShortHelp / frontmatter desc)")
 	if err := parseAndCheck(cmdPipelineNew, fs, args); err != nil {
@@ -259,7 +259,7 @@ func (p {{STRUCT}}) Help() string { return p.ShortHelp() }
 
 func ({{STRUCT}}) Examples() []sw.Example {
 	return []sw.Example{
-		{Comment: "Run locally", Command: "wing {{NAME}}"},
+		{Comment: "Run locally", Command: "sparkwing run {{NAME}}"},
 	}
 }
 
@@ -293,7 +293,7 @@ func init() {
 
 // buildTestDeployTemplate: the canonical CI shape. Three nodes with
 // classic build->test->deploy ordering. Each Run shells `echo` so
-// `wing <name>` succeeds end-to-end on first invocation; the user
+// `sparkwing run <name>` succeeds end-to-end on first invocation; the user
 // fills in real commands once they see the structure pass. The
 // inline DAG comment is intentional (pipeline-specific structure,
 // not SDK reference) -- the SDK cookbook lives in `docs read
@@ -320,7 +320,7 @@ func (p {{STRUCT}}) Help() string { return p.ShortHelp() }
 
 func ({{STRUCT}}) Examples() []sw.Example {
 	return []sw.Example{
-		{Comment: "Run locally", Command: "wing {{NAME}}"},
+		{Comment: "Run locally", Command: "sparkwing run {{NAME}}"},
 	}
 }
 

@@ -75,7 +75,7 @@ func runPipelinePublish(args []string) error {
 	}
 
 	// Parse --platform list. Empty = current platform only, matches
-	// what `wing run` would compile for.
+	// what `sparkwing run` would compile for.
 	platforms_list, err := parsePlatforms(*platforms)
 	if err != nil {
 		return err

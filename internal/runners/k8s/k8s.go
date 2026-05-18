@@ -3,7 +3,7 @@
 // For each dispatched node, Runner.RunNode creates a batch/v1 Job
 // named deterministically on (runID, nodeID, attempt) so duplicate
 // dispatch collides on the API server rather than spawning a racing
-// second pod. The pod runs `wing run-node <runID> <nodeID>`, which
+// second pod. The pod runs `sparkwing run-node <runID> <nodeID>`, which
 // executes the node against HTTP backends (state + logs + locks) and
 // writes the terminal state. When the Job succeeds or fails, this
 // runner reads the resulting node row from the controller and maps
@@ -408,7 +408,7 @@ func (r *Runner) buildJob(name string, req runner.Request) *batchv1.Job {
 		Name:            "runner",
 		Image:           r.cfg.Image,
 		ImagePullPolicy: corev1.PullAlways,
-		Command:         []string{"wing"},
+		Command:         []string{"sparkwing"},
 		Args:            []string{"run-node", req.RunID, req.NodeID},
 		Env:             env,
 		Resources:       r.resources(),

@@ -4,7 +4,7 @@
 running in a shared Kubernetes cluster, where webhooks arrive from GitHub,
 a team looks at a central dashboard, and runners are pooled for work.
 
-**For local dev, almost none of this applies.** On a laptop, `wing`
+**For local dev, almost none of this applies.** On a laptop, `sparkwing`
 compiles and runs your pipeline as a host subprocess and records each
 run under `~/.sparkwing/`. `sparkwing dashboard start` spawns a detached
 local web server (the standalone `sparkwing-local-ws` binary is a thin
@@ -50,7 +50,7 @@ Kubernetes. The stack is five pods plus an in-cluster registry.
          ▲                    ▲
          │                    │
     ┌────┴────┐          ┌────┴────┐
-    │  wing   │          │  git    │
+    │  sparkwing   │          │  git    │
     │  (CLI)  │          │ (push)  │
     └─────────┘          └─────────┘
 ```
@@ -99,7 +99,7 @@ clones over HTTP so runners do not need SSH keys.
 
 Also stores:
 
-- **Code uploads**: tarballs from `wing --on` invocations
+- **Code uploads**: tarballs from `sparkwing run --on` invocations
 - **Artifacts**: job output files
 - **Binary cache**: compiled pipeline binaries
 - **Dependency cache**: saved / restored by pipelines (gems, node_modules, etc.)
@@ -137,7 +137,7 @@ component talks over HTTP - there are no custom protocols.
 ### Who talks to whom
 
 ```
-wing CLI ──────► Controller        POST /trigger, /upload (via controller proxy)
+sparkwing CLI ──────► Controller        POST /trigger, /upload (via controller proxy)
                                    GET  /jobs/{id} (poll for completion)
 
 GitHub ────────► Controller        POST /webhooks/github (HMAC verified)
@@ -159,7 +159,7 @@ Dashboard ─────► Logs              GET  /logs/{jobId} (SSE live stre
 
 Cache ─────────► GitHub            git fetch (background, every 30s)
 
-wing CLI ──────► Cache             POST /upload (code tarball, incremental sync)
+sparkwing CLI ──────► Cache             POST /upload (code tarball, incremental sync)
                                    POST /sync/negotiate (ancestor negotiation)
 ```
 
@@ -230,7 +230,7 @@ A condensed list - see `docs/api.md` for the full reference.
 ### Local Development
 
 ```
-wing build-deploy
+sparkwing run build-deploy
   → compiles .sparkwing/ into a binary
   → runs the binary locally
   → pipeline does whatever its code says (build, test, deploy, etc.)
@@ -239,10 +239,10 @@ wing build-deploy
 ### Remote Execution (--on)
 
 ```
-wing build-deploy --on <cluster>
-  1. wing resolves profile -> controller URL
-  2. wing uploads code tarball to cache (incremental when possible)
-  3. wing POST /trigger to controller (with upload_ref)
+sparkwing run build-deploy --on <cluster>
+  1. sparkwing run resolves profile -> controller URL
+  2. sparkwing run uploads code tarball to cache (incremental when possible)
+  3. sparkwing POST /trigger to controller (with upload_ref)
   4. controller enqueues run
   5. dispatcher creates a k8s Job
   6. runner downloads code from cache
@@ -250,7 +250,7 @@ wing build-deploy --on <cluster>
   8. runner streams logs to logs service
   9. runner sends heartbeats every 5s to controller
   10. runner reports completion to controller
-  11. wing polls /jobs/{id} and displays result
+  11. sparkwing run polls /jobs/{id} and displays result
 ```
 
 ### Git Push Trigger

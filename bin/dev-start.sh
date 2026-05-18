@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Start the local dashboard dev loop:
 #   * sparkwing-local-ws on :4343 -- serves /api/v1/* off the local
-#     SQLite store at ~/.sparkwing/state.db (the same store wing
+#     SQLite store at ~/.sparkwing/state.db (the same store sparkwing
 #     writes to).
 #   * next dev on :3100 -- serves the SPA with HMR. The dev rewrite
 #     in web/next.config.ts proxies /api/* to :4343, so a UI change

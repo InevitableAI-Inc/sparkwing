@@ -24,7 +24,7 @@ import (
 //	--output / -o   pretty | json (default pretty)
 //	--json          alias for --output json
 //
-// --for is honored via the SPARKWING_FOR env var the outer wing CLI
+// --for is honored via the SPARKWING_FOR env var the outer sparkwing CLI
 // already forwards; no separate parse here.
 func runPipelineConfigInspect(pipeline string, extra []string) error {
 	format := "pretty"

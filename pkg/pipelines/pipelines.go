@@ -32,7 +32,7 @@ type Pipeline struct {
 	// SecretsField.
 	Secrets SecretsField `yaml:"secrets,omitempty"`
 	Tags    []string     `yaml:"tags,omitempty"`
-	// Hidden omits the entry from default `wing <TAB>` listings.
+	// Hidden omits the entry from default `sparkwing run <TAB>` listings.
 	// It is still invocable by typing the exact name. Used for
 	// rarely-used tools (demos, scaffolding, one-shot utilities)
 	// that would otherwise clutter the completion menu.
@@ -214,7 +214,7 @@ func nodeKindName(k yaml.Kind) string {
 
 // Triggers groups the declared trigger rules. All fields are optional;
 // a pipeline with no triggers can still be invoked manually via
-// `wing <name>`.
+// `sparkwing run <name>`.
 type Triggers struct {
 	Manual   *ManualTrigger   `yaml:"manual,omitempty"`
 	Push     *PushTrigger     `yaml:"push,omitempty"`
@@ -225,7 +225,7 @@ type Triggers struct {
 	PostHook *PostHookTrigger `yaml:"pre_push,omitempty"`
 }
 
-// ManualTrigger is the explicit opt-in for `wing <name>`. Pipelines
+// ManualTrigger is the explicit opt-in for `sparkwing run <name>`. Pipelines
 // without any trigger declared are still manually invocable; this
 // exists so authors can tag a pipeline as manual-only for clarity.
 type ManualTrigger struct{}

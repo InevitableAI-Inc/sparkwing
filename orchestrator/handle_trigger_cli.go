@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// runHandleTriggerCLI handles `wing handle-trigger <id> [flags]`.
+// runHandleTriggerCLI handles `sparkwing handle-trigger <id> [flags]`.
 // Adopts an already-claimed trigger and runs it to terminal state.
 // --local skips the controller and uses LocalBackends.
 func runHandleTriggerCLI(args []string) error {

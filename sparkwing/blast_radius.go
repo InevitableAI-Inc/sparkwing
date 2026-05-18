@@ -4,7 +4,7 @@ import "fmt"
 
 // BlastRadius is a typed marker an author attaches to a WorkStep to
 // declare the consequences of running it. Without markers every step
-// is equally trusted -- `wing cluster-down` and `wing format` look
+// is equally trusted -- `sparkwing run cluster-down` and `sparkwing run format` look
 // identical from the dispatcher's POV. Agents make mistakes humans
 // wouldn't ("wait, this would destroy production" is an instinct),
 // and even careful humans benefit from explicit markers. With
@@ -14,9 +14,9 @@ import "fmt"
 //
 // Markers are additive: a single step may declare any combination
 // (e.g. `apply-eks` is both Destructive and AffectsProduction). The
-// dispatcher walks the per-step set against the wing-level escape
+// dispatcher walks the per-step set against the sparkwing-level escape
 // flags (--allow-destructive / --allow-prod / --allow-money) plus
-// --dry-run; `wing X --dry-run` always proceeds regardless of the
+// --dry-run; `sparkwing run X --dry-run` always proceeds regardless of the
 // markers, because dry-run is the safe-mode preview path.
 //
 // Typed values flow through DescribePipeline + PlanPreview +
@@ -154,7 +154,7 @@ func (s *WorkStep) addBlastRadius(b BlastRadius) {
 	s.blastRadius = append(s.blastRadius, b)
 }
 
-// allowFlagFor returns the wing-level escape flag name that
+// allowFlagFor returns the sparkwing-level escape flag name that
 // authorizes a given marker.
 func allowFlagFor(b BlastRadius) string {
 	switch b {

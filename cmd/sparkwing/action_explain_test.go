@@ -8,7 +8,7 @@ import (
 // `sparkwing pipeline explain --name X -- <flags>` must forward
 // <flags> to the inner pipeline binary so a sliced Plan (e.g.
 // --skip artifact, --only build) renders the same DAG as
-// `wing X --explain --skip artifact`.
+// `sparkwing run X --explain --skip artifact`.
 //
 // The literal "--" separator must be CONSUMED, not forwarded:
 // Go's flag package stops flag processing at "--", so passing it

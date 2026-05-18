@@ -76,7 +76,7 @@ func runWorker(args []string) error {
 }
 
 // dispatchTrigger hands a claimed trigger to `sparkwing handle-trigger`
-// as a child process. That command routes through runWing's
+// as a child process. That command routes through dispatchRun's
 // compile+exec, so the user's .sparkwing binary runs the pipeline
 // with its registry intact. The child's exit status is observed but
 // not propagated -- the trigger is already flipped to 'done' inside

@@ -456,35 +456,6 @@ _sparkwing_complete() {
     fi
 }
 complete -F _sparkwing_complete sparkwing
-
-# wing is the pipeline-runner symlink (or wing.exe copy on Windows).
-# Completion shape: first positional = pipeline name; after that,
-# flag completion via the shared sparkwing _complete-flags helper
-# (wing inherits sparkwing-run flags). Without the cword==1 guard,
-# every TAB after the pipeline re-suggested every pipeline name,
-# producing "wing release release release ...".
-_wing_complete() {
-    local cur
-    cur="${COMP_WORDS[COMP_CWORD]:-}"
-
-    if (( COMP_CWORD == 1 )); then
-        local pipes
-        pipes=$(sparkwing _complete-pipelines 2>/dev/null | cut -f1)
-        COMPREPLY=( $(compgen -W "$pipes" -- "$cur") )
-        return
-    fi
-
-    # Past the pipeline name: complete flags. wing accepts the same
-    # flags as "sparkwing run", so reuse that flag list. Pipeline-
-    # specific flags would require shelling to the pipeline binary
-    # with --describe; out of scope for tab completion.
-    if [[ "$cur" == -* ]]; then
-        local -a out
-        mapfile -t out < <(sparkwing _complete-flags run 2>/dev/null | cut -f1)
-        COMPREPLY=( $(compgen -W "${out[*]}" -- "$cur") )
-    fi
-}
-complete -F _wing_complete wing
 `)
 	return b.String()
 }
@@ -499,17 +470,15 @@ func renderZsh() string {
 
 # Enable group-name rendering and a format for group descriptions so
 # compadd's -X explanation text is shown as a bold/colored header
-# instead of just "<groupname>:". Scoped to the sparkwing/wing
-# completion contexts so the user's other completions stay untouched.
+# instead of just "<groupname>:". Scoped to the sparkwing completion
+# context so the user's other completions stay untouched.
 # %d is the -X explanation (which itself contains %F/%B/etc. prompt
 # escapes we emit from _sparkwing_complete_flags); %b%f reset bold
 # and foreground color so the matches below render in the default
 # style. Without this zstyle, compadd -X prints the raw explanation
 # unformatted.
 zstyle ':completion:*:sparkwing:*:descriptions' format '%d%b%f'
-zstyle ':completion:*:wing:*:descriptions'      format '%d%b%f'
 zstyle ':completion:*:sparkwing:*'              group-name ''
-zstyle ':completion:*:wing:*'                   group-name ''
 # list-colors was tried here for coloring [pipeline]/[command]/[script]
 # and [required]/[optional] markers but had no effect: zsh's list-colors
 # matches against the match name (compadd -a), not the display string
@@ -542,8 +511,6 @@ _sparkwing() {
         local pipe=""
         if (( ${#swpath[@]} >= 2 )) && [[ "${swpath[1]}" == "run" ]]; then
             pipe="${swpath[2]}"
-        elif (( ${#swpath[@]} >= 1 )) && [[ "${swpath[1]}" == "wing" ]]; then
-            pipe="${swpath[2]:-}"
         fi
         local -a profs
         if [[ -n "$pipe" ]]; then
@@ -569,8 +536,6 @@ _sparkwing() {
         local pipe=""
         if (( ${#swpath[@]} >= 2 )) && [[ "${swpath[1]}" == "run" ]]; then
             pipe="${swpath[2]}"
-        elif (( ${#swpath[@]} >= 1 )) && [[ "${swpath[1]}" == "wing" ]]; then
-            pipe="${swpath[2]:-}"
         fi
         if [[ -n "$pipe" ]]; then
             local -a tgts
@@ -595,8 +560,6 @@ _sparkwing() {
         local pipe=""
         if (( ${#swpath[@]} >= 2 )) && [[ "${swpath[1]}" == "run" ]]; then
             pipe="${swpath[2]}"
-        elif (( ${#swpath[@]} >= 1 )) && [[ "${swpath[1]}" == "wing" ]]; then
-            pipe="${swpath[2]:-}"
         fi
         local -a labs
         labs=( ${(f)"$(sparkwing _complete-runner-labels "$pipe" 2>/dev/null)"} )
@@ -628,9 +591,9 @@ _sparkwing() {
     # Positional completion for "sparkwing run <TAB>". Run is the
     # one verb in the sparkwing surface that takes the pipeline as a
     # positional rather than via --pipeline; this branch makes its
-    # tab-complete match the wing shortcut. Fires when the path so
-    # far is exactly ["run"] and we haven't typed a pipeline name
-    # yet (so words[2] is the cursor or empty).
+    # Pipeline-name completion at 'sparkwing run <TAB>'. Fires when
+    # the path so far is exactly ["run"] and we haven't typed a
+    # pipeline name yet (so words[2] is the cursor or empty).
     if (( ${#swpath[@]} == 1 )) && [[ "${swpath[1]}" == "run" ]]; then
         _sparkwing_complete_pipelines
         return
@@ -742,18 +705,11 @@ _sparkwing_complete_flags() {
     # Pipeline-specific flags go FIRST so the "Pipeline Args" group
     # renders at the top of the menu -- operators can tab-cycle
     # directly to the per-pipeline knobs without scrolling past the
-    # wing-owned plumbing (--on/--from/--config/...) every time.
-    # Two invocation paths carry a pipeline name at a known
-    # position:
-    #   wing <pipeline> --<TAB>          leaf "wing", pipeline at $2
-    #   sparkwing run <pipeline> --<TAB> leaf "run",  pipeline at $2
-    # (Pre-v0.42 there was also "pipelines run <pipeline>" with the
-    # pipeline at $3; that path is gone.)
-    if (( $# >= 2 )) && [[ "$1" == "wing" ]]; then
-        while IFS= read -r line; do
-            _sw_absorb_flag_line
-        done < <(sparkwing _complete-pipeline-flags "$2" 2>/dev/null)
-    elif (( $# >= 2 )) && [[ "$1" == "run" ]]; then
+    # sparkwing-owned plumbing (--sw-on/--sw-from/--sw-config/...)
+    # every time. "sparkwing run <pipeline> --<TAB>" is the only path
+    # that carries a pipeline name at a known position (leaf "run",
+    # pipeline at $2).
+    if (( $# >= 2 )) && [[ "$1" == "run" ]]; then
         while IFS= read -r line; do
             _sw_absorb_flag_line
         done < <(sparkwing _complete-pipeline-flags "$2" 2>/dev/null)
@@ -783,9 +739,9 @@ _sparkwing_complete_flags() {
     compadd -l -J "flags" -d alldescs -a allnames
 }
 
-# _sparkwing_complete_pipelines is shared by 'sparkwing run <TAB>'
-# and 'wing <TAB>'. Entries come back tab-separated as four
-# columns -- name, group, kind, desc -- where kind is the
+# _sparkwing_complete_pipelines handles 'sparkwing run <TAB>'.
+# Entries come back tab-separated as four columns -- name, group,
+# kind, desc -- where kind is the
 # pipeline-trigger model (currently always "pipeline"; the
 # column persists for backward compat with the helper output).
 # Bucket by group in first-seen order and render each row as:
@@ -885,72 +841,7 @@ _sparkwing_complete_pipelines() {
     done
 }
 
-# wing <TAB>: first positional is a pipeline name; everything else
-# is forwarded to the user's pipeline binary so we don't try to
-# complete it.
-_wing() {
-    # 'wing -<TAB>' (flag at position 1, before any pipeline name)
-    # -> wing-owned flags. Kept first so the '-' prefix wins over
-    # the pipeline-name completer (which would match nothing and
-    # let zsh fall through to unpredictable default behavior).
-    if [[ $CURRENT -eq 2 && "${words[CURRENT]}" == -* ]]; then
-        _sparkwing_complete_flags "wing"
-        return
-    fi
-    # 'wing <TAB>' -> pipeline names.
-    if [[ $CURRENT -eq 2 ]]; then
-        _sparkwing_complete_pipelines
-        return
-    fi
-    # 'wing <pipeline> --on <TAB>' -> profile names (matches the
-    # sparkwing-level completion's --on handling). Kept first so
-    # value-of-flag completion wins over generic flag listing.
-    if [[ ${CURRENT} -ge 3 && "${words[CURRENT-1]}" == "--sw-on" ]]; then
-        local -a profs
-        profs=( ${(f)"$(sparkwing _complete-profiles 2>/dev/null)"} )
-        _describe -t profiles 'profile' profs
-        return
-    fi
-    # 'wing <pipeline> --for <TAB>' -> the pipeline's declared targets.
-    if [[ ${CURRENT} -ge 3 && "${words[CURRENT-1]}" == "--sw-for" ]]; then
-        local -a tgts
-        tgts=( ${(f)"$(sparkwing _complete-targets "${words[2]}" 2>/dev/null)"} )
-        _describe -t targets 'target' tgts
-        return
-    fi
-    # 'wing <pipeline> --backends-env <TAB>' -> environments declared in
-    # backends.yaml (after built-in merge).
-    if [[ ${CURRENT} -ge 3 && "${words[CURRENT-1]}" == "--sw-backends-env" ]]; then
-        local -a envs
-        envs=( ${(f)"$(sparkwing _complete-backends-envs 2>/dev/null)"} )
-        _describe -t environments 'environment' envs
-        return
-    fi
-    # 'wing <pipeline> --prefer <TAB>' -> label union across runners
-    # the pipeline can target.
-    if [[ ${CURRENT} -ge 3 && "${words[CURRENT-1]}" == "--sw-prefer" ]]; then
-        local -a labs
-        labs=( ${(f)"$(sparkwing _complete-runner-labels "${words[2]}" 2>/dev/null)"} )
-        _describe -t labels 'label' labs
-        return
-    fi
-    # 'wing <pipeline> --job <TAB>' -> runner names (operator types
-    # --job ID=<TAB> to fill the runner half).
-    if [[ ${CURRENT} -ge 3 && "${words[CURRENT-1]}" == "--sw-job" ]]; then
-        local -a runs
-        runs=( ${(f)"$(sparkwing _complete-runners 2>/dev/null)"} )
-        _describe -t runners 'runner (use as ID=RUNNER)' runs
-        return
-    fi
-    # Everything else after a pipeline name -> wing-owned flags
-    # (--on/--from/--config/--help) merged with the pipeline's
-    # typed flags from the describe cache. Offered on bare <TAB> as
-    # well as '--<TAB>' so operators don't have to type '-' first.
-    _sparkwing_complete_flags "wing" "${words[2]}"
-}
-
 compdef _sparkwing sparkwing
-compdef _wing wing
 `)
 	return b.String()
 }
@@ -1047,10 +938,6 @@ end
 		}
 	}
 
-	// `wing` gets pipeline completion on its first positional.
-	b.WriteString("\n# wing binary: first positional is a pipeline name.\n")
-	b.WriteString(`complete -c wing -f -n 'not __fish_seen_subcommand_from (sparkwing _complete-pipelines 2>/dev/null | awk -F "\\t" "{print \\$1}")' -a '(__sparkwing_pipelines)'
-`)
 	return b.String()
 }
 

@@ -86,7 +86,7 @@ func lookupCachedBlastRadius(sparkwingDir, pipelineName string) []blastRadiusFin
 func enforceBlastRadius(
 	pipelineName string,
 	findings []blastRadiusFinding,
-	wf wingFlags,
+	wf runFlags,
 	prof *profile.Profile,
 ) error {
 	// dry-run is the always-safe escape hatch.
@@ -110,11 +110,11 @@ func enforceBlastRadius(
 }
 
 // isMarkerAllowed reports whether the operator has authorized the
-// given marker via either the wing-level --allow-* flag or the
+// given marker via either the sparkwing-level --allow-* flag or the
 // profile's auto_allow declaration. Profile auto-allow is opt-in
 // per-marker so a "production" profile can leave Destructive locked
 // while a "laptop" profile can flip the whole set.
-func isMarkerAllowed(b sparkwing.BlastRadius, wf wingFlags, prof *profile.Profile) bool {
+func isMarkerAllowed(b sparkwing.BlastRadius, wf runFlags, prof *profile.Profile) bool {
 	switch b {
 	case sparkwing.BlastRadiusDestructive:
 		if wf.allowDestructive {

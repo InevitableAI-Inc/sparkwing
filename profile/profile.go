@@ -55,7 +55,7 @@ type Profile struct {
 	// AutoAllow pre-authorizes per-marker blast-radius gates for
 	// this profile. A low-stakes environment (laptop, kind
 	// cluster) can declare `auto_allow: { destructive: true }` so an
-	// operator running `wing destroy-cluster --on laptop` doesn't
+	// operator running `sparkwing run destroy-cluster --on laptop` doesn't
 	// have to pass --allow-destructive every time. Production
 	// profiles should leave this zero so the gate stays loud.
 	// Defaults are zero everywhere; the field is opt-in.

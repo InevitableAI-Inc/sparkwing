@@ -87,7 +87,7 @@ func TestDescribePipelineShape(t *testing.T) {
 	}
 
 	// Round-trip through JSON so the wire shape is locked down. The
-	// wing CLI consumes this exact encoding out of the describe
+	// sparkwing CLI consumes this exact encoding out of the describe
 	// subprocess.
 	blob, err := json.Marshal(dp)
 	if err != nil {

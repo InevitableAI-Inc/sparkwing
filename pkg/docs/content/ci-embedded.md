@@ -49,7 +49,7 @@ A pipeline node that fails fails the GHA job (exit code propagates).
 
 ## How it works
 
-1. `--mode=ci-embedded` plumbs through `wing` -> the pipeline binary
+1. `--mode=ci-embedded` plumbs through `sparkwing` -> the pipeline binary
    via env vars (`SPARKWING_MODE`, `SPARKWING_WORKERS`).
 2. The orchestrator resolves cache and logs through
    `.sparkwing/backends.yaml`. In GHA the built-in `gha` environment

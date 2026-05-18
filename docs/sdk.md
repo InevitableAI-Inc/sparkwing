@@ -166,7 +166,7 @@ WorkDir() string                    // pipeline working directory (repo root)
 
 `Bash` shells out to the host's `bash`. macOS and Linux have it by
 default. **On Windows, install [Git for Windows](https://git-scm.com/download/win)
-and run `wing` from the Git Bash terminal it ships** -- the same dep
+and run `sparkwing` from the Git Bash terminal it ships** -- the same dep
 pipelines.md flags. `Exec` doesn't need a shell, so it works regardless;
 prefer it when the command is a clean arg vector (no pipes, redirects,
 or `&&`).
@@ -442,13 +442,13 @@ Step modifiers (chainable on `*WorkStep`):
 ```
 step.Needs(deps...) *WorkStep                             // accepts *WorkStep, *StepGroup, *SpawnHandle, *SpawnGroup, []*WorkStep, string
 step.SkipIf(predicate) *WorkStep                          // OR-accumulating skip predicate
-step.DryRun(fn func(ctx) error) *WorkStep                 // no-mutation body run instead of the apply Fn under wing X --dry-run
+step.DryRun(fn func(ctx) error) *WorkStep                 // no-mutation body run instead of the apply Fn under sparkwing X --dry-run
 step.SafeWithoutDryRun() *WorkStep                        // mark the apply Fn as side-effect-free; runs unmodified under --dry-run
 ```
 
 ### Dry-run contract
 
-`wing X --dry-run` (and `pipeline plan --dry-run`) installs
+`sparkwing X --dry-run` (and `pipeline plan --dry-run`) installs
 `sparkwing.WithDryRun(ctx)` on the run-wide ctx. Each step's
 dispatch then picks one of three paths:
 
@@ -472,7 +472,7 @@ structured "would do X" log line for an op without a native
 dry-run flag), read `sparkwing.IsDryRun(ctx)` directly. The
 `sparkwing.WithDryRun(ctx)` constructor is exported for tests
 and embedders that want to invoke RunWork in dry mode without
-going through the wing CLI.
+going through the sparkwing CLI.
 
 `PreviewPlan` (the pipeline-binary helper behind
 `sparkwing pipeline plan`) renders one of three decisions per step
@@ -483,9 +483,9 @@ and preview always agree.
 
 Do NOT add a `flag:"dry-run"` field to your pipeline's typed
 Inputs as a roll-your-own preview mode. `--dry-run` is a reserved
-wing-level flag (see *Typed Inputs > Reserved flag names* below)
+sparkwing-level flag (see *Typed Inputs > Reserved flag names* below)
 and `Register` panics on the collision. Declare `step.DryRun(fn)`
-on the steps that mutate, and the wing-level `--dry-run` does
+on the steps that mutate, and the sparkwing-level `--dry-run` does
 the right thing for free.
 
 `*StepGroup` (returned by `sw.GroupSteps`) is both a `Needs` target
@@ -732,7 +732,7 @@ sw.Register[sw.NoInputs]("lint", func() sw.Pipeline[sw.NoInputs] {
 ```
 
 The pipeline struct embeds `sw.Base` and optionally exposes
-`ShortHelp() / Help() / Examples()` for the `wing <name> --help`
+`ShortHelp() / Help() / Examples()` for the `sparkwing run <name> --help`
 screen.
 
 ## Typed Inputs
@@ -770,8 +770,8 @@ type WrapperInputs struct {
 
 ### Reserved flag names
 
-`sparkwing run` (and the `wing` shortcut) consumes a set of
-wing-owned long flags before the pipeline binary parses anything.
+`sparkwing run` consumes a set of sparkwing-owned long flags before
+the pipeline binary parses anything.
 A pipeline Args struct that declares one of these as a `flag:"..."`
 tag would silently lose the value, so `sparkwing.Register` panics
 at registration time with the colliding flag, the offending Go
@@ -810,7 +810,7 @@ pipeline side (e.g. `--plan-only` for `dry-run`, `--my-from` for
 `from`). For `--dry-run` specifically: declare
 `step.DryRun(fn)` on each mutating step (see *Work - the inner
 DAG > Dry-run contract*) rather than rolling a `flag:"dry-run"`
-input; the wing-level `--dry-run` then dispatches your DryRun
+input; the sparkwing-level `--dry-run` then dispatches your DryRun
 bodies for free.
 
 ## Cache

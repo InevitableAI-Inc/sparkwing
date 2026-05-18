@@ -30,7 +30,7 @@ func (StaticAnalysis) Help() string {
 
 func (StaticAnalysis) Examples() []sparkwing.Example {
 	return []sparkwing.Example{
-		{Comment: "Heavy static-analysis pass before cutting a release", Command: "wing static-analysis"},
+		{Comment: "Heavy static-analysis pass before cutting a release", Command: "sparkwing run static-analysis"},
 	}
 }
 

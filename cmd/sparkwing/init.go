@@ -108,7 +108,7 @@ func sdkRequirementVersion() string {
 func renderInitMainGo(moduleName string) string {
 	return fmt.Sprintf(`// Command %s is this repo's local pipeline runner.
 // It re-exports orchestrator.Main, which dispatches based on argv:
-// `+"`wing <pipeline>`"+` invokes the pipeline; `+"`sparkwing pipeline ...`"+`
+// `+"`sparkwing run <pipeline>`"+` invokes the pipeline; `+"`sparkwing pipeline ...`"+`
 // is the agent/operator surface.
 package main
 
@@ -127,7 +127,7 @@ func renderInitReadme() string {
 		"\n" +
 		"This directory holds this repo's [sparkwing](https://sparkwing.dev) pipeline\n" +
 		"definitions. Pipelines are Go programs registered in `pipelines.yaml` and run\n" +
-		"via `sparkwing run <name>` (or the human shortcut `wing <name>`).\n" +
+		"via `sparkwing run <name>`.\n" +
 		"\n" +
 		"Add a pipeline:\n" +
 		"\n" +
@@ -155,8 +155,7 @@ func renderInitReadme() string {
 
 func renderInitPipelinesYAML() string {
 	return `# Registry of every pipeline this repo defines. Each entry
-# below becomes an invocable target for ` + "`sparkwing run <name>`" + `
-# (or the human shortcut ` + "`wing <name>`" + `).
+# below becomes an invocable target for ` + "`sparkwing run <name>`" + `.
 #
 # Add an entry by running:
 #   sparkwing pipeline new --name <name>
@@ -189,7 +188,7 @@ func ensureGitignoreEntry(repoRoot, entry string) error {
 			b.WriteByte('\n')
 		}
 	}
-	b.WriteString("\n# sparkwing: cached pipeline binary, regenerated on each `wing` invocation\n")
+	b.WriteString("\n# sparkwing: cached pipeline binary, regenerated on each `sparkwing run` invocation\n")
 	b.WriteString(entry)
 	b.WriteByte('\n')
 	return os.WriteFile(path, []byte(b.String()), 0o644)
@@ -208,7 +207,7 @@ type tidyStatus struct {
 }
 
 // tidySkeleton runs `go mod tidy` so go.sum is populated before the
-// first `wing <name>`. Captures Go's noisy stdout/stderr; dumps only on failure.
+// first `sparkwing run <name>`. Captures Go's noisy stdout/stderr; dumps only on failure.
 func tidySkeleton(sparkwingDir string, createdAny bool) tidyStatus {
 	_ = createdAny
 	if !goOnPath() {

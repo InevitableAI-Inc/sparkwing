@@ -15,7 +15,7 @@ import (
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
-// runReplayNodeCLI implements `wing replay-node <runID> <nodeID>`.
+// runReplayNodeCLI implements the pipeline binary's `replay-node <runID> <nodeID>` entrypoint.
 // runID must be a replay run minted by MintReplayRun.
 func runReplayNodeCLI(args []string) error {
 	fs := flag.NewFlagSet("replay-node", flag.ExitOnError)

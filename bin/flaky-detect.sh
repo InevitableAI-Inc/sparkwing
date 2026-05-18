@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# wing: flaky-detect
+# sparkwing run: flaky-detect
 # desc: Run Go tests N times and report flaky tests with failure rates
 # arg: runs (optional, default: 10) Number of test iterations
 # arg: package (optional, default: ./...) Go package pattern

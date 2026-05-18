@@ -96,7 +96,7 @@ spec:
             - name: GOMODCACHE
               value: /tmp/sparkwing/gomodcache
             - name: SPARKWING_BAKED_BINARY
-              value: /usr/local/bin/wing
+              value: /usr/local/bin/sparkwing
             {{- if .Values.cache.enabled }}
             - name: SPARKWING_GITCACHE_URL
               value: {{ printf "http://%s.%s.svc.cluster.local" (include "sparkwing-runner-bundle.cache.fullname" .) .Release.Namespace | quote }}

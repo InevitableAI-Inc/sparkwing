@@ -8,9 +8,9 @@ import (
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
-// Enforce the dispatch gate from the wing CLI's perspective. The
+// Enforce the dispatch gate from the sparkwing CLI's perspective. The
 // unit-level coverage (BlastRadius.String, BlastRadiusBlockedError
-// contract) lives in pkg/sparkwing; here we pin the wing-level
+// contract) lives in pkg/sparkwing; here we pin the sparkwing-level
 // escape-flag and profile-auto-allow behavior.
 
 // destructiveFinding is a fixture for "any pipeline with a
@@ -34,7 +34,7 @@ func moneyFinding() []blastRadiusFinding {
 }
 
 func TestEnforceBlastRadius_DestructiveBlocks(t *testing.T) {
-	err := enforceBlastRadius("cluster-down", destructiveFinding(), wingFlags{}, nil)
+	err := enforceBlastRadius("cluster-down", destructiveFinding(), runFlags{}, nil)
 	if err == nil {
 		t.Fatal("enforceBlastRadius: want refusal, got nil")
 	}
@@ -51,7 +51,7 @@ func TestEnforceBlastRadius_DestructiveBlocks(t *testing.T) {
 }
 
 func TestEnforceBlastRadius_AllowDestructivePasses(t *testing.T) {
-	wf := wingFlags{allowDestructive: true}
+	wf := runFlags{allowDestructive: true}
 	if err := enforceBlastRadius("cluster-down", destructiveFinding(), wf, nil); err != nil {
 		t.Fatalf("--allow-destructive should pass: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestEnforceBlastRadius_DryRunBypassesEverything(t *testing.T) {
 		},
 	}
 	for i, findings := range cases {
-		wf := wingFlags{dryRun: true}
+		wf := runFlags{dryRun: true}
 		if err := enforceBlastRadius("any", findings, wf, nil); err != nil {
 			t.Errorf("case %d: --dry-run should bypass gate: %v", i, err)
 		}
@@ -79,7 +79,7 @@ func TestEnforceBlastRadius_DryRunBypassesEverything(t *testing.T) {
 }
 
 func TestEnforceBlastRadius_ProductionBlocks(t *testing.T) {
-	err := enforceBlastRadius("migrate", prodFinding(), wingFlags{}, nil)
+	err := enforceBlastRadius("migrate", prodFinding(), runFlags{}, nil)
 	if err == nil {
 		t.Fatal("enforceBlastRadius: want refusal for production marker")
 	}
@@ -93,28 +93,28 @@ func TestEnforceBlastRadius_ProductionBlocks(t *testing.T) {
 }
 
 func TestEnforceBlastRadius_AllowProdPasses(t *testing.T) {
-	wf := wingFlags{allowProd: true}
+	wf := runFlags{allowProd: true}
 	if err := enforceBlastRadius("migrate", prodFinding(), wf, nil); err != nil {
 		t.Fatalf("--allow-prod should pass: %v", err)
 	}
 }
 
 func TestEnforceBlastRadius_AllowProdDoesNotAuthorizeDestructive(t *testing.T) {
-	wf := wingFlags{allowProd: true}
+	wf := runFlags{allowProd: true}
 	if err := enforceBlastRadius("cluster-down", destructiveFinding(), wf, nil); err == nil {
 		t.Fatal("--allow-prod should NOT authorize destructive marker")
 	}
 }
 
 func TestEnforceBlastRadius_MoneyBlocks(t *testing.T) {
-	err := enforceBlastRadius("stress-test", moneyFinding(), wingFlags{}, nil)
+	err := enforceBlastRadius("stress-test", moneyFinding(), runFlags{}, nil)
 	if err == nil {
 		t.Fatal("enforceBlastRadius: want refusal for money marker")
 	}
 }
 
 func TestEnforceBlastRadius_AllowMoneyPasses(t *testing.T) {
-	wf := wingFlags{allowMoney: true}
+	wf := runFlags{allowMoney: true}
 	if err := enforceBlastRadius("stress-test", moneyFinding(), wf, nil); err != nil {
 		t.Fatalf("--allow-money should pass: %v", err)
 	}
@@ -125,7 +125,7 @@ func TestEnforceBlastRadius_ProfileAutoAllowDestructive(t *testing.T) {
 		Name:      "laptop",
 		AutoAllow: profile.AutoAllow{Destructive: true},
 	}
-	if err := enforceBlastRadius("cluster-down", destructiveFinding(), wingFlags{}, prof); err != nil {
+	if err := enforceBlastRadius("cluster-down", destructiveFinding(), runFlags{}, prof); err != nil {
 		t.Fatalf("profile auto_allow.destructive should pass: %v", err)
 	}
 }
@@ -138,7 +138,7 @@ func TestEnforceBlastRadius_ProfileAutoAllowDoesNotLeak(t *testing.T) {
 		Name:      "laptop",
 		AutoAllow: profile.AutoAllow{Destructive: true},
 	}
-	if err := enforceBlastRadius("migrate", prodFinding(), wingFlags{}, prof); err == nil {
+	if err := enforceBlastRadius("migrate", prodFinding(), runFlags{}, prof); err == nil {
 		t.Fatal("auto_allow.destructive should NOT authorize production marker")
 	}
 }
@@ -147,7 +147,7 @@ func TestEnforceBlastRadius_NoFindings(t *testing.T) {
 	// Empty findings is the "no markers detected" state and must
 	// pass cleanly so a cold cache or older binary doesn't block
 	// dispatch.
-	if err := enforceBlastRadius("plain", nil, wingFlags{}, nil); err != nil {
+	if err := enforceBlastRadius("plain", nil, runFlags{}, nil); err != nil {
 		t.Fatalf("no findings should pass: %v", err)
 	}
 }
@@ -159,7 +159,7 @@ func TestEnforceBlastRadius_FirstFindingSurfaces(t *testing.T) {
 		{NodeID: "n1", StepID: "step-a", Marker: sparkwing.BlastRadiusDestructive},
 		{NodeID: "n2", StepID: "step-b", Marker: sparkwing.BlastRadiusAffectsProduction},
 	}
-	wf := wingFlags{allowDestructive: true} // skip the first
+	wf := runFlags{allowDestructive: true} // skip the first
 	err := enforceBlastRadius("multi", findings, wf, nil)
 	var bre *sparkwing.BlastRadiusBlockedError
 	if !errors.As(err, &bre) {

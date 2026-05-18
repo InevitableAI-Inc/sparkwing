@@ -21,7 +21,7 @@ func (Test) Help() string {
 
 func (Test) Examples() []sparkwing.Example {
 	return []sparkwing.Example{
-		{Comment: "Run the full test suite", Command: "wing test"},
+		{Comment: "Run the full test suite", Command: "sparkwing run test"},
 	}
 }
 

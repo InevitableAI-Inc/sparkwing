@@ -17,7 +17,7 @@ the cache's bare repos would drift from upstream.
                    └──────┬──────┘
                           │ fetch (background, every 30s)
                    ┌──────▼──────┐
- wing CLI ────────►│   cache     │◄──── runner (clone + pkg proxy)
+ sparkwing CLI ────────►│   cache     │◄──── runner (clone + pkg proxy)
  (upload tarball)  │  (read-only │
                    │   + blobs   │
                    │   + proxy)  │
@@ -79,16 +79,16 @@ This keeps repos fresh so that:
 
 ## Code Uploads
 
-When running `wing <pipeline> --on prod --from local`, the wing CLI
+When running `sparkwing run <pipeline> --on prod --from local`, the sparkwing CLI
 uploads a code tarball directly to the cache (not through the controller):
 
 ```
-wing CLI -> cache /upload (stores tarball, returns ref ID)
-wing CLI -> controller /trigger (job with upload_ref)
+sparkwing CLI -> cache /upload (stores tarball, returns ref ID)
+sparkwing CLI -> controller /trigger (job with upload_ref)
 runner   -> cache /uploads/<ref> (downloads tarball)
 ```
 
-For incremental uploads, wing first negotiates a common ancestor with
+For incremental uploads, sparkwing run first negotiates a common ancestor with
 the cache (`/sync/negotiate`), then sends only the changed files since
 that commit.
 

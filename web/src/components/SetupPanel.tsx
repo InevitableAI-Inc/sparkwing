@@ -5,7 +5,7 @@
 // (binary_source, cwd, flags, args, reproducer, hashes) the
 // orchestrator persists on the run row at CreateRun time. Mirrors
 // the CLI's `--- Setup ---` section so the dashboard surfaces the
-// same reproducibility info an operator would see in `wing release`.
+// same reproducibility info an operator would see in `sparkwing run release`.
 //
 // Per-node selection info (Runner, Activity, Heartbeat) lives in a
 // sibling SelectedNodePanel so the Setup section stays scoped to the

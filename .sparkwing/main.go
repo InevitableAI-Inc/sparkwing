@@ -1,6 +1,6 @@
 // Command sparkwing-pipelines is the public sparkwing repo's pipeline
-// runner. `wing <name>` invokes this binary with the pipeline name as
-// the first positional arg; orchestrator.Main dispatches to the
+// runner. `sparkwing run <name>` invokes this binary with the pipeline
+// name as the first positional arg; orchestrator.Main dispatches to the
 // registered pipeline.
 //
 // This .sparkwing/ tree is intentionally minimal: it covers the

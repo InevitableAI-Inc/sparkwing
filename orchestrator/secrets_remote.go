@@ -12,7 +12,7 @@ import (
 )
 
 // remoteSecretSource builds a secrets.Source backed by the named
-// profile's controller (`wing <pipeline> --secrets PROF`).
+// profile's controller (`sparkwing run <pipeline> --secrets PROF`).
 func remoteSecretSource(profName string) (secrets.Source, error) {
 	if profName == "" {
 		return nil, errors.New("profile name is required")

@@ -71,6 +71,9 @@ type Options struct {
 // for standalone use; redundant when the parent ctx already cancels
 // on signal.
 func Run(ctx context.Context, opts Options) error {
+	if err := web.VerifyBundleEmbedded(); err != nil {
+		return err
+	}
 	if opts.Listener != nil {
 		// Mirror Addr from the listener so dev.env + baseURL stay
 		// consistent even if the caller didn't set Addr explicitly.

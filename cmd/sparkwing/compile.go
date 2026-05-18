@@ -115,7 +115,7 @@ func compileAndExec(sparkwingDir string, args []string, env []string, opts compi
 		}
 	}
 
-	// Warm the describe cache before exec so `wing <pipeline> --<TAB>`
+	// Warm the describe cache before exec so `sparkwing run <pipeline> --<TAB>`
 	// shows typed flags without waiting for a second run.
 	ensureDescribeCache(sparkwingDir, binPath)
 	env = append(env, "SPARKWING_BINARY_SOURCE=compiled")
@@ -197,7 +197,7 @@ func runGo(dir string, args, env []string) error {
 	return runExec("go", args, dir, env)
 }
 
-// compileOptions bundles the subset of wing flags that affects how we
+// compileOptions bundles the subset of sparkwing flags that affects how we
 // prepare the module graph before compile. Today only `--no-update`
 // (gate on sparks auto-resolve); extend here rather than threading
 // booleans one at a time through compileAndExec.

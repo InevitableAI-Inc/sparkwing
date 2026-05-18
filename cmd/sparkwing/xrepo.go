@@ -56,7 +56,7 @@ func printXrepoUsage(w io.Writer) {
 	fmt.Fprintln(w, "  The registry maps pipeline names to local checkouts so")
 	fmt.Fprintln(w, "  cross-repo RunAndAwait calls resolve without")
 	fmt.Fprintln(w, "  hardcoded WithFreshRepo annotations. Auto-populated when")
-	fmt.Fprintln(w, "  you run `wing <pipeline>` in a .sparkwing/-bearing repo")
+	fmt.Fprintln(w, "  you run `sparkwing run <pipeline>` in a .sparkwing/-bearing repo")
 	fmt.Fprintln(w, "  (set SPARKWING_NO_AUTO_REGISTER=1 to disable).")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "COMMANDS")
@@ -117,7 +117,7 @@ func runXrepoList(args []string) error {
 
 	if len(rows) == 0 {
 		fmt.Println("no repos registered")
-		fmt.Println("(register with `sparkwing configure xrepo add <path>` or just run `wing` in a .sparkwing/-bearing repo)")
+		fmt.Println("(register with `sparkwing configure xrepo add <path>` or just run `sparkwing run` in a .sparkwing/-bearing repo)")
 		return nil
 	}
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)

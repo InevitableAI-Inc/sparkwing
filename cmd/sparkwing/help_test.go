@@ -82,17 +82,16 @@ func TestBindFlagsDefaults(t *testing.T) {
 	}
 }
 
-// TestWingHelpListsArcFlags pins which wing-level flags surface in
-// `--help` (the hot tier) and which only surface in `--help-all`
-// (the advanced tier). The wing-flag list is sourced from
-// sparkwing.WingFlagDocs() so a flag added in the SDK propagates
+// TestRunHelpListsArcFlags pins which sparkwing-owned flags surface
+// in `--help` (the hot tier) and which only surface in `--help-all`
+// (the advanced tier). The flag list is sourced from
+// sparkwing.SparkwingFlagDocs() so a flag added in the SDK propagates
 // here automatically.
-func TestWingHelpListsArcFlags(t *testing.T) {
+func TestRunHelpListsArcFlags(t *testing.T) {
 	cases := []struct {
 		name string
 		cmd  Command
 	}{
-		{"wing", cmdWing},
 		{"sparkwing run", cmdRun},
 		{"sparkwing pipeline run", cmdPipelineRun},
 	}

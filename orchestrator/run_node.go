@@ -329,7 +329,7 @@ func RunNodeOnce(
 // Nil in user pipeline binaries to keep the prometheus dep out.
 var MetricsHook func(pipeline, outcome string, d time.Duration)
 
-// runNodeCLI implements `wing run-node <runID> <nodeID>`. One node
+// runNodeCLI implements the pipeline binary's `run-node <runID> <nodeID>` entrypoint. One node
 // per invocation; orchestrator creates the node row first, this body
 // executes it and writes terminal state through the controller.
 func runNodeCLI(args []string) error {

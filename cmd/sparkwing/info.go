@@ -200,7 +200,7 @@ const agentBlockBody = "This repo uses **sparkwing** for CI/CD (https://sparkwin
 	"- `sparkwing info --json` -- context: binary, project, next steps (start here)\n" +
 	"- `sparkwing commands` -- full CLI surface as JSON (every verb + every flag)\n" +
 	"- `sparkwing pipeline list --json` -- this repo's pipelines\n" +
-	"- `sparkwing run <name>` -- run a pipeline (`wing <name>` is a human alias; agents prefer `sparkwing run`)\n" +
+	"- `sparkwing run <name>` -- run a pipeline\n" +
 	"- `sparkwing docs read --topic <slug>` -- offline docs; full corpus: https://sparkwing.dev/llms-full.txt\n"
 
 func printAgentBlock() {
@@ -223,7 +223,7 @@ func printFirstTimeCard() {
 		fmt.Println(color.Bold("PREREQUISITES"))
 		if sparkwingMissing {
 			fmt.Println("  - " + color.Yellow("sparkwing is not on PATH.") + " " +
-				color.Dim("typing `sparkwing` or `wing` in a new shell will fail."))
+				color.Dim("typing `sparkwing` in a new shell will fail."))
 			fmt.Println("    " + color.Dim("Add ~/.local/bin to PATH and reload:"))
 			for _, line := range pathHintLines() {
 				fmt.Println("    " + color.Cyan(line))
@@ -249,7 +249,6 @@ func printFirstTimeCard() {
 	fmt.Println()
 	fmt.Println(color.Bold("TIPS"))
 	tips := []InfoNextStep{
-		{Command: "wing <pipeline>", Purpose: "human shortcut for 'sparkwing run <pipeline>'"},
 		{Command: "sparkwing dashboard start", Purpose: "run the dashboard locally to watch runs in a browser"},
 		{Command: "sparkwing info", Purpose: "surveys the current repo + suggests next commands"},
 	}
@@ -565,7 +564,7 @@ func nextStepsFor(info Info, agentMode bool) []InfoNextStep {
 	return []InfoNextStep{
 		{Command: "sparkwing pipeline list", Purpose: "see every pipeline this repo defines"},
 		{Command: "sparkwing pipeline describe --name <name>", Purpose: "full metadata for one pipeline"},
-		{Command: "sparkwing run <name>", Purpose: "run a pipeline (humans: `wing <name>` is the same thing)"},
+		{Command: "sparkwing run <name>", Purpose: "run a pipeline"},
 		{Command: "sparkwing pipeline new --name <name>", Purpose: "scaffold a new pipeline"},
 		{Command: "sparkwing docs list", Purpose: "browse embedded docs (offline)"},
 		{Command: "sparkwing dashboard start", Purpose: "start the local dashboard at http://127.0.0.1:4343"},

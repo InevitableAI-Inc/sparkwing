@@ -21,7 +21,7 @@ func TestCreateRun_InvocationRoundTrip(t *testing.T) {
 	want := map[string]any{
 		"binary_source": "cached",
 		"cwd":           "/Users/test/code/repo/.sparkwing",
-		"reproducer":    "wing release --dry-run --start-at=run",
+		"reproducer":    "sparkwing run release --dry-run --start-at=run",
 		"hints": map[string]any{
 			"follow_logs": "sparkwing runs logs --run run-X --follow",
 			"status":      "sparkwing runs status --run run-X",
@@ -62,7 +62,7 @@ func TestCreateRun_InvocationRoundTrip(t *testing.T) {
 	if got.Invocation["cwd"] != "/Users/test/code/repo/.sparkwing" {
 		t.Errorf("cwd: got %v", got.Invocation["cwd"])
 	}
-	if got.Invocation["reproducer"] != "wing release --dry-run --start-at=run" {
+	if got.Invocation["reproducer"] != "sparkwing run release --dry-run --start-at=run" {
 		t.Errorf("reproducer: got %v", got.Invocation["reproducer"])
 	}
 	flags, _ := got.Invocation["flags"].(map[string]any)

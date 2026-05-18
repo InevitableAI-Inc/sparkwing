@@ -43,7 +43,7 @@ func (Build) Help() string {
 
 func (Build) Examples() []sparkwing.Example {
 	return []sparkwing.Example{
-		{Comment: "Sanity-build every public binary", Command: "wing build"},
+		{Comment: "Sanity-build every public binary", Command: "sparkwing run build"},
 	}
 }
 

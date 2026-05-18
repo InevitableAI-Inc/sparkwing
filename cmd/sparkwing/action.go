@@ -23,7 +23,7 @@ import (
 // repo's pipelines.yaml. Pipelines with at least one trigger
 // (push / webhook / schedule / hook) auto-run when the trigger
 // fires; pipelines with an empty Triggers list are manual-only
-// (`sparkwing run <name>` / `wing <name>`).
+// (`sparkwing run <name>`).
 type Pipeline struct {
 	Name       string                  `json:"name"`
 	Short      string                  `json:"short,omitempty"`
@@ -43,27 +43,6 @@ type Pipeline struct {
 	// BlastRadiusBySteps is the per-step breakdown of declared
 	// markers. Mirrors sparkwing.DescribePipeline.BlastRadiusBySteps.
 	BlastRadiusBySteps []sparkwing.DescribeStepBlastRadius `json:"blast_radius_by_step,omitempty"`
-}
-
-// runPipelineRunDispatch extracts --pipeline from args and forwards the
-// rest to the wing run path. The "no positional args on sparkwing"
-// rule means operators write `sparkwing pipeline run --pipeline NAME
-// [--flag value ...]`; wing's own positional surface stays the
-// friendly shortcut for humans.
-// runRun handles the top-level `sparkwing run <pipeline> [args...]`.
-// Pipeline is positional (the deliberate exception in an otherwise
-// flag-only sparkwing surface) because the verb is on the hot
-// path -- typed many times a day.
-func runRun(args []string) error {
-	if len(args) == 0 || args[0] == "-h" || args[0] == "--help" {
-		if len(args) == 0 {
-			PrintHelp(cmdRun, os.Stderr)
-			return errors.New("run: pipeline name required (e.g. `sparkwing run hello`)")
-		}
-		PrintHelp(cmdRun, os.Stdout)
-		return nil
-	}
-	return runWing(args)
 }
 
 // runPipeline dispatches `sparkwing pipeline <verb> [...]`.
@@ -89,9 +68,9 @@ func runPipeline(args []string) error {
 	case "plan":
 		return runPipelinePlan(args[1:])
 	case "run":
-		// Canonical run path. `sparkwing run <name>` is an alias
-		// for this; both end up at the same wing dispatch.
-		return runRun(args[1:])
+		// Canonical run path. `sparkwing run <name>` is an alias for
+		// this; both end up at the same dispatch entrypoint.
+		return dispatchRun(args[1:])
 	case "publish":
 		// : compile + upload pipeline binary to the
 		// configured ArtifactStore. Explicit operator action -- the
@@ -308,7 +287,7 @@ func runPipelineDescribe(args []string) error {
 		// close to a registered name. Source the candidate set from
 		// the catalog we just gathered
 		// (rather than sparkwing.Registered() — this CLI verb runs in
-		// the wing process, not the inner pipeline binary, so the
+		// the sparkwing process, not the inner pipeline binary, so the
 		// in-process registry is empty here). Far typos fall through
 		// to the existing "list --all" hint.
 		candidates := make([]string, 0, len(pipelines))

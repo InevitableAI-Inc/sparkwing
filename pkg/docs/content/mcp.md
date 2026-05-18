@@ -2,7 +2,7 @@
 
 > **STATUS: design / not yet shipped.** This doc describes the planned
 > shape of the MCP integration; `sparkwing mcp serve` and the
-> `wing tools` surface are not implemented in the current binary.
+> `sparkwing run tools` surface are not implemented in the current binary.
 > Until then, agents should drive sparkwing via `sparkwing commands
 > --json` + `sparkwing pipeline {list,describe,explain} --json` +
 > `sparkwing pipeline run`.
@@ -126,10 +126,10 @@ What the agent sees in its context (~100 tokens):
 Sparkwing can aggregate external MCP servers into namespaces:
 
 ```bash
-wing tools                          # → pipeline, git, linear, github
-wing tools github                   # → create-issue, search-repos, ...
-wing tools github create-issue --schema
-wing tools github create-issue --json --arg title="Fix bug"
+sparkwing run tools                          # → pipeline, git, linear, github
+sparkwing run tools github                   # → create-issue, search-repos, ...
+sparkwing run tools github create-issue --schema
+sparkwing run tools github create-issue --json --arg title="Fix bug"
 ```
 
 External tools configured in `.sparkwing/tools.yaml` are proxied through sparkwing's governance layer (validation, audit, rate limiting).

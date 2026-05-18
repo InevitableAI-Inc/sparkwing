@@ -180,7 +180,7 @@ func filterEmpty(in []string) []string {
 }
 
 // UserConfigPath returns the per-user runners.yaml location. Honors
-// $XDG_CONFIG_HOME so it sits alongside the wing config under the
+// $XDG_CONFIG_HOME so it sits alongside the sparkwing config under the
 // same parent directory.
 func UserConfigPath() (string, error) {
 	if env := os.Getenv("XDG_CONFIG_HOME"); env != "" {

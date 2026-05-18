@@ -153,7 +153,7 @@ libraries:
     version: latest
 ```
 
-Opt-in live tracking: every `wing <pipeline>` hits the module proxy to
+Opt-in live tracking: every `sparkwing run <pipeline>` hits the module proxy to
 discover the newest non-prerelease tag. Acceptable cost (~100ms per run) given
 the user opted in. Use `--no-update` to bypass when offline.
 
@@ -183,7 +183,7 @@ in their `go.mod`.
 
 ### Flow
 
-On every `wing <pipeline>` run (and on explicit `sparkwing pipeline sparks resolve`):
+On every `sparkwing run <pipeline>` run (and on explicit `sparkwing pipeline sparks resolve`):
 
 1. If `.sparkwing/sparks.yaml` is absent, no-op. Compile with plain `go build`
    against the user's `go.mod`.
@@ -203,7 +203,7 @@ On every `wing <pipeline>` run (and on explicit `sparkwing pipeline sparks resol
    `go build -modfile=.sparkwing/.resolved.mod ...`.
 
 The git-tracked `go.mod` and `go.sum` remain pristine; `git status` after a
-`wing` run shows no changes. Consumers who never create a `sparks.yaml` see
+`sparkwing` run shows no changes. Consumers who never create a `sparks.yaml` see
 behavior identical to plain Go builds.
 
 ### Fast-path skip
@@ -238,7 +238,7 @@ works.
 
 ### Offline work: `--no-update`
 
-`wing <pipeline> --no-update` skips the resolution step entirely. If a
+`sparkwing run <pipeline> --no-update` skips the resolution step entirely. If a
 previous overlay exists at `.sparkwing/.resolved.mod`, it is reused; otherwise
 compile uses the git-tracked `go.mod`. Useful on flights, in offline CI, or
 while debugging a stale pin without touching the network.
@@ -296,10 +296,10 @@ Subcommands and one-line purposes:
 `sparkwing pipeline sparks warmup` pre-compiles pipeline binaries across consumer repos
 after a sparks library release. It clears the binary cache, resolves the
 latest versions, compiles each pipeline in the repo, and uploads the binaries
-to gitcache. The next `wing <pipeline>` run - locally or in-cluster - gets
+to gitcache. The next `sparkwing run <pipeline>` run - locally or in-cluster - gets
 a binary-cache hit instead of paying the full compile cost.
 
-Warmup uses the exact same build path as `wing`, so cache keys match. It is
+Warmup uses the exact same build path as `sparkwing`, so cache keys match. It is
 an optimization, not a requirement: pipelines always resolve versions on
 build, warmup just removes the first-run compile cost after a release.
 
@@ -353,7 +353,7 @@ Explicit scope limits, baked in to avoid drift:
   use in `sparks.yaml`. There is no classpath scan, no `go.mod` walk to
   detect libraries by manifest presence, no implicit enrollment.
 - **No modification of git-tracked files.** `go.mod`, `go.sum`, and the rest
-  of the repo stay pristine after any `sparkwing pipeline sparks *` or `wing` run.
+  of the repo stay pristine after any `sparkwing pipeline sparks *` or `sparkwing` run.
   Generated files live under `.sparkwing/` with names starting `.resolved.`
   and are gitignored.
 - **No cross-module locking.** Each consumer resolves independently. There

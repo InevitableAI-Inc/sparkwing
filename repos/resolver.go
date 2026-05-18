@@ -81,7 +81,7 @@ func ResolveRepoForPipeline(name string) (string, error) {
 // InvalidateCache clears the in-memory describe cache. Useful in
 // tests that mutate the registry mid-process. Production code
 // shouldn't need it -- describe results don't change underneath
-// a running wing invocation.
+// a running sparkwing invocation.
 func InvalidateCache() {
 	defaultResolver.mu.Lock()
 	defaultResolver.built = false

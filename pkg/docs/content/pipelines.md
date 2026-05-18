@@ -1,7 +1,7 @@
 # Pipelines
 
 Pipelines are the core of sparkwing. They define what happens when you run
-`wing <name>` (or `sparkwing run <name>`). This page is the user-facing
+`sparkwing run <name>` (or `sparkwing run <name>`). This page is the user-facing
 tour; for the full Go SDK reference see [sdk.md](sdk.md).
 
 > **Host requirements.** Pipelines that call `sparkwing.Bash` shell
@@ -34,7 +34,7 @@ release:
 
 Each entry has:
 
-- **name** - the pipeline name (`wing build-deploy`), from the YAML map key
+- **name** - the pipeline name (`sparkwing run build-deploy`), from the YAML map key
 - **description** - one-line summary surfaced by `sparkwing pipeline list`
 - **on** - declarative trigger block. Absent means "manual only" (a command).
 - **tags** - labels for filtering and grouping
@@ -545,8 +545,8 @@ Resolution paths:
   `{"resolution":"approved","comment":"..."}`. The approver is recorded
   from the authenticated principal.
 
-**Limitation - `wing` runs cannot survive a terminal close mid-approval.**
-In local (`wing <pipeline>`) mode the orchestrator lives in the same
+**Limitation - `sparkwing` runs cannot survive a terminal close mid-approval.**
+In local (`sparkwing run <pipeline>`) mode the orchestrator lives in the same
 process as the CLI invocation. Close the terminal while a gate is
 waiting and the waiter goroutine dies with it: the approvals row
 stays on disk and can still be resolved from the dashboard, but

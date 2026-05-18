@@ -291,7 +291,7 @@ var fetchSourceFn = bincache.FetchPipelineSource
 // Vars (not consts) so tests can shrink the retry surface.
 //
 // The warm-runner's source fetch races the gitcache's 30s
-// background-fetch loop on the `git push && wing X --on prod` path.
+// background-fetch loop on the `git push && sparkwing run X --on prod` path.
 // 3 attempts spaced ~10s apart (so total wall time ≤ 30s, the
 // background-fetch period) recovers the residual case where the
 // dispatch-time eager refresh either failed or got skipped (e.g. the

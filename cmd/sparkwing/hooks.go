@@ -181,13 +181,13 @@ func runHooksStatus(args []string) error {
 		if !strings.Contains(string(data), sparkwingHookMarker) {
 			continue
 		}
-		// Extract pipeline names from `wing <name>` lines so status
-		// is informative not just "yes it's there."
+		// Extract pipeline names from `sparkwing run <name>` lines so
+		// status is informative not just "yes it's there."
 		var pipes []string
 		for _, line := range strings.Split(string(data), "\n") {
 			line = strings.TrimSpace(line)
-			if strings.HasPrefix(line, "wing ") {
-				pipes = append(pipes, strings.TrimPrefix(line, "wing "))
+			if strings.HasPrefix(line, "sparkwing run ") {
+				pipes = append(pipes, strings.TrimPrefix(line, "sparkwing run "))
 			}
 		}
 		if len(pipes) > 0 {
@@ -236,7 +236,7 @@ func renderHookScript(pipes []string) string {
 	b.WriteString("# " + sparkwingHookMarker + " -- do not edit; use `sparkwing hooks (un)install`\n")
 	b.WriteString("set -e\n")
 	for _, p := range pipes {
-		fmt.Fprintf(&b, "wing %s\n", p)
+		fmt.Fprintf(&b, "sparkwing run %s\n", p)
 	}
 	return b.String()
 }

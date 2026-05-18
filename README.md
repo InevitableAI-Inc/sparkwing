@@ -11,13 +11,18 @@ Pipelines as Go code. The public CLI + SDK for sparkwing.
 curl -fsSL https://sparkwing.dev/install.sh | sh
 ```
 
-Drops `sparkwing` into `~/.local/bin` and creates a `wing -> sparkwing`
-symlink. Detects your OS/arch and pulls the matching release binary
-from
+Drops `sparkwing` into `~/.local/bin`. Detects your OS/arch and pulls
+the matching release binary from
 [GitHub Releases](https://github.com/sparkwing-dev/sparkwing/releases/latest).
 
 For a specific version: `curl -fsSL https://sparkwing.dev/install.sh | sh -s -- --version vX.Y.Z`.
-Or build from source: `go install github.com/sparkwing-dev/sparkwing/cmd/sparkwing@latest`.
+
+Building from source via `go install` is supported, but the Next.js
+dashboard bundle is a generated artifact and is not checked into the
+repository, so a source build will refuse to start `sparkwing dashboard`
+with a clear message. Use a release binary for the dashboard, or
+generate the bundle locally first (`bash bin/build-web.sh && go install
+./cmd/sparkwing` from a sparkwing checkout).
 
 ## Quick start
 

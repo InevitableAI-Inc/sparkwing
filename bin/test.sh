@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# wing: test
+# sparkwing run: test
 # desc: Run Go tests with formatted pass/fail summary
 # arg: package (optional, default: ./...) Go package pattern
 set -uo pipefail

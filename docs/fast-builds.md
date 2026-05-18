@@ -57,13 +57,13 @@ if os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
 
 ## 3. Use upload triggers, not git pushes, for iteration
 
-`wing build-deploy --on prod` uploads an incremental diff from the
+`sparkwing run build-deploy --on prod` uploads an incremental diff from the
 current commit to the cache and triggers the pipeline in-cluster.
 Versus `git commit && git push`:
 
 - no commit pollution of history for every experimental edit
 - incremental sync is `HEAD` + changed files, typically a few KB
-- wing streams live logs back via SSE
+- sparkwing run streams live logs back via SSE
 
 Git-push mode is a good production path (CI-style, audited), but for
 "change a log line and re-run" it is the wrong gear.

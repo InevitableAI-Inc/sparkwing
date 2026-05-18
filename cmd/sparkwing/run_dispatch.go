@@ -1,6 +1,6 @@
-// Wing-owned flags. parseWingFlags walks args manually (not pflag)
-// because the pipeline binary defines its own flags; we strip what
-// we know and pass the rest through untouched.
+// sparkwing run flag parsing. parseRunFlags walks args manually (not
+// pflag) because the pipeline binary defines its own flags; we strip
+// the sw-prefixed flags we know and pass the rest through untouched.
 package main
 
 import (
@@ -38,7 +38,7 @@ func atoiNonNeg(s string) (int, error) {
 	return n, nil
 }
 
-type wingFlags struct {
+type runFlags struct {
 	from      string
 	on        string
 	config    string
@@ -133,181 +133,11 @@ func collectPipelineArgs(passthrough []string) map[string]string {
 	return out
 }
 
-// wingTokenSpec classifies a wing-owned flag token at parse time.
-// takesValue is true for flags that consume the next token (e.g.
-// --on prod) versus pure boolean flags (e.g. --full). Used by both
-// parseWingFlags and extractPipelineName so the two stay in sync.
-type wingTokenSpec struct {
-	tok        string
-	takesValue bool
-}
-
-// wingTokenSpecs is the canonical wing-owned flag-token table. Both
-// parseWingFlags and extractPipelineName read from this so adding a
-// new wing flag is a one-line change. The list mirrors the SDK's
-// ReservedFlagNames() set; tests pin them in lockstep.
-var wingTokenSpecs = []wingTokenSpec{
-	{tok: "--sw-from", takesValue: true},
-	{tok: "--sw-on", takesValue: true},
-	{tok: "--sw-retry-of", takesValue: true},
-	{tok: "--sw-full", takesValue: false},
-	{tok: "--sw-config", takesValue: true},
-	{tok: "--sw-no-update", takesValue: false},
-	{tok: "--sw-verbose", takesValue: false},
-	{tok: "-v", takesValue: false},
-	{tok: "--sw-secrets", takesValue: true},
-	{tok: "--sw-mode", takesValue: true},
-	{tok: "--sw-workers", takesValue: true},
-	{tok: "--sw-start-at", takesValue: true},
-	{tok: "--sw-stop-at", takesValue: true},
-	{tok: "--sw-dry-run", takesValue: false},
-	{tok: "--sw-allow-destructive", takesValue: false},
-	{tok: "--sw-allow-prod", takesValue: false},
-	{tok: "--sw-allow-money", takesValue: false},
-	{tok: "-C", takesValue: true},
-	{tok: "--sw-change-directory", takesValue: true},
-	{tok: "--sw-for", takesValue: true},
-	{tok: "--sw-job", takesValue: true},
-	{tok: "--sw-prefer", takesValue: true},
-	{tok: "--sw-backends-env", takesValue: true},
-	{tok: "--sw-backends-config", takesValue: true},
-}
-
-// classifyWingFlag returns (spec, ok) for a token that matches a
-// wing-owned flag in either bare (`--on`) or `=`-joined
-// (`--on=prod`) form. Used by extractPipelineName to know whether
-// to skip one or two tokens when scanning for the pipeline-name
-// positional.
-func classifyWingFlag(tok string) (wingTokenSpec, bool) {
-	for _, s := range wingTokenSpecs {
-		if tok == s.tok {
-			return s, true
-		}
-		if s.takesValue && strings.HasPrefix(tok, s.tok+"=") {
-			// `=`-joined form is one token regardless of takesValue.
-			return wingTokenSpec{tok: s.tok, takesValue: false}, true
-		}
-	}
-	return wingTokenSpec{}, false
-}
-
-// strictOrderFlags must precede the pipeline-name positional. Other
-// wing flags (`--on`, `--from`, ...) are still consumed from any
-// position by parseWingFlags so existing `wing build --on prod`
-// muscle memory keeps working; the strict-order set is the subset
-// where ambiguity vs the positional is the actual bug -- `-C` whose
-// long form is `--change-directory`.
-// Adding more flags here is a one-line change and immediately
-// covered by the existing test matrix.
-var strictOrderFlags = map[string]bool{
-	"-C":                 true,
-	"--sw-change-directory": true,
-}
-
-// isStrictOrderFlagToken returns true when tok is a strict-order
-// wing flag (`-C`, `--change-directory`, or their `=value` form).
-func isStrictOrderFlagToken(tok string) bool {
-	if strictOrderFlags[tok] {
-		return true
-	}
-	if eq := strings.IndexByte(tok, '='); eq >= 0 {
-		return strictOrderFlags[tok[:eq]]
-	}
-	return false
-}
-
-// extractPipelineName implements the strict-ordering contract for
-// `wing <name>` and `sparkwing run <name>`. The rule is narrow:
-// only the strict-order flag set (currently just `-C` /
-// `--change-directory`) must appear BEFORE the pipeline-name
-// positional. Other wing-owned flags (`--on`, `--from`, `--start-at`,
-// ...) are still consumed from any position by parseWingFlags so
-// existing `wing build --on prod` invocations keep working untouched.
-//
-// The first non-flag token (or the token immediately after a literal
-// `--`) is the pipeline name; everything else is returned as `rest`
-// for downstream parseWingFlags / pipeline-binary handling. Wing
-// flag-VALUE pairs are consumed as one unit when scanning so a path
-// argument like `/path` after `-C` is never mistaken for the
-// positional.
-//
-// Returns an error if `-C` / `--change-directory` appears after the
-// pipeline name. That covers the previously-silent
-// `wing run foo -C /path` shape, where `-C` would otherwise be
-// treated as a pipeline flag and the path would either get ignored
-// or land in the pipeline's own flag bag.
-//
-// `--` is honored as a strict break: tokens after `--` are treated
-// as opaque pipeline args -- no wing-flag detection runs on them, so
-// `wing run foo -- --my-pipeline-flag value` parses cleanly even if
-// a future wing flag shares the name.
-func extractPipelineName(args []string) (name string, rest []string, err error) {
-	rest = make([]string, 0, len(args))
-	i := 0
-	for i < len(args) {
-		tok := args[i]
-		if tok == "--" {
-			// Everything after `--` is pipeline-side; the pipeline
-			// name must already have been found, otherwise the
-			// invocation has no pipeline at all.
-			if name == "" {
-				return "", nil, fmt.Errorf("pipeline name required before `--`")
-			}
-			rest = append(rest, args[i+1:]...)
-			return name, rest, nil
-		}
-		if isStrictOrderFlagToken(tok) {
-			if name != "" {
-				return "", nil, fmt.Errorf("ambiguous flag position: %s must precede the pipeline name %q", tok, name)
-			}
-			// Consume the flag (and its value if applicable) into
-			// rest so parseWingFlags handles the actual binding.
-			spec, ok := classifyWingFlag(tok)
-			rest = append(rest, tok)
-			if ok && spec.takesValue && i+1 < len(args) {
-				rest = append(rest, args[i+1])
-				i += 2
-				continue
-			}
-			i++
-			continue
-		}
-		if spec, ok := classifyWingFlag(tok); ok {
-			// Non-strict-order wing flag (e.g. --on, --from):
-			// consume the value alongside it so it can't be
-			// mistaken for the pipeline-name positional, then keep
-			// scanning. parseWingFlags will bind it later.
-			rest = append(rest, tok)
-			if spec.takesValue && i+1 < len(args) {
-				rest = append(rest, args[i+1])
-				i += 2
-				continue
-			}
-			i++
-			continue
-		}
-		// Non-wing-flag token. The first one that doesn't start with
-		// `-` (and isn't a value of a wing flag) is the pipeline
-		// name. Flag-looking tokens are pipeline flags -- pass
-		// through to the binary on either side of the positional.
-		if name == "" && (tok == "" || tok[0] != '-') {
-			name = tok
-			i++
-			continue
-		}
-		rest = append(rest, tok)
-		i++
-	}
-	if name == "" {
-		return "", nil, fmt.Errorf("pipeline name required")
-	}
-	return name, rest, nil
-}
-
-// parseWingFlags splits wing-owned flags from pass-through args.
-// Unknown / malformed-trailing flags fall through to the pipeline binary.
-func parseWingFlags(args []string) (wingFlags, []string) {
-	var wf wingFlags
+// parseRunFlags splits sparkwing-owned (sw-prefixed) flags from
+// pass-through args. Unknown / malformed-trailing flags fall through
+// to the pipeline binary.
+func parseRunFlags(args []string) (runFlags, []string) {
+	var wf runFlags
 	pass := make([]string, 0, len(args))
 	i := 0
 	for i < len(args) {
@@ -562,19 +392,19 @@ func setupFromRef(sparkwingDir, ref string) (worktreeDir string, sparkwingSub st
 
 // dispatchRemote POSTs a TriggerRequest to the profile's controller.
 // Does NOT compile locally — assumes the remote already has the pipeline.
-func dispatchRemote(pipelineName string, wf wingFlags, passthrough []string) error {
+func dispatchRemote(pipelineName string, wf runFlags, passthrough []string) error {
 	prof, err := resolveProfile(wf.on)
 	if err != nil {
 		return err
 	}
-	if err := requireController(prof, "wing --on"); err != nil {
+	if err := requireController(prof, "sparkwing run --on"); err != nil {
 		return err
 	}
 
 	args := collectPipelineArgs(passthrough)
-	source := "wing"
+	source := "sparkwing"
 	if host, err := os.Hostname(); err == nil && host != "" {
-		source = "wing@" + host
+		source = "sparkwing@" + host
 	}
 	var userName string
 	if u, err := user.Current(); err == nil {
@@ -588,7 +418,7 @@ func dispatchRemote(pipelineName string, wf wingFlags, passthrough []string) err
 	if repoSlug != "" {
 		envMap["GITHUB_REPOSITORY"] = repoSlug
 	}
-	// --start-at / --stop-at are wing-level on the local CLI; the
+	// --start-at / --stop-at are sparkwing-level on the local CLI; the
 	// remote runner reads them as SPARKWING_START_AT /
 	// SPARKWING_STOP_AT from trigger env. Same env-var protocol the
 	// laptop-local exec path uses, so behavior is identical across
@@ -601,7 +431,7 @@ func dispatchRemote(pipelineName string, wf wingFlags, passthrough []string) err
 	}
 	// Forward --dry-run to the remote runner via the same env-var
 	// protocol the local-exec path uses. Behavior is identical
-	// across venues so `wing X --on prod --dry-run` previews the
+	// across venues so `sparkwing run X --on prod --dry-run` previews the
 	// same way it does locally.
 	if wf.dryRun {
 		envMap["SPARKWING_DRY_RUN"] = "1"
@@ -637,11 +467,11 @@ func dispatchRemote(pipelineName string, wf wingFlags, passthrough []string) err
 	}
 	// --full is local-only; warn loudly when it would silently no-op remotely.
 	if wf.fullRetry && wf.retryOf != "" {
-		fmt.Fprintln(os.Stderr, "wing: --full is local-only; remote retry always skips passed nodes (ignoring --full)")
+		fmt.Fprintln(os.Stderr, "sparkwing run: --full is local-only; remote retry always skips passed nodes (ignoring --full)")
 	}
 
 	// Best-effort eager refresh closes the
-	// `git push && wing X --on prod` race where the gitcache
+	// `git push && sparkwing run X --on prod` race where the gitcache
 	// hasn't yet mirrored the just-pushed SHA. The retry in the
 	// runner's trigger loop catches the residual race; this just
 	// shrinks the window to ~zero on the happy path. 5s ceiling so
@@ -651,7 +481,7 @@ func dispatchRemote(pipelineName string, wf wingFlags, passthrough []string) err
 		refreshCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		if err := bincache.RefreshRepo(refreshCtx, prof.Gitcache, repoURL); err != nil {
 			fmt.Fprintf(os.Stderr,
-				"wing: gitcache eager refresh failed (%v); proceeding — runner will retry on stale-SHA\n",
+				"sparkwing run: gitcache eager refresh failed (%v); proceeding — runner will retry on stale-SHA\n",
 				err)
 		}
 		cancel()

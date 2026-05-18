@@ -1,5 +1,5 @@
-// Package wingconfig loads named flag presets for `wing <pipeline>
-// --config <preset>`. Presets bundle wing-owned flags (on, from) so
+// Package wingconfig loads named flag presets for `sparkwing run <pipeline>
+// --config <preset>`. Presets bundle sparkwing-owned flags (on, from) so
 // operators can stash common combinations instead of retyping.
 //
 // Source precedence (first match wins, with per-preset field merge
@@ -24,7 +24,7 @@
 //
 // Typed per-pipeline flags are deliberately absent from this file --
 // they land once the pipeline-describe cache is restored (separate
-// session). Until then, configs are a pure wing-flag surface.
+// session). Until then, configs are a pure sparkwing-flag surface.
 package wingconfig
 
 import (
@@ -52,7 +52,7 @@ type File struct {
 	Configs map[string]Preset `yaml:"configs"`
 }
 
-// Load reads a single wing config file. Missing files are NOT an
+// Load reads a single sparkwing config file. Missing files are NOT an
 // error -- they return an empty File. Parse errors bubble up so
 // operators see "yaml: line 3: ..." rather than silent fallback.
 func Load(path string) (File, error) {

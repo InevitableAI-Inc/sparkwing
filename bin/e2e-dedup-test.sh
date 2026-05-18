@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# wing: e2e-dedup-test
+# sparkwing run: e2e-dedup-test
 # desc: E2E tests for work deduplication (claim/waiter/status lifecycle)
 # arg: controller (optional, default: http://localhost:9001) Controller URL
 set -uo pipefail

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# wing: pre-release-test
+# sparkwing run: pre-release-test
 # desc: Full pre-release test suite (unit, security, build, config)
 # arg: quick (bool) Skip slow tests
 #

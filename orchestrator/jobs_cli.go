@@ -123,7 +123,7 @@ func renderRunList(runs []*store.Run, opts ListOpts, out io.Writer) error {
 	}
 
 	if len(runs) == 0 {
-		fmt.Fprintln(out, "no runs yet — invoke one via `wing <pipeline>`")
+		fmt.Fprintln(out, "no runs yet — invoke one via `sparkwing run <pipeline>`")
 		return nil
 	}
 	tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
@@ -1264,7 +1264,7 @@ func formatRunDuration(r *store.Run) string {
 // heartbeat before status flags it as stale. Local in-process runs
 // don't refresh last_heartbeat after the initial stamp -- the node
 // either completes or the process dies -- so the threshold also
-// covers the "orphaned local run" case where the wing process
+// covers the "orphaned local run" case where the sparkwing process
 // crashed and left the row hanging in "running". The value is
 // intentionally generous (well above the cluster heartbeat cadence
 // of 5s) so a slow runner pause doesn't false-positive.

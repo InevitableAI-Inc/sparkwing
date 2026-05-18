@@ -9,7 +9,7 @@ import (
 // Lint runs fast, repo-wide checks: gofmt compliance and go vet
 // across every package in the sparkwing module. Cross-repo callers
 // (a downstream release-all orchestration pipeline) can invoke
-// `wing lint` here as a gate.
+// `sparkwing run lint` here as a gate.
 type Lint struct{ sparkwing.Base }
 
 func (Lint) ShortHelp() string { return "Fast static check: gofmt + go vet" }
@@ -20,7 +20,7 @@ func (Lint) Help() string {
 
 func (Lint) Examples() []sparkwing.Example {
 	return []sparkwing.Example{
-		{Comment: "Quick static check before pushing a local change", Command: "wing lint"},
+		{Comment: "Quick static check before pushing a local change", Command: "sparkwing run lint"},
 	}
 }
 

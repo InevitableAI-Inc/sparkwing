@@ -1,36 +1,37 @@
 package sparkwing
 
-// WingFlagDoc is a public, single-source-of-truth description of one
-// wing-owned flag. Multiple help-rendering surfaces consume this:
+// SparkwingFlagDoc is a public, single-source-of-truth description of
+// one sparkwing-owned flag. Multiple help-rendering surfaces consume
+// this:
 //
-//   - cmd/sparkwing's `wing --help` and `sparkwing run --help` pages
-//     (FlagSpec entries are derived from this list).
-//   - orchestrator's per-pipeline `wing <pipeline> --help` footer
-//     (the "wing-owned flags" enumeration the user sees alongside
-//     PIPELINE FLAGS).
+//   - cmd/sparkwing's `sparkwing run --help` page (FlagSpec entries
+//     are derived from this list).
+//   - orchestrator's per-pipeline `sparkwing run <pipeline> --help`
+//     footer (the "SPARKWING FLAGS" enumeration the user sees
+//     alongside PIPELINE FLAGS).
 //
 // This list is the canonical source: the per-pipeline footer used to
 // hand-code "(--on, --from, --config)" and silently drifted every
-// time a new wing flag landed. Sourcing from one list keeps the
-// surfaces in lockstep.
+// time a new flag landed. Sourcing from one list keeps the surfaces
+// in lockstep.
 //
-// Every wing flag is prefixed `sw-`. Pipeline-author Inputs flags
-// occupy the full unprefixed namespace; there is no reserved-name
-// collision check because none can happen.
-type WingFlagDoc struct {
+// Every sparkwing-owned flag is prefixed `sw-`. Pipeline-author
+// Inputs flags occupy the full unprefixed namespace; there is no
+// reserved-name collision check because none can happen.
+type SparkwingFlagDoc struct {
 	// Name is the long flag name without the leading "--".
 	Name string
 	// Short is the optional one-letter alias without the leading "-"
-	// (e.g. "v" for --verbose). Empty for flags without a short form.
+	// (e.g. "v" for --sw-verbose). Empty for flags without a short form.
 	Short string
 	// Argument is the value placeholder for value-taking flags
 	// (e.g. "PATH", "REF"); empty for boolean flags.
 	Argument string
 	// Desc is the one-line help text shown in --help output.
 	Desc string
-	// Group is the rendering bucket: "Source", "Range", "Safety",
-	// "System". Per-pipeline help uses this to section the footer;
-	// `wing --help` uses it via FlagSpec.Group.
+	// Group is the rendering bucket: currently a single "System"
+	// label. Per-pipeline help uses this to section the footer;
+	// `sparkwing run --help` uses it via FlagSpec.Group.
 	Group string
 	// Hot marks flags an operator reaches for on most runs. Default
 	// --help and tab-completion menus filter to Hot=true entries to
@@ -38,20 +39,17 @@ type WingFlagDoc struct {
 	Hot bool
 }
 
-// wingFlagDocs is the canonical documentation source for wing-owned
-// flags. The order here is the order help renderers walk; group
-// boundaries determine section breaks. Adding a flag here surfaces it
-// in `wing --help`, `sparkwing run --help`, AND every per-pipeline
+// sparkwingFlagDocs is the canonical documentation source for
+// sparkwing-owned flags. The order here is the order help renderers
+// walk; group boundaries determine section breaks. Adding a flag
+// here surfaces it in `sparkwing run --help` AND every per-pipeline
 // footer simultaneously.
 //
-// Subsumes `cmd/sparkwing/help_registry.go`'s wingFlagSpecs (which
-// derives from this list).
-// All sparkwing-owned flags are prefixed `sw-` so pipeline authors
-// have the full unprefixed namespace for their typed Inputs flags.
-// The previous reserved-name list (--from / --on / --for / ...) is
-// retired: a pipeline can now declare `flag:"from"` or `flag:"on"`
-// without colliding with anything wing-owned.
-var wingFlagDocs = []WingFlagDoc{
+// Subsumes `cmd/sparkwing/help_registry.go`'s runFlagSpecs (which
+// derives from this list). All sparkwing-owned flags are prefixed
+// `sw-` so pipeline authors have the full unprefixed namespace for
+// their typed Inputs flags.
+var sparkwingFlagDocs = []SparkwingFlagDoc{
 	{Name: "sw-change-directory", Short: "C", Argument: "PATH", Desc: "Re-anchor .sparkwing/ discovery to PATH (mirrors `git -C` / `make -C`)", Group: "System"},
 	{Name: "sw-from", Argument: "REF", Desc: "Compile from a git ref (branch/tag/SHA) instead of the working tree", Group: "System", Hot: true},
 	{Name: "sw-config", Argument: "PRESET", Desc: "Apply a named preset from .sparkwing/config.yaml or ~/.config/sparkwing/config.yaml", Group: "System"},
@@ -71,10 +69,11 @@ var wingFlagDocs = []WingFlagDoc{
 	{Name: "sw-backends-env", Argument: "NAME", Desc: "Force a specific environments: entry from backends.yaml (skips auto-detect)", Group: "System"},
 }
 
-// WingFlagDocs returns the canonical wing-owned flag documentation.
-// The returned slice is a copy; callers may mutate freely.
-func WingFlagDocs() []WingFlagDoc {
-	out := make([]WingFlagDoc, len(wingFlagDocs))
-	copy(out, wingFlagDocs)
+// SparkwingFlagDocs returns the canonical sparkwing-owned flag
+// documentation. The returned slice is a copy; callers may mutate
+// freely.
+func SparkwingFlagDocs() []SparkwingFlagDoc {
+	out := make([]SparkwingFlagDoc, len(sparkwingFlagDocs))
+	copy(out, sparkwingFlagDocs)
 	return out
 }

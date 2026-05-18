@@ -1,7 +1,6 @@
-// The sparkwing binary. When invoked as "wing" (symlink or renamed
-// copy) it dispatches to the repo's local .sparkwing/ pipeline
-// runner. Otherwise it exposes infrastructure and observation
-// subcommands.
+// The sparkwing binary. Exposes pipeline dispatch (`sparkwing run`),
+// infrastructure verbs (cluster, secrets, configure), and observation
+// verbs (runs, dashboard).
 package main
 
 import (
@@ -29,14 +28,6 @@ func main() {
 	// Windows self-update defers deletion of the running binary; clean it up here.
 	cleanupStaleUpdate()
 
-	base := strings.TrimSuffix(filepath.Base(os.Args[0]), ".exe")
-	if base == "wing" {
-		if err := runWing(os.Args[1:]); err != nil {
-			fmt.Fprintln(os.Stderr, color.Red(color.Bold("wing error:")), err)
-			os.Exit(exitCodeFor(err))
-		}
-		return
-	}
 	if err := runSparkwing(os.Args[1:]); err != nil {
 		fmt.Fprintln(os.Stderr, color.Red(color.Bold("sparkwing error:")), err)
 		os.Exit(exitCodeFor(err))
@@ -84,31 +75,29 @@ func exitCodeFor(err error) int {
 	return 1
 }
 
-// runWing implements `wing <pipeline> [flags...]`. Locates the enclosing
-// .sparkwing/, strips wing-owned flags, optionally re-roots on a git
-// ref (--from), then compiles + execs the user's pipeline binary.
-// `wing <pipeline> --help` cannot short-circuit here because pipeline
-// flags are parsed by the user's compiled binary.
-func runWing(args []string) error {
+// dispatchRun implements `sparkwing run <pipeline> [flags...]`.
+// Locates the enclosing .sparkwing/, strips sparkwing-owned flags,
+// optionally re-roots on a git ref (--sw-from), then compiles + execs
+// the user's pipeline binary. `sparkwing run <pipeline> --help`
+// cannot short-circuit here because pipeline flags are parsed by the
+// user's compiled binary.
+func dispatchRun(args []string) error {
 	if len(args) == 0 || args[0] == "-h" || args[0] == "--help" || args[0] == "help" {
 		if len(args) == 0 {
-			PrintHelp(cmdWing, os.Stderr)
-			return errors.New("wing: pipeline name required")
+			PrintHelp(cmdRun, os.Stderr)
+			return errors.New("run: pipeline name required (e.g. `sparkwing run hello`)")
 		}
-		PrintHelp(cmdWing, os.Stdout)
+		PrintHelp(cmdRun, os.Stdout)
 		return nil
 	}
 
-	// Wing-owned flags must precede the pipeline-name positional.
-	// extractPipelineName enforces that; without it the parser would
-	// take args[0] as the pipeline name unconditionally, so
-	// `sparkwing run -C /path foo` would silently treat `-C` as the
-	// pipeline name and `/path` as a pipeline arg.
-	pipelineName, rest, err := extractPipelineName(args)
-	if err != nil {
-		return fmt.Errorf("wing: %w", err)
+	pipelineName := args[0]
+	if strings.HasPrefix(pipelineName, "-") {
+		PrintHelp(cmdRun, os.Stderr)
+		return fmt.Errorf("run: pipeline name must come first; got flag %q", pipelineName)
 	}
-	wf, passthrough := parseWingFlags(rest)
+	wf, passthrough := parseRunFlags(args[1:])
+	var err error
 
 	// `-C <path>` re-anchors discovery (same shape as `git -C`).
 	var dir string
@@ -122,7 +111,7 @@ func runWing(args []string) error {
 	}
 
 	// Auto-register so cross-repo RunAndAwait can resolve names without
-	// a hardcoded WithFreshRepo. Errors dropped: read-only home shouldn't break wing.
+	// a hardcoded WithFreshRepo. Errors dropped: read-only home shouldn't break dispatch.
 	_ = repos.AutoRegister(filepath.Dir(dir))
 
 	// --config PRESET: explicit flags always win over the preset.
@@ -174,11 +163,11 @@ func runWing(args []string) error {
 		return dispatchRemote(pipelineName, wf, passthrough)
 	}
 
-	// --from re-roots compilation on a git worktree; cleanup must run on both paths.
+	// --sw-from re-roots compilation on a git worktree; cleanup must run on both paths.
 	if wf.from != "" {
 		_, sparkwingSub, cleanup, err := setupFromRef(dir, wf.from)
 		if err != nil {
-			return fmt.Errorf("wing: --from %s: %w", wf.from, err)
+			return fmt.Errorf("--sw-from %s: %w", wf.from, err)
 		}
 		defer cleanup()
 		dir = sparkwingSub
@@ -197,7 +186,7 @@ func runWing(args []string) error {
 	if wf.verbose {
 		env = append(env, "SPARKWING_LOG_LEVEL=debug")
 	}
-	// Wing-owned knobs ride env vars the pipeline binary reads at Options-build time.
+	// sparkwing-owned knobs ride env vars the pipeline binary reads at Options-build time.
 	if wf.retryOf != "" {
 		env = append(env, "SPARKWING_RETRY_OF="+wf.retryOf)
 		if wf.fullRetry {
@@ -219,8 +208,8 @@ func runWing(args []string) error {
 	if wf.dryRun {
 		env = append(env, "SPARKWING_DRY_RUN=1")
 	}
-	// allow-* gate flags: consumed by the wing wrapper for the
-	// blast-radius pre-flight check, but still surfaced on the
+	// allow-* gate flags: consumed by the sparkwing run dispatcher for
+	// the blast-radius pre-flight check, but still surfaced on the
 	// run record for reproducibility (an agent re-invoking needs to
 	// know which gates were authorized). Forwarded as env vars; the
 	// orchestrator reads them in emitRunStart and includes the names
@@ -234,12 +223,13 @@ func runWing(args []string) error {
 	if wf.allowMoney {
 		env = append(env, "SPARKWING_ALLOW_MONEY=1")
 	}
-	// Forward pre-flight wing flags as env vars purely so emitRunStart
-	// can surface them on run_start.attrs.flags. The pipeline binary
-	// itself doesn't read these (--from is consumed before exec via
-	// setupFromRef, --config is resolved into other flags above,
-	// --no-update gates sparks resolve in compile.go) -- they appear
-	// only as reproducibility breadcrumbs in the run record.
+	// Forward pre-flight sparkwing flags as env vars purely so
+	// emitRunStart can surface them on run_start.attrs.flags. The
+	// pipeline binary itself doesn't read these (--sw-from is
+	// consumed before exec via setupFromRef, --sw-config is resolved
+	// into other flags above, --sw-no-update gates sparks resolve in
+	// compile.go) -- they appear only as reproducibility breadcrumbs
+	// in the run record.
 	if wf.from != "" {
 		env = append(env, "SPARKWING_FROM="+wf.from)
 	}
@@ -316,7 +306,7 @@ func runSparkwing(args []string) error {
 	case "pipeline":
 		return runPipeline(args[1:])
 	case "run":
-		return runRun(args[1:])
+		return dispatchRun(args[1:])
 	case "runs":
 		return runJobs(args[1:])
 
@@ -345,7 +335,7 @@ func runSparkwing(args []string) error {
 		return runDebug(args[1:])
 
 	case "handle-trigger":
-		return runWing(args)
+		return dispatchRun(args)
 	case "__dashboard-supervise":
 		return runDashboardSupervise(args[1:])
 	case "_complete-profiles":

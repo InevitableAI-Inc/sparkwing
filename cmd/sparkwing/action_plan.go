@@ -152,11 +152,11 @@ func runPipelinePlan(args []string) error {
 	}
 	jsonOut := format == "json"
 
-	pipelineArgs := append([]string{parsed.pipeline, "--plan"}, parsed.passthrough...)
-	binary := "wing"
-	if _, err := exec.LookPath(binary); err != nil {
+	pipelineArgs := []string{"pipeline", "run", parsed.pipeline, "--plan"}
+	pipelineArgs = append(pipelineArgs, parsed.passthrough...)
+	binary, err := os.Executable()
+	if err != nil {
 		binary = "sparkwing"
-		pipelineArgs = append([]string{"pipelines", "run"}, pipelineArgs...)
 	}
 
 	// Plumb --start-at / --stop-at via the same env-var contract

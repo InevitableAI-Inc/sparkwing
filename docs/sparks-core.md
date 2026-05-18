@@ -330,7 +330,7 @@ res, err := s3.DeployStaticSite(ctx, s3.StaticSiteConfig{
 Set `SPARKWING_DEBUG=1` to enable verbose debug logging from all sparks-core packages. Debug output is dimmed and prefixed with `debug:` to distinguish it from normal pipeline output.
 
 ```bash
-SPARKWING_DEBUG=1 wing build-deploy
+SPARKWING_DEBUG=1 sparkwing run build-deploy
 ```
 
 Debug logging covers:

@@ -163,7 +163,7 @@ github.com/sparkwing-dev/sparkwing              (everything else)
   concrete impls of SDK interfaces
   DAG executor, scheduler, run lifecycle
   HTTP / dashboard / persistence / caching backends
-  cmd/* binaries (sparkwing, wing, sparkwing-runner, ...)
+  cmd/* binaries (sparkwing, sparkwing, sparkwing-runner, ...)
   everything in internal/
 ```
 
@@ -234,5 +234,5 @@ isn't settling.
 - Pin to the v1 line: `sparkwing-sdk v1`, `sparks-core/<sub>` v1.
   Specific minor / patch is up to you.
 - API stability is real within v1. Patch and minor bumps are safe.
-- The wing CLI binary is your interface to the runtime; install it
+- The sparkwing CLI binary is your interface to the runtime; install it
   once and your plugin only depends on the SDK module.

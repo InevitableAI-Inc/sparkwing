@@ -22,10 +22,6 @@ for b in "${BINS[@]}"; do
   go -C "$ROOT" build -o "$DEST/$b" "./cmd/$b"
 done
 
-# 'wing' alias (run pipelines shortcut). The CLI's main routes both
-# bare-name invocations through the same entry point.
-ln -sf "$DEST/sparkwing" "$DEST/wing"
-
 echo
 echo "Installed to $DEST:"
-ls -1 "$DEST"/sparkwing* "$DEST"/wing
+ls -1 "$DEST"/sparkwing*

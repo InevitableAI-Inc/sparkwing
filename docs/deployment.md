@@ -10,15 +10,15 @@ Every pipeline supports `--on` to target a cluster:
 
 | Source | Target | Command |
 |--------|--------|---------|
-| Local code | Local machine | `wing build` |
-| Local code | Any cluster | `wing build --on dev` |
-| Remote (git ref) | Any cluster | `wing build --from main --on prod` |
+| Local code | Local machine | `sparkwing run build` |
+| Local code | Any cluster | `sparkwing run build --on dev` |
+| Remote (git ref) | Any cluster | `sparkwing run build --from main --on prod` |
 
 The `--on` flag resolves a **profile** - a named cluster endpoint. Every
 profile follows the same dispatch flow:
 
 ```
-wing <pipeline> --on <profile>
+sparkwing run <pipeline> --on <profile>
   → upload code to controller (or trigger by SHA if clean)
   → controller enqueues run
   → dispatcher creates k8s Job
