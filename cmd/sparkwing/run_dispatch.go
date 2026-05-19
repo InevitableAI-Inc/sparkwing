@@ -245,7 +245,7 @@ func parseRunFlags(args []string) (runFlags, []string) {
 		case strings.HasPrefix(a, "--sw-allow="):
 			wf.allow = appendCSV(wf.allow, strings.TrimPrefix(a, "--sw-allow="))
 			i++
-		case a == "-C", a == "--sw-change-directory":
+		case a == "-C", a == "--sw-cd":
 			if i+1 < len(args) {
 				wf.changeDir = args[i+1]
 				i += 2
@@ -253,8 +253,8 @@ func parseRunFlags(args []string) (runFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--sw-change-directory="):
-			wf.changeDir = strings.TrimPrefix(a, "--sw-change-directory=")
+		case strings.HasPrefix(a, "--sw-cd="):
+			wf.changeDir = strings.TrimPrefix(a, "--sw-cd=")
 			i++
 		case a == "--sw-for":
 			if i+1 < len(args) {

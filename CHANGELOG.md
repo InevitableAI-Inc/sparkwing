@@ -12,6 +12,7 @@
   into one `--sw-allow LABEL[,LABEL...]` flag (repeatable; comma-separated
   allowed). Profile `auto_allow` is now a list of labels
   (`auto_allow: [destructive]`) instead of per-marker booleans.
+- Renamed `--sw-change-directory` to `--sw-cd`. The `-C` short form is unchanged.
 
 ### Removed
 

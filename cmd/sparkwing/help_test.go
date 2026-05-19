@@ -102,7 +102,7 @@ func TestRunHelpListsArcFlags(t *testing.T) {
 		"--sw-dry-run",
 		"--sw-for", "--sw-on",
 		// Advanced tier — also surface in --help
-		"--sw-change-directory", "--sw-verbose",
+		"--sw-cd", "--sw-verbose",
 		"--sw-allow",
 	}
 	for _, tc := range cases {
@@ -131,7 +131,7 @@ func TestCompletionFlagsListsHotOnly(t *testing.T) {
 		"--help",
 	}
 	advancedFlags := []string{
-		"--sw-change-directory", "--sw-verbose",
+		"--sw-cd", "--sw-verbose",
 		"--sw-allow",
 	}
 	for _, tc := range []struct {
