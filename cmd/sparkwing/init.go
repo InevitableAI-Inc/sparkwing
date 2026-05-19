@@ -107,18 +107,18 @@ func sdkRequirementVersion() string {
 
 func renderInitMainGo(moduleName string) string {
 	return fmt.Sprintf(`// Command %s is this repo's local pipeline runner.
-// It re-exports orchestrator.Main, which dispatches based on argv:
+// It re-exports runner.Main, which dispatches based on argv:
 // `+"`sparkwing run <pipeline>`"+` invokes the pipeline; `+"`sparkwing pipeline ...`"+`
 // is the agent/operator surface.
 package main
 
 import (
-	"github.com/sparkwing-dev/sparkwing/orchestrator"
+	"github.com/sparkwing-dev/sparkwing/pkg/runner"
 
 	_ %q
 )
 
-func main() { orchestrator.Main() }
+func main() { runner.Main() }
 `, moduleName, moduleName+"/jobs")
 }
 
@@ -141,7 +141,7 @@ func renderInitReadme() string {
 		".sparkwing/\n" +
 		"  pipelines.yaml      registry of every pipeline (name -> entrypoint)\n" +
 		"  jobs/               Go package holding pipeline definitions; scaffold lands one .go file per pipeline\n" +
-		"  main.go             thin entrypoint; delegates to orchestrator.Main\n" +
+		"  main.go             thin entrypoint; delegates to runner.Main\n" +
 		"  go.mod / go.sum     module + pinned SDK version\n" +
 		"  sparkwing-pipeline  cached compiled binary (gitignored, regenerated)\n" +
 		"```\n" +

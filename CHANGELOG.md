@@ -2,8 +2,21 @@
 
 ## Unreleased
 
+### Added
+
+- `pkg/runner` package with `runner.Main()`: the user-facing entry
+  point that `.sparkwing/main.go` imports. Wraps `orchestrator.Main()`
+  so internal changes to the orchestrator package don't propagate
+  into user repos' `main.go`.
+
 ### Changed
 
+- `.sparkwing/main.go` template now imports
+  `github.com/sparkwing-dev/sparkwing/pkg/runner` instead of
+  `.../orchestrator`. Newly-generated user repos pick up the new
+  path; existing user repos continue to work with the direct
+  `orchestrator` import and can migrate at their leisure (or on the
+  next regenerate / SDK bump).
 - Moved several packages to clarify the public/private boundary:
   - `logutil`, `bincache`, `otelutil`, `profile`, `repos` →
     `internal/` (implementation detail, no external stability

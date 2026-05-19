@@ -1,6 +1,6 @@
 // Command sparkwing-pipelines is the public sparkwing repo's pipeline
 // runner. `sparkwing run <name>` invokes this binary with the pipeline
-// name as the first positional arg; orchestrator.Main dispatches to the
+// name as the first positional arg; runner.Main dispatches to the
 // registered pipeline.
 //
 // This .sparkwing/ tree is intentionally minimal: it covers the
@@ -9,11 +9,11 @@
 package main
 
 import (
-	"github.com/sparkwing-dev/sparkwing/orchestrator"
+	"github.com/sparkwing-dev/sparkwing/pkg/runner"
 
 	// Side-effect imports: each jobs/ file's init() registers its
 	// pipeline with the sparkwing package's process-global registry.
 	_ "sparkwing-pipelines/jobs"
 )
 
-func main() { orchestrator.Main() }
+func main() { runner.Main() }
