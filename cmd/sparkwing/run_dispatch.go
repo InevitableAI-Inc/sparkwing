@@ -39,7 +39,7 @@ func atoiNonNeg(s string) (int, error) {
 }
 
 type runFlags struct {
-	from     string
+	ref      string
 	on       string
 	noUpdate bool
 	verbose  bool
@@ -141,16 +141,16 @@ func parseRunFlags(args []string) (runFlags, []string) {
 	for i < len(args) {
 		a := args[i]
 		switch {
-		case a == "--sw-from":
+		case a == "--sw-ref":
 			if i+1 < len(args) {
-				wf.from = args[i+1]
+				wf.ref = args[i+1]
 				i += 2
 				continue
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--sw-from="):
-			wf.from = strings.TrimPrefix(a, "--sw-from=")
+		case strings.HasPrefix(a, "--sw-ref="):
+			wf.ref = strings.TrimPrefix(a, "--sw-ref=")
 			i++
 		case a == "--sw-profile":
 			if i+1 < len(args) {
@@ -286,9 +286,9 @@ func parseRunFlags(args []string) (runFlags, []string) {
 	return wf, pass
 }
 
-// setupFromRef creates a git worktree at ref. Caller must defer cleanup.
+// setupRefWorktree creates a git worktree at ref. Caller must defer cleanup.
 // Best-effort fetch first so unseen refs resolve; fetch failure is non-fatal.
-func setupFromRef(sparkwingDir, ref string) (worktreeDir string, sparkwingSub string, cleanup func(), err error) {
+func setupRefWorktree(sparkwingDir, ref string) (worktreeDir string, sparkwingSub string, cleanup func(), err error) {
 	repoRoot := filepath.Dir(sparkwingDir)
 
 	tmpDir, err := os.MkdirTemp("", "sparkwing-from-*")
@@ -370,7 +370,7 @@ func dispatchRemote(pipelineName string, wf runFlags, passthrough []string) erro
 		envMap["SPARKWING_DRY_RUN"] = "1"
 	}
 
-	triggerBranch := wf.from
+	triggerBranch := wf.ref
 	if triggerBranch == "" {
 		triggerBranch = branch
 	}

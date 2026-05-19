@@ -51,7 +51,7 @@ func runDebug(args []string) error {
 // runDebugRun parses debug-owned flags, converts them to env vars the
 // pipeline binary reads in orchestrator.Main, and then forwards the
 // pipeline name + remaining args through the normal run dispatch.
-// Reusing dispatchRun guarantees --sw-from / --sw-profile still work
+// Reusing dispatchRun guarantees --sw-ref / --sw-profile still work
 // alongside --pause-*.
 func runDebugRun(args []string) error {
 	if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {

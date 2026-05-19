@@ -76,7 +76,7 @@ func exitCodeFor(err error) int {
 
 // dispatchRun implements `sparkwing run <pipeline> [flags...]`.
 // Locates the enclosing .sparkwing/, strips sparkwing-owned flags,
-// optionally re-roots on a git ref (--sw-from), then compiles + execs
+// optionally re-roots on a git ref (--sw-ref), then compiles + execs
 // the user's pipeline binary. `sparkwing run <pipeline> --help`
 // cannot short-circuit here because pipeline flags are parsed by the
 // user's compiled binary.
@@ -144,11 +144,11 @@ func dispatchRun(args []string) error {
 		return dispatchRemote(pipelineName, wf, passthrough)
 	}
 
-	// --sw-from re-roots compilation on a git worktree; cleanup must run on both paths.
-	if wf.from != "" {
-		_, sparkwingSub, cleanup, err := setupFromRef(dir, wf.from)
+	// --sw-ref re-roots compilation on a git worktree; cleanup must run on both paths.
+	if wf.ref != "" {
+		_, sparkwingSub, cleanup, err := setupRefWorktree(dir, wf.ref)
 		if err != nil {
-			return fmt.Errorf("--sw-from %s: %w", wf.from, err)
+			return fmt.Errorf("--sw-ref %s: %w", wf.ref, err)
 		}
 		defer cleanup()
 		dir = sparkwingSub
@@ -189,12 +189,12 @@ func dispatchRun(args []string) error {
 	}
 	// Forward pre-flight sparkwing flags as env vars purely so
 	// emitRunStart can surface them on run_start.attrs.flags. The
-	// pipeline binary itself doesn't read these (--sw-from is
-	// consumed before exec via setupFromRef, --sw-no-update gates
-	// sparks resolve in compile.go) -- they appear only as
+	// pipeline binary itself doesn't read these (--sw-ref is
+	// consumed before exec via setupRefWorktree, --sw-no-update
+	// gates sparks resolve in compile.go) -- they appear only as
 	// reproducibility breadcrumbs in the run record.
-	if wf.from != "" {
-		env = append(env, "SPARKWING_FROM="+wf.from)
+	if wf.ref != "" {
+		env = append(env, "SPARKWING_REF="+wf.ref)
 	}
 	if wf.noUpdate {
 		env = append(env, "SPARKWING_NO_UPDATE=1")

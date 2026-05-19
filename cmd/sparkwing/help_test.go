@@ -97,7 +97,7 @@ func TestRunHelpListsArcFlags(t *testing.T) {
 	}
 	allFlags := []string{
 		// Hot tier
-		"--sw-from",
+		"--sw-ref",
 		"--sw-start-at", "--sw-stop-at",
 		"--sw-dry-run",
 		"--sw-target", "--sw-profile",
@@ -124,7 +124,7 @@ func TestRunHelpListsArcFlags(t *testing.T) {
 // --help, not in the completion menu.
 func TestCompletionFlagsListsHotOnly(t *testing.T) {
 	hotFlags := []string{
-		"--sw-from",
+		"--sw-ref",
 		"--sw-start-at", "--sw-stop-at",
 		"--sw-dry-run",
 		"--sw-target", "--sw-profile",

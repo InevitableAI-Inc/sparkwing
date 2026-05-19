@@ -796,8 +796,8 @@ func buildRunFlags(opts Options) map[string]any {
 	// before exec, so the pipeline binary never lifts them onto
 	// Options -- but knowing they were set is still load-bearing for
 	// reproducibility.
-	if v := os.Getenv("SPARKWING_FROM"); v != "" {
-		flags["from"] = v
+	if v := os.Getenv("SPARKWING_REF"); v != "" {
+		flags["ref"] = v
 	}
 	if os.Getenv("SPARKWING_NO_UPDATE") == "1" {
 		flags["no_update"] = true

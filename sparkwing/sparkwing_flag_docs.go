@@ -51,7 +51,7 @@ type SparkwingFlagDoc struct {
 // their typed Inputs flags.
 var sparkwingFlagDocs = []SparkwingFlagDoc{
 	{Name: "sw-cd", Short: "C", Argument: "PATH", Desc: "Re-anchor .sparkwing/ discovery to PATH (mirrors `git -C` / `make -C`)", Group: "System"},
-	{Name: "sw-from", Argument: "REF", Desc: "Compile from a git ref (branch/tag/SHA) instead of the working tree", Group: "System", Hot: true},
+	{Name: "sw-ref", Argument: "REF", Desc: "Compile from a git ref (branch/tag/SHA) instead of the working tree", Group: "System", Hot: true},
 	{Name: "sw-verbose", Short: "v", Desc: "Enable debug logging from the orchestrator (equivalent to SPARKWING_LOG_LEVEL=debug)", Group: "System"},
 	{Name: "sw-start-at", Argument: "STEP", Desc: "Start the run at STEP, skipping every step before it", Group: "System", Hot: true},
 	{Name: "sw-stop-at", Argument: "STEP", Desc: "Stop the run after STEP, skipping every step beyond it", Group: "System", Hot: true},

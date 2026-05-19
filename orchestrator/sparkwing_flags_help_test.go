@@ -21,7 +21,7 @@ func TestPrintSparkwingFlagsSection_ContainsArcFlags(t *testing.T) {
 	mustContain(t, out, "--sw-allow")
 
 	mustContain(t, out, "--sw-profile")
-	mustContain(t, out, "--sw-from")
+	mustContain(t, out, "--sw-ref")
 
 	mustContain(t, out, "SPARKWING FLAGS")
 }
