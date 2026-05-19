@@ -156,7 +156,7 @@ func TestPreviewPlan_DryRunRendersThreeDecisions(t *testing.T) {
 		t.Fatalf("Invoke: %v", err)
 	}
 
-	preview, err := sparkwing.PreviewPlan(plan, "dry-run-preview", nil, sparkwing.PreviewOptions{DryRun: true})
+	preview, err := sparkwingruntime.PreviewPlan(plan, "dry-run-preview", nil, sparkwingruntime.PreviewOptions{DryRun: true})
 	if err != nil {
 		t.Fatalf("PreviewPlan: %v", err)
 	}

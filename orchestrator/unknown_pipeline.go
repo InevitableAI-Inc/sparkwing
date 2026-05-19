@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
 // unknownPipelineErr formats the canonical "unknown pipeline X"
 // error with a "did you mean Y?" Levenshtein suggestion sourced from
-// the live registration set. Reuses sparkwing.SuggestClosest so the
+// the live registration set. Reuses sparkwingruntime.SuggestClosest so the
 // typo threshold matches the rest of the SDK's string-id surfaces.
 //
 // Previously every "unknown pipeline" site returned a flat error and
@@ -29,7 +30,7 @@ func unknownPipelineErr(pipeline string) error {
 // logic without inheriting our message prefix.
 func unknownPipelineMessage(pipeline string) string {
 	registered := sparkwing.Registered()
-	suggestion := sparkwing.SuggestClosest(pipeline, registered)
+	suggestion := sparkwingruntime.SuggestClosest(pipeline, registered)
 	var b strings.Builder
 	fmt.Fprintf(&b, "unknown pipeline %q", pipeline)
 	if suggestion != "" {

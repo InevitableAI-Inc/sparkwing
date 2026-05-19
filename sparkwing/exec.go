@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sparkwing-dev/sparkwing/sparkwing/planguard"
 )
 
 // ExitNotStarted marks an ExecError where the child process never
@@ -240,7 +242,7 @@ func (c *Cmd) execute(silent bool) (ExecResult, error) {
 	case kindExec:
 		helper = "sparkwing.Exec"
 	}
-	GuardPlanTime(c.ctx, helper)
+	planguard.Guard(c.ctx, helper)
 
 	var name string
 	var args []string

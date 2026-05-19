@@ -1,8 +1,11 @@
-package sparkwing
+package sparkwingruntime
 
 import (
 	"context"
 	"fmt"
+
+	"github.com/sparkwing-dev/sparkwing/sparkwing"
+	"github.com/sparkwing-dev/sparkwing/sparkwing/planguard"
 )
 
 // PlanPreview is the runtime-resolved view of a Plan: the same DAG
@@ -131,7 +134,7 @@ type PreviewOptions struct {
 // ResolvedArgs so renderers can show the operator the inputs that
 // drove the decisions -- single source of truth for what was
 // actually parsed.
-func PreviewPlan(plan *Plan, pipeline string, resolvedArgs map[string]string, opts PreviewOptions) (*PlanPreview, error) {
+func PreviewPlan(plan *sparkwing.Plan, pipeline string, resolvedArgs map[string]string, opts PreviewOptions) (*PlanPreview, error) {
 	if plan == nil {
 		return nil, fmt.Errorf("PreviewPlan: plan is nil")
 	}
@@ -161,7 +164,7 @@ func PreviewPlan(plan *Plan, pipeline string, resolvedArgs map[string]string, op
 	// Plan-only ctx so SkipIf predicates that touch side-effect-guarded
 	// helpers panic with the canonical "Plan() must be pure-
 	// declarative" message rather than silently shelling out.
-	planCtx := withPlanTime(context.Background())
+	planCtx := planguard.With(context.Background())
 
 	// Dedupe recovery nodes that are also plan.Add'd directly --
 	// mirrors the orchestrator's marshalPlanSnapshot walk so the
@@ -201,14 +204,14 @@ func PreviewPlan(plan *Plan, pipeline string, resolvedArgs map[string]string, op
 // recovery target; "" for ordinary plan nodes. PreviewPlan threads
 // this in from its own walk rather than reaching into n, matching
 // how marshalPlanSnapshot encodes recovery nodes.
-func previewNode(ctx context.Context, n *JobNode, onFailureOf string, opts PreviewOptions) PreviewNode {
+func previewNode(ctx context.Context, n *sparkwing.JobNode, onFailureOf string, opts PreviewOptions) PreviewNode {
 	pn := PreviewNode{
 		ID:          n.ID(),
 		Deps:        append([]string(nil), n.DepIDs()...),
 		OnFailureOf: onFailureOf,
 		Decision:    "would_run",
 	}
-	if n.approval != nil {
+	if n.IsApproval() {
 		pn.IsApproval = true
 		return pn
 	}
@@ -244,7 +247,7 @@ func previewNode(ctx context.Context, n *JobNode, onFailureOf string, opts Previ
 // per-item decision: range-skip wins (matches RunWork's runtime
 // precedence so plan output and execution agree), then SkipIf, then
 // "would_run".
-func previewWork(ctx context.Context, w *Work, opts PreviewOptions) *PreviewWork {
+func previewWork(ctx context.Context, w *sparkwing.Work, opts PreviewOptions) *PreviewWork {
 	rangeSkips := w.PreviewSkipForRange(opts.StartAt, opts.StopAt)
 
 	pw := &PreviewWork{}
@@ -303,7 +306,7 @@ func previewWork(ctx context.Context, w *Work, opts PreviewOptions) *PreviewWork
 // SkipPredicates are called with a plan-only ctx; a panic in user
 // code is caught and surfaced on the item's SkipDetail rather than
 // crashing the whole plan command.
-func previewItem(ctx context.Context, id string, needs []string, rangeSkips map[string]string, predicates []SkipPredicate) PreviewItem {
+func previewItem(ctx context.Context, id string, needs []string, rangeSkips map[string]string, predicates []sparkwing.SkipPredicate) PreviewItem {
 	item := PreviewItem{
 		ID:       id,
 		Needs:    append([]string(nil), needs...),
@@ -344,7 +347,7 @@ func previewItem(ctx context.Context, id string, needs []string, rangeSkips map[
 // the boolean result + a non-empty panic message when the predicate
 // crashed. Lets PreviewPlan stay best-effort: a malformed predicate
 // in one step doesn't blow up the entire plan render.
-func safeEvalPredicate(ctx context.Context, p SkipPredicate) (match bool, panicMsg string) {
+func safeEvalPredicate(ctx context.Context, p sparkwing.SkipPredicate) (match bool, panicMsg string) {
 	defer func() {
 		if r := recover(); r != nil {
 			panicMsg = fmt.Sprintf("%v", r)

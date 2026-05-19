@@ -377,7 +377,7 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 	// loop is "save -> sparkwing run X -> see typo error" not "save -> dispatch
 	// -> watch run finish silently doing nothing useful."
 	if opts.StartAt != "" || opts.StopAt != "" {
-		if err := sparkwing.ValidateStepRange(plan, opts.StartAt, opts.StopAt); err != nil {
+		if err := sparkwingruntime.ValidateStepRange(plan, opts.StartAt, opts.StopAt); err != nil {
 			_ = backends.State.FinishRun(ctx, runID, "failed", err.Error())
 			return &Result{RunID: runID, Status: "failed", Error: err}, nil
 		}

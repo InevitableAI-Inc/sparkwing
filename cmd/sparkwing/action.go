@@ -15,6 +15,7 @@ import (
 
 	flag "github.com/spf13/pflag"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/pkg/pipelines"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
@@ -293,7 +294,7 @@ func runPipelineDescribe(args []string) error {
 		for _, p := range pipelines {
 			candidates = append(candidates, p.Name)
 		}
-		suggestion := sparkwing.SuggestClosest(name, candidates)
+		suggestion := sparkwingruntime.SuggestClosest(name, candidates)
 		if suggestion != "" {
 			return fmt.Errorf("no pipeline named %q; did you mean %q? (run `sparkwing pipeline list --all` to see every entry)", name, suggestion)
 		}

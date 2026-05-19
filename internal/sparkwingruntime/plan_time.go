@@ -1,24 +1,10 @@
-package sparkwing
+package sparkwingruntime
 
 import (
 	"context"
 
 	"github.com/sparkwing-dev/sparkwing/sparkwing/planguard"
 )
-
-// Enforces Plan() purity. Pipeline.Plan(ctx, in, rc) is
-// pure-declarative; side effects belong inside a Job's Work() body.
-// Violations panic at runtime via the sentinel below.
-//
-// The actual sentinel lives in sparkwing/planguard so SDK
-// sub-packages (docker, git, services) can import it without
-// violating the layering rule. The names here are user-facing
-// aliases.
-
-// withPlanTime marks ctx as the Plan() invocation context.
-func withPlanTime(ctx context.Context) context.Context {
-	return planguard.With(ctx)
-}
 
 // GuardPlanTime panics if invoked from inside a Pipeline.Plan() call.
 // `what` names the helper that triggered the guard (e.g.

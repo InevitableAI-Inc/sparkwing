@@ -1,4 +1,4 @@
-package sparkwing_test
+package sparkwingruntime_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -37,7 +38,7 @@ func TestPreviewPlan_SingleStepWouldRun(t *testing.T) {
 	}
 
 	previewExecCounter.Store(0)
-	preview, err := sparkwing.PreviewPlan(plan, "plan-preview-single", nil, sparkwing.PreviewOptions{})
+	preview, err := sparkwingruntime.PreviewPlan(plan, "plan-preview-single", nil, sparkwingruntime.PreviewOptions{})
 	if err != nil {
 		t.Fatalf("PreviewPlan: %v", err)
 	}
@@ -79,7 +80,7 @@ func TestPreviewPlan_UserSkipIfReportedAsUserSkipIf(t *testing.T) {
 	}
 
 	previewExecCounter.Store(0)
-	preview, err := sparkwing.PreviewPlan(plan, "plan-preview-skipif", nil, sparkwing.PreviewOptions{})
+	preview, err := sparkwingruntime.PreviewPlan(plan, "plan-preview-skipif", nil, sparkwingruntime.PreviewOptions{})
 	if err != nil {
 		t.Fatalf("PreviewPlan: %v", err)
 	}
@@ -130,7 +131,7 @@ func TestPreviewPlan_StartAtRangeSkipReported(t *testing.T) {
 	}
 
 	previewExecCounter.Store(0)
-	preview, err := sparkwing.PreviewPlan(plan, "plan-preview-range", nil, sparkwing.PreviewOptions{StartAt: "b"})
+	preview, err := sparkwingruntime.PreviewPlan(plan, "plan-preview-range", nil, sparkwingruntime.PreviewOptions{StartAt: "b"})
 	if err != nil {
 		t.Fatalf("PreviewPlan: %v", err)
 	}
@@ -187,7 +188,7 @@ func TestPreviewPlan_UnknownStartAtSuggestsNearMatch(t *testing.T) {
 	}
 
 	previewExecCounter.Store(0)
-	preview, err := sparkwing.PreviewPlan(plan, "preview-near-miss", nil, sparkwing.PreviewOptions{StartAt: "instal-argocd"})
+	preview, err := sparkwingruntime.PreviewPlan(plan, "preview-near-miss", nil, sparkwingruntime.PreviewOptions{StartAt: "instal-argocd"})
 	if err == nil {
 		t.Fatalf("expected error for typo'd --start-at, got nil (preview = %+v)", preview)
 	}
@@ -214,7 +215,7 @@ func TestPreviewPlan_UnknownStartAtFarMissListsAvailable(t *testing.T) {
 	}
 
 	previewExecCounter.Store(0)
-	preview, err := sparkwing.PreviewPlan(plan, "preview-far-miss", nil, sparkwing.PreviewOptions{StartAt: "completely-unrelated-name"})
+	preview, err := sparkwingruntime.PreviewPlan(plan, "preview-far-miss", nil, sparkwingruntime.PreviewOptions{StartAt: "completely-unrelated-name"})
 	if err == nil {
 		t.Fatalf("expected error for far-miss --start-at, got nil")
 	}
@@ -246,7 +247,7 @@ func TestPreviewPlan_KnownStartAtSucceeds(t *testing.T) {
 	}
 
 	previewExecCounter.Store(0)
-	preview, err := sparkwing.PreviewPlan(plan, "preview-known", nil, sparkwing.PreviewOptions{StartAt: "install-argocd"})
+	preview, err := sparkwingruntime.PreviewPlan(plan, "preview-known", nil, sparkwingruntime.PreviewOptions{StartAt: "install-argocd"})
 	if err != nil {
 		t.Fatalf("PreviewPlan with valid --start-at: unexpected error %v", err)
 	}
@@ -291,7 +292,7 @@ func TestPreviewPlan_DynamicFanOutCardinalityUnresolved(t *testing.T) {
 	}
 
 	previewExecCounter.Store(0)
-	preview, err := sparkwing.PreviewPlan(plan, "plan-preview-fanout", nil, sparkwing.PreviewOptions{})
+	preview, err := sparkwingruntime.PreviewPlan(plan, "plan-preview-fanout", nil, sparkwingruntime.PreviewOptions{})
 	if err != nil {
 		t.Fatalf("PreviewPlan: %v", err)
 	}
@@ -344,7 +345,7 @@ func TestPreviewPlan_OnFailureRecoverySurfaced(t *testing.T) {
 	}
 
 	previewExecCounter.Store(0)
-	preview, err := sparkwing.PreviewPlan(plan, "plan-onfailure", nil, sparkwing.PreviewOptions{})
+	preview, err := sparkwingruntime.PreviewPlan(plan, "plan-onfailure", nil, sparkwingruntime.PreviewOptions{})
 	if err != nil {
 		t.Fatalf("PreviewPlan: %v", err)
 	}
@@ -352,7 +353,7 @@ func TestPreviewPlan_OnFailureRecoverySurfaced(t *testing.T) {
 		t.Fatalf("step body executed during preview (counter = %d)", previewExecCounter.Load())
 	}
 
-	var rec *sparkwing.PreviewNode
+	var rec *sparkwingruntime.PreviewNode
 	for i := range preview.Nodes {
 		if preview.Nodes[i].ID == "rollback" {
 			rec = &preview.Nodes[i]
@@ -401,7 +402,7 @@ func TestPreviewPlan_ResolvedArgsRoundtrip(t *testing.T) {
 	}
 
 	previewExecCounter.Store(0)
-	preview, err := sparkwing.PreviewPlan(plan, "plan-preview-args", args, sparkwing.PreviewOptions{})
+	preview, err := sparkwingruntime.PreviewPlan(plan, "plan-preview-args", args, sparkwingruntime.PreviewOptions{})
 	if err != nil {
 		t.Fatalf("PreviewPlan: %v", err)
 	}

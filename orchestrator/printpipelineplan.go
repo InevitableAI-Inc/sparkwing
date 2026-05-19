@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -40,7 +41,7 @@ func printPipelineRuntimePlan(pipeline string, rest []string) error {
 		return fmt.Errorf("build plan: %w", err)
 	}
 
-	preview, err := sparkwing.PreviewPlan(plan, pipeline, argsMap, sparkwing.PreviewOptions{
+	preview, err := sparkwingruntime.PreviewPlan(plan, pipeline, argsMap, sparkwingruntime.PreviewOptions{
 		StartAt: os.Getenv("SPARKWING_START_AT"),
 		StopAt:  os.Getenv("SPARKWING_STOP_AT"),
 		DryRun:  os.Getenv("SPARKWING_DRY_RUN") == "1",

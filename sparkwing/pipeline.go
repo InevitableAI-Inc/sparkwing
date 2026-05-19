@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"sort"
 	"sync"
+
+	"github.com/sparkwing-dev/sparkwing/sparkwing/planguard"
 )
 
 // Base is the marker embedded by every pipeline. Reserved for future
@@ -120,7 +122,7 @@ func Register[T any](name string, factory func() Pipeline[T]) {
 		// the same value via sparkwing.Inputs[T](ctx) without closure
 		// threading.
 		plan.setInputs(in)
-		if err := p.Plan(withPlanTime(ctx), plan, in, rc); err != nil {
+		if err := p.Plan(planguard.With(ctx), plan, in, rc); err != nil {
 			return nil, err
 		}
 		// Catch typo'd string-keyed Needs("...") references once the

@@ -1,10 +1,11 @@
-package sparkwing_test
+package sparkwingruntime_test
 
 import (
 	"context"
 	"strings"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -14,11 +15,11 @@ import (
 
 // guardingPipe deliberately calls a side-effect helper inside Plan().
 // Used to exercise the runtime sentinel via Registration.Invoke (the
-// canonical wiring point), since withPlanTime itself is unexported.
+// canonical wiring point).
 type guardingPipe struct{ sparkwing.Base }
 
 func (guardingPipe) Plan(ctx context.Context, _ *sparkwing.Plan, _ sparkwing.NoInputs, _ sparkwing.RunContext) error {
-	sparkwing.GuardPlanTime(ctx, "test.helper")
+	sparkwingruntime.GuardPlanTime(ctx, "test.helper")
 	return nil
 }
 
@@ -45,11 +46,11 @@ func TestPlanTime_GuardPanicsUnderPlanContext(t *testing.T) {
 
 func TestPlanTime_GuardSilentOutsidePlanContext(t *testing.T) {
 	// Plain ctx (no Plan() in flight). GuardPlanTime should be a no-op.
-	sparkwing.GuardPlanTime(context.Background(), "test.helper")
+	sparkwingruntime.GuardPlanTime(context.Background(), "test.helper")
 }
 
 func TestPlanTime_IsPlanTimeFalseByDefault(t *testing.T) {
-	if sparkwing.IsPlanTime(context.Background()) {
+	if sparkwingruntime.IsPlanTime(context.Background()) {
 		t.Fatal("bare ctx should not be plan-time")
 	}
 }

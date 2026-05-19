@@ -22,6 +22,10 @@
   into `internal/sparkwingruntime`. Pipeline authors never call these;
   relocation tightens the author-facing surface visible in IDE autocomplete
   and godoc. No behavior change.
+- Moved Plan-layer plumbing (`GuardPlanTime`, `IsPlanTime`, `ValidateStepRange`,
+  `SuggestClosest`, `PreviewPlan`) from `sparkwing` to
+  `internal/sparkwingruntime`. Pipeline authors do not call these. No behavior
+  change.
 
 ### Removed
 

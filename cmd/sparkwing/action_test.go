@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -109,7 +110,7 @@ func TestPipelineDescribe_NoPipelineNamed_SuggestsClosest(t *testing.T) {
 	for _, p := range catalog {
 		candidates = append(candidates, p.Name)
 	}
-	suggestion := sparkwing.SuggestClosest(name, candidates)
+	suggestion := sparkwingruntime.SuggestClosest(name, candidates)
 	if suggestion != "cluster-up" {
 		t.Fatalf("SuggestClosest(%q) = %q, want %q", name, suggestion, "cluster-up")
 	}
@@ -139,7 +140,7 @@ func TestPipelineDescribe_FarTypoNoSuggestion(t *testing.T) {
 	for _, p := range catalog {
 		candidates = append(candidates, p.Name)
 	}
-	suggestion := sparkwing.SuggestClosest("totallyunrelated", candidates)
+	suggestion := sparkwingruntime.SuggestClosest("totallyunrelated", candidates)
 	if suggestion != "" {
 		t.Errorf("far typo should not suggest, got %q", suggestion)
 	}
