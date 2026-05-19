@@ -10,7 +10,7 @@ import (
 // in the Plan. The result captures the author's OnTarget declarations
 // plus the inferred propagation walk:
 //
-//  1. A node with an explicit OnTargetList uses that list verbatim.
+//  1. A node with an explicit OnTargets list uses that list verbatim.
 //  2. A node without an explicit list whose consumers are all
 //     non-universal inherits the union of their effective sets.
 //  3. A node whose consumers include any universal set (or which
@@ -75,7 +75,7 @@ func EffectiveJobTargets(p *sparkwing.Plan) map[string][]string {
 		for _, id := range queue {
 			processed++
 			n := byID[id]
-			if explicit := n.OnTargetList(); len(explicit) > 0 {
+			if explicit := n.OnTargets(); len(explicit) > 0 {
 				set := make(map[string]struct{}, len(explicit))
 				for _, t := range explicit {
 					set[t] = struct{}{}

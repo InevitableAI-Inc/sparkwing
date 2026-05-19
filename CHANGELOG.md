@@ -26,9 +26,12 @@
   `SuggestClosest`, `PreviewPlan`) from `sparkwing` to
   `internal/sparkwingruntime`. Pipeline authors do not call these. No behavior
   change.
+- Renamed `JobNode.OnTargetList()` to `JobNode.OnTargets()`. The setter
+  `OnTarget(...)` is unchanged.
 
 ### Removed
 
+- `JobNode.OnFailureNodeID()`. Use `OnFailureNode().ID()` with a nil check.
 - Retired `--sw-retry-of` and `--sw-full`; use `sparkwing runs retry RUN_ID [--failed | --all]`.
 - Retired `--sw-job` and `--sw-prefer`; runner selection is now exclusively Plan-layer via `Job.Requires` / `Job.Prefers`. If you used these flags, declare the constraint in the pipeline instead.
 - Retired `--sw-backends-env`. `backends.yaml` environment selection is now exclusively auto-detect — if it picks wrong, fix the `match:` rules in `backends.yaml` or the `DetectEnvironment` logic.

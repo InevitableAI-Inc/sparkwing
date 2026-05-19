@@ -376,21 +376,6 @@ func TestPreviewPlan_OnFailureRecoverySurfaced(t *testing.T) {
 	}
 }
 
-// TestNodeOnFailureNodeID covers the public accessor: returns the
-// recovery node's id when set, "" when not.
-func TestNodeOnFailureNodeID(t *testing.T) {
-	plan := sparkwing.NewPlan()
-	bare := sparkwing.Job(plan, "bare", nopStep)
-	if got := bare.OnFailureNodeID(); got != "" {
-		t.Errorf("bare node OnFailureNodeID: got %q, want \"\"", got)
-	}
-	parent := sparkwing.Job(plan, "parent", nopStep)
-	parent.OnFailure("rollback", nopStep)
-	if got := parent.OnFailureNodeID(); got != "rollback" {
-		t.Errorf("parent OnFailureNodeID: got %q, want %q", got, "rollback")
-	}
-}
-
 func TestPreviewPlan_ResolvedArgsRoundtrip(t *testing.T) {
 	sparkwing.Register[previewArgsInputs]("plan-preview-args",
 		func() sparkwing.Pipeline[previewArgsInputs] { return previewArgsPipe{} })

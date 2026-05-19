@@ -94,7 +94,7 @@ func validateOnTargetSelection(opts Options, plan *sparkwing.Plan) error {
 }
 
 func checkJobOnTarget(pipelineName string, n *sparkwing.JobNode, declared map[string]struct{}, hasTargets bool, yaml *pipelines.Pipeline) error {
-	list := n.OnTargetList()
+	list := n.OnTargets()
 	if len(list) == 0 {
 		return nil
 	}

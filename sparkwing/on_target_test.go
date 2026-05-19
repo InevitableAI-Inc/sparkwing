@@ -22,18 +22,18 @@ func TestTarget_AccessorRoundTrip(t *testing.T) {
 func TestOnTarget_PopulatesList(t *testing.T) {
 	plan := sparkwing.NewPlan()
 	n := sparkwing.Job(plan, "deploy", &buildJob{}).OnTarget("prod", "staging")
-	got := n.OnTargetList()
+	got := n.OnTargets()
 	want := []string{"prod", "staging"}
 	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("OnTargetList = %v, want %v", got, want)
+		t.Fatalf("OnTargets = %v, want %v", got, want)
 	}
 }
 
 func TestOnTarget_EmptyClears(t *testing.T) {
 	plan := sparkwing.NewPlan()
 	n := sparkwing.Job(plan, "deploy", &buildJob{}).OnTarget("prod").OnTarget()
-	if got := n.OnTargetList(); got != nil {
-		t.Fatalf("OnTargetList after clear: %v", got)
+	if got := n.OnTargets(); got != nil {
+		t.Fatalf("OnTargets after clear: %v", got)
 	}
 }
 
@@ -43,8 +43,8 @@ func TestOnTarget_GroupDelegates(t *testing.T) {
 	b := sparkwing.Job(plan, "b", &buildJob{})
 	g := sparkwing.GroupJobs(plan, "deploys", a, b).OnTarget("dev")
 	for _, m := range g.Members() {
-		if got := m.OnTargetList(); !reflect.DeepEqual(got, []string{"dev"}) {
-			t.Fatalf("member %q OnTargetList = %v", m.ID(), got)
+		if got := m.OnTargets(); !reflect.DeepEqual(got, []string{"dev"}) {
+			t.Fatalf("member %q OnTargets = %v", m.ID(), got)
 		}
 	}
 }

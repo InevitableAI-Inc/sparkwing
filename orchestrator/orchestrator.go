@@ -925,7 +925,7 @@ func emitRunPlan(delegate sparkwing.Logger, plan *sparkwing.Plan, target string)
 		// it as a hide signal so target-mismatched jobs don't clutter
 		// the log view, while the dashboard keeps showing them with
 		// a "skipped" badge.
-		if onT := n.OnTargetList(); len(onT) > 0 {
+		if onT := n.OnTargets(); len(onT) > 0 {
 			row["on_target"] = onT
 		}
 		if eff, ok := effective[n.ID()]; ok && len(eff) > 0 {
@@ -2503,7 +2503,7 @@ func nodeModifiersSnapshot(n *sparkwing.JobNode) *snapshotModifiers {
 		RunsOn:          n.RequiresLabels(),
 		Prefers:         n.PrefersLabels(),
 		WhenRunner:      n.WhenRunnerLabels(),
-		OnTarget:        n.OnTargetList(),
+		OnTarget:        n.OnTargets(),
 		Inline:          n.IsInline(),
 		Optional:        n.IsOptional(),
 		ContinueOnError: n.IsContinueOnError(),

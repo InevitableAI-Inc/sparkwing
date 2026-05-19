@@ -814,19 +814,6 @@ func (n *JobNode) TimeoutDuration() time.Duration { return n.timeout }
 // nil if none.
 func (n *JobNode) OnFailureNode() *JobNode { return n.onFailure }
 
-// OnFailureNodeID returns the ID of the recovery node registered via
-// OnFailure, or "" if none. Mirrors OnFailureNode() but returns just
-// the identifier so plan-introspection callers (PreviewPlan, the
-// orchestrator's snapshot encoder, dashboard renderers) can surface
-// the failure-branch attachment without dereferencing the unexported
-// onFailure field.
-func (n *JobNode) OnFailureNodeID() string {
-	if n.onFailure == nil {
-		return ""
-	}
-	return n.onFailure.ID()
-}
-
 // SkipOption configures a SkipIf registration.
 type SkipOption func(*JobNode)
 
@@ -1017,7 +1004,7 @@ func (n *JobNode) WhenRunnerLabels() []string {
 // explicit OnTarget but whose only consumers are all OnTarget("X")
 // inherits that filter; a node feeding any universal-effective
 // consumer stays universal. The explicit list returned by
-// OnTargetList reflects only what the author declared -- the
+// OnTargets reflects only what the author declared -- the
 // inferred set is not surfaced through this method.
 //
 //	deploy := sw.Job(plan, "deploy-prod", &Deploy{}).OnTarget("prod")
@@ -1027,12 +1014,12 @@ func (n *JobNode) OnTarget(targets ...string) *JobNode {
 	return n
 }
 
-// OnTargetList returns the explicit OnTarget list as declared at
+// OnTargets returns the explicit OnTarget list as declared at
 // registration time. The inferred target set computed during the
 // plan-finalize walk is NOT reflected here -- "what the author wrote"
 // and "what the scheduler resolved" are deliberately separate
 // questions.
-func (n *JobNode) OnTargetList() []string {
+func (n *JobNode) OnTargets() []string {
 	return copyLabels(n.onTarget)
 }
 

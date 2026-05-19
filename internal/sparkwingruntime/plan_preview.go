@@ -181,12 +181,12 @@ func PreviewPlan(plan *sparkwing.Plan, pipeline string, resolvedArgs map[string]
 	// `pipeline plan` can render the failure-branch attachment without
 	// re-parsing the snapshot.
 	for _, n := range plan.Nodes() {
-		recID := n.OnFailureNodeID()
-		if recID == "" || seen[recID] {
-			continue
-		}
 		rec := n.OnFailureNode()
 		if rec == nil {
+			continue
+		}
+		recID := rec.ID()
+		if seen[recID] {
 			continue
 		}
 		out.Nodes = append(out.Nodes, previewNode(planCtx, rec, n.ID(), opts))
