@@ -28,6 +28,8 @@
   change.
 - Renamed `JobNode.OnTargetList()` to `JobNode.OnTargets()`. The setter
   `OnTarget(...)` is unchanged.
+- Renamed `WorkStep.OnTargetList()` to `WorkStep.OnTargets()` for parity with
+  the JobNode rename. The setter `WorkStep.OnTarget(...)` is unchanged.
 
 ### Removed
 

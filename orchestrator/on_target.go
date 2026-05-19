@@ -115,7 +115,7 @@ func checkJobOnTarget(pipelineName string, n *sparkwing.JobNode, declared map[st
 }
 
 func checkStepOnTarget(pipelineName, jobID string, s *sparkwing.WorkStep, declared map[string]struct{}, hasTargets bool, yaml *pipelines.Pipeline) error {
-	list := s.OnTargetList()
+	list := s.OnTargets()
 	if len(list) == 0 {
 		return nil
 	}

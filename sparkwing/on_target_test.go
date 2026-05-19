@@ -118,7 +118,7 @@ func TestEffectiveStepTargets_InheritsFromStepConsumer(t *testing.T) {
 func TestWorkStep_OnTarget_EmptyClears(t *testing.T) {
 	w := sparkwing.NewWork()
 	s := sparkwing.Step(w, "x", func(context.Context) error { return nil }).OnTarget("prod").OnTarget()
-	if got := s.OnTargetList(); got != nil {
+	if got := s.OnTargets(); got != nil {
 		t.Fatalf("after clear: %v", got)
 	}
 }

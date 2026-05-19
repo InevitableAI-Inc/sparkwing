@@ -595,9 +595,9 @@ func (s *WorkStep) OnTarget(targets ...string) *WorkStep {
 	return s
 }
 
-// OnTargetList returns the explicit OnTarget list as declared at
+// OnTargets returns the explicit OnTarget list as declared at
 // registration time. The inferred target set is not reflected here.
-func (s *WorkStep) OnTargetList() []string {
+func (s *WorkStep) OnTargets() []string {
 	return copyLabels(s.onTarget)
 }
 

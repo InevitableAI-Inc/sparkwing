@@ -97,7 +97,7 @@ func effectiveStepTargets(w *Work) map[string][]string {
 		var next []string
 		for _, id := range queue {
 			s := byID[id]
-			if explicit := s.OnTargetList(); len(explicit) > 0 {
+			if explicit := s.OnTargets(); len(explicit) > 0 {
 				set := make(map[string]struct{}, len(explicit))
 				for _, t := range explicit {
 					set[t] = struct{}{}
