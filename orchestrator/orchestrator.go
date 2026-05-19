@@ -244,8 +244,8 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 		Trigger:   trigger,
 		StartedAt: time.Now(),
 	}
-	// Same instance lives on Runtime().Git so SDK helpers
-	// (docker.ComputeTags, sparkwing.Runtime().Git.SHA in user code)
+	// Same instance lives on CurrentRuntime().Git so SDK helpers
+	// (docker.ComputeTags, sparkwing.CurrentRuntime().Git.SHA in user code)
 	// see the trigger's view without re-shelling.
 	sparkwing.SetGit(gitOpt)
 
@@ -429,13 +429,13 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 	// must resolve before any job dispatches; optional entries
 	// tolerate a missing source. Skipped when neither side declared
 	// anything.
-	pipeSec, err := sparkwing.ResolvePipelineSecrets(ctx, reg, opts.PipelineYAML)
+	pipeSec, err := sparkwingruntime.ResolvePipelineSecrets(ctx, reg, opts.PipelineYAML)
 	if err != nil {
 		_ = backends.State.FinishRun(ctx, runID, "failed", err.Error())
 		return &Result{RunID: runID, Status: "failed", Error: err}, nil
 	}
 	if pipeSec != nil {
-		ctx = sparkwing.WithPipelineSecrets(ctx, pipeSec)
+		ctx = sparkwingruntime.WithPipelineSecrets(ctx, pipeSec)
 	}
 	delegate := secrets.MaskingLogger(opts.Delegate, masker)
 
@@ -1197,7 +1197,7 @@ func newDispatchState(ctx context.Context, backends Backends, r runner.Runner, r
 	// Install the typed Inputs the registration parsed so step
 	// bodies can read the value via sparkwing.Inputs[T](ctx).
 	if in := plan.Inputs(); in != nil {
-		s.resolverCtx = sparkwing.WithInputs(s.resolverCtx, in)
+		s.resolverCtx = sparkwingruntime.WithInputs(s.resolverCtx, in)
 	}
 	return s
 }

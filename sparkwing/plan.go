@@ -52,7 +52,8 @@ func NewPlan() *Plan {
 // this pipeline's Plan() method, or nil for a Plan built directly
 // (outside the registration path). The orchestrator uses this at
 // dispatch time to install the value on each runner ctx via
-// sparkwing.WithInputs, so step bodies can call sparkwing.Inputs[T].
+// internal/sparkwingruntime.WithInputs, so step bodies can call
+// sparkwing.Inputs[T].
 //
 // Type-erased on purpose -- Plan can't carry a generic type
 // parameter; the typed Inputs[T] accessor does the assertion at the

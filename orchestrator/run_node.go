@@ -138,7 +138,7 @@ func RunNodeOnce(
 	// so step bodies can read via sparkwing.Inputs[T](ctx) without
 	// per-job closure threading.
 	if in := plan.Inputs(); in != nil {
-		ctx = sparkwing.WithInputs(ctx, in)
+		ctx = sparkwingruntime.WithInputs(ctx, in)
 	}
 
 	// Pod-side install of the runner identity so adapters branching
@@ -182,7 +182,7 @@ func RunNodeOnce(
 	if sec, serr := rehydratePipelineSecrets(ctx, run.PlanSnapshot, reg); serr != nil {
 		logger.Warn("pod: rehydrate pipeline secrets", "err", serr)
 	} else if sec != nil {
-		ctx = sparkwing.WithPipelineSecrets(ctx, sec)
+		ctx = sparkwingruntime.WithPipelineSecrets(ctx, sec)
 	}
 
 	// Pod-side twin of dispatchState.pipelineRef.

@@ -34,6 +34,12 @@
   `WithPipelineAwaiter`, `DescribeAll`, `DescribePipelineByName`) from the
   `sparkwing` package to `internal/sparkwingruntime`. Pipeline authors do not
   call these.
+- Moved deep-plumbing functions (`WithInputs`, `WithPipelineSecrets`,
+  `DecodePipelineConfig`, `ResolvePipelineSecrets`) from `sparkwing` to
+  `internal/sparkwingruntime`. These functions only matter to code rebuilding
+  the orchestrator; sparkwing retains `WithPipelineConfig`,
+  `WithSecretResolver`, `ResolvePipelineConfig` as platform-extensibility
+  primitives.
 
 ### Removed
 
@@ -43,6 +49,8 @@
 - `sparkwing.ToKebabCase` (unused string utility) and `sparkwing.LookupInstance`
   (no callers anywhere). Consumer repos using either must inline their own
   equivalent.
+- `sparkwing.Runtime()` — use `sparkwing.CurrentRuntime()` instead. The alias
+  had no production callers.
 - Retired `--sw-retry-of` and `--sw-full`; use `sparkwing runs retry RUN_ID [--failed | --all]`.
 - Retired `--sw-job` and `--sw-prefer`; runner selection is now exclusively Plan-layer via `Job.Requires` / `Job.Prefers`. If you used these flags, declare the constraint in the pipeline instead.
 - Retired `--sw-backends-env`. `backends.yaml` environment selection is now exclusively auto-detect — if it picks wrong, fix the `match:` rules in `backends.yaml` or the `DetectEnvironment` logic.

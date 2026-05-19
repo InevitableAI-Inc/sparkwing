@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/pkg/pipelines"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
@@ -28,7 +29,7 @@ func rehydratePipelineConfig(snapshot []byte, reg *sparkwing.Registration) (any,
 	if err := json.Unmarshal(snapshot, &meta); err != nil {
 		return nil, fmt.Errorf("decode snapshot: %w", err)
 	}
-	return sparkwing.DecodePipelineConfig(reg, meta.PipelineConfig)
+	return sparkwingruntime.DecodePipelineConfig(reg, meta.PipelineConfig)
 }
 
 // rehydrateTarget reads the run's active target out of the persisted
@@ -73,5 +74,5 @@ func rehydratePipelineSecrets(ctx context.Context, snapshot []byte, reg *sparkwi
 		}
 	}
 	stub := &pipelines.Pipeline{Secrets: meta.Secrets}
-	return sparkwing.ResolvePipelineSecrets(ctx, reg, stub)
+	return sparkwingruntime.ResolvePipelineSecrets(ctx, reg, stub)
 }

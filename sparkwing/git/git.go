@@ -4,7 +4,7 @@
 //
 // Every function takes an explicit `repoDir` parameter. Callers
 // operating on the run's working tree usually go through
-// sparkwing.RunContext.Git / sparkwing.Runtime().Git; release
+// sparkwing.RunContext.Git / sparkwing.CurrentRuntime().Git; release
 // pipelines that operate on sibling clones import this package
 // directly.
 //

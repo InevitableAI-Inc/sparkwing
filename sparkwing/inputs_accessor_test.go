@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -17,7 +18,7 @@ type deployArgs struct {
 // (or a test) installs via sw.WithInputs.
 func TestInputs_RoundTrip(t *testing.T) {
 	want := deployArgs{Service: "api", Env: "prod"}
-	ctx := sparkwing.WithInputs(context.Background(), want)
+	ctx := sparkwingruntime.WithInputs(context.Background(), want)
 	got := sparkwing.Inputs[deployArgs](ctx)
 	if got != want {
 		t.Fatalf("Inputs[deployArgs] = %+v, want %+v", got, want)
@@ -48,7 +49,7 @@ func TestInputs_PanicsOnTypeMismatch(t *testing.T) {
 	type otherArgs struct {
 		Region string
 	}
-	ctx := sparkwing.WithInputs(context.Background(), deployArgs{Service: "x"})
+	ctx := sparkwingruntime.WithInputs(context.Background(), deployArgs{Service: "x"})
 	defer func() {
 		r := recover()
 		if r == nil {

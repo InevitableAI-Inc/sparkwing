@@ -85,10 +85,6 @@ func CurrentRuntime() RuntimeConfig {
 	return runtime
 }
 
-// Runtime is shorthand for CurrentRuntime, e.g. for
-// `sparkwing.Runtime().Git.SHA`.
-func Runtime() RuntimeConfig { return CurrentRuntime() }
-
 // SetWorkDir overrides the WorkDir field. Intended for tests; also
 // updates the Git workDir so live methods follow.
 func SetWorkDir(dir string) {

@@ -16,6 +16,9 @@ type runtimePlumbingKeys struct {
 	JSONRefResolver  any
 	PipelineResolver any
 	PipelineAwaiter  any
+	Inputs           any
+	PipelineSecrets  any
+	SecretResolver   any
 }
 
 // RuntimePlumbing exposes context keys to internal/sparkwingruntime so
@@ -35,4 +38,7 @@ var RuntimePlumbing = runtimePlumbingKeys{
 	JSONRefResolver:  keyJSONRefResolver,
 	PipelineResolver: keyPipelineResolver,
 	PipelineAwaiter:  keyPipelineAwaiter,
+	Inputs:           keyInputs,
+	PipelineSecrets:  keyPipelineSecrets,
+	SecretResolver:   keySecretResolver,
 }

@@ -72,7 +72,7 @@ func TestWalkUpToProject_ReturnsEmptyWhenNoProject(t *testing.T) {
 	}
 }
 
-// SetGit attaches a populated *Git, visible via Runtime().Git.
+// SetGit attaches a populated *Git, visible via CurrentRuntime().Git.
 func TestSetGit_AttachesPopulatedGit(t *testing.T) {
 	prev := runtime.Git
 	t.Cleanup(func() { runtimeMu.Lock(); runtime.Git = prev; runtimeMu.Unlock() })
@@ -80,9 +80,9 @@ func TestSetGit_AttachesPopulatedGit(t *testing.T) {
 	g := NewGit("/work/repo", "abc123def456abc123def456abc123def456abcd",
 		"main", "owner/name", "git@github.com:owner/name.git")
 	SetGit(g)
-	got := Runtime().Git
+	got := CurrentRuntime().Git
 	if got == nil {
-		t.Fatal("Runtime().Git is nil after SetGit")
+		t.Fatal("CurrentRuntime().Git is nil after SetGit")
 	}
 	if got.SHA != g.SHA || got.Branch != g.Branch || got.Repo != g.Repo {
 		t.Errorf("SetGit roundtrip mismatch: %+v vs %+v", got, g)
