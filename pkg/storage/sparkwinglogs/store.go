@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/sparkwing-dev/sparkwing/logs"
+	"github.com/sparkwing-dev/sparkwing/pkg/logs"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage"
 )
 

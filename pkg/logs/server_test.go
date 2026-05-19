@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sparkwing-dev/sparkwing/logs"
+	"github.com/sparkwing-dev/sparkwing/pkg/logs"
 )
 
 func newLogsServer(t *testing.T) (*logs.Client, string, func()) {

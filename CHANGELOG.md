@@ -17,6 +17,13 @@
   path; existing user repos continue to work with the direct
   `orchestrator` import and can migrate at their leisure (or on the
   next regenerate / SDK bump).
+- Promoted `logs/` to `pkg/logs/`. The HTTP logs service and its
+  client are now explicitly part of the public API surface
+  (stability promise); `pkg/storage/sparkwinglogs/` already
+  depended on `logs.Client` / `logs.Server` types publicly, so this
+  just makes the existing reality match the import path. Consumers
+  outside this repo importing the old `logs/` path must update on
+  next `go.mod` bump.
 - Moved several packages to clarify the public/private boundary:
   - `logutil`, `bincache`, `otelutil`, `profile`, `repos` →
     `internal/` (implementation detail, no external stability

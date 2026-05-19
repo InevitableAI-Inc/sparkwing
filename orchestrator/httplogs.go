@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sparkwing-dev/sparkwing/logs"
+	"github.com/sparkwing-dev/sparkwing/pkg/logs"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage/sparkwinglogs"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"

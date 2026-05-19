@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sparkwing-dev/sparkwing/logs"
+	"github.com/sparkwing-dev/sparkwing/pkg/logs"
 )
 
 // A 403 from the logs service must come back as a typed

@@ -13,7 +13,7 @@ import (
 
 	"github.com/sparkwing-dev/sparkwing/internal/bincache"
 	"github.com/sparkwing-dev/sparkwing/pkg/controller/client"
-	"github.com/sparkwing-dev/sparkwing/logs"
+	"github.com/sparkwing-dev/sparkwing/pkg/logs"
 	"github.com/sparkwing-dev/sparkwing/orchestrator/store"
 	"github.com/sparkwing-dev/sparkwing/internal/otelutil"
 )
