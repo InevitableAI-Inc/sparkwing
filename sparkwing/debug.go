@@ -11,8 +11,8 @@ import (
 
 // debugEnabled toggles emission of Level:"debug" LogRecords. Atomic
 // so Debug is close to free when off (one load + branch). Seeded
-// from SPARKWING_DEBUG at package init; SetDebug overrides at
-// runtime.
+// from SPARKWING_DEBUG at package init; tests can override via the
+// test-only setDebug helper in testhelpers_test.go.
 var debugEnabled atomic.Bool
 
 func init() {
@@ -39,10 +39,6 @@ func parseDebug(v string) bool {
 // Cheap format calls (string constants, small ints) can call Debug
 // unconditionally — the atomic load is negligible.
 func DebugEnabled() bool { return debugEnabled.Load() }
-
-// SetDebug overrides the SPARKWING_DEBUG-derived default. Safe for
-// concurrent use.
-func SetDebug(on bool) { debugEnabled.Store(on) }
 
 // Debug emits a debug-level LogRecord. No-op when SPARKWING_DEBUG is
 // not set (the default). Use it for SDK-internal tracing and

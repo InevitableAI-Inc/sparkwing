@@ -85,8 +85,12 @@ func CurrentRuntime() RuntimeConfig {
 	return runtime
 }
 
-// SetWorkDir overrides the WorkDir field. Intended for tests; also
-// updates the Git workDir so live methods follow.
+// SetWorkDir overrides the WorkDir field on the runtime singleton
+// and updates the Git workDir so live methods follow. Used by tests
+// across this module's SDK packages (sparkwing/, sparkwing/inputs/,
+// sparkwing/fs/...) to point the runtime at a temp checkout; no
+// production callers reach for this -- the orchestrator owns the
+// WorkDir lifecycle via SPARKWING_WORK_DIR + the runtime snapshot.
 func SetWorkDir(dir string) {
 	runtimeMu.Lock()
 	defer runtimeMu.Unlock()
@@ -98,9 +102,12 @@ func SetWorkDir(dir string) {
 	}
 }
 
-// SetGit attaches a fully-populated Git to the runtime. Called by the
-// orchestrator at run start once the trigger has been parsed. Same
-// instance also lives on RunContext.Git. Later calls overwrite.
+// SetGit attaches a fully-populated Git to the runtime. Called by
+// the orchestrator at run start once the trigger has been parsed
+// (see internal/orchestrator/orchestrator.go and
+// internal/orchestrator/run_node.go for the two boot-time call
+// sites). Same instance also lives on RunContext.Git. Later calls
+// overwrite. Safe for concurrent use.
 func SetGit(g *Git) {
 	runtimeMu.Lock()
 	defer runtimeMu.Unlock()

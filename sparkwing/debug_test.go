@@ -25,16 +25,16 @@ func TestParseDebug(t *testing.T) {
 	}
 }
 
-func TestDebugEnabled_SetDebugRoundTrip(t *testing.T) {
+func TestDebugEnabled_setDebugRoundTrip(t *testing.T) {
 	prev := DebugEnabled()
-	t.Cleanup(func() { SetDebug(prev) })
+	t.Cleanup(func() { setDebug(prev) })
 
-	SetDebug(true)
+	setDebug(true)
 	if !DebugEnabled() {
-		t.Error("SetDebug(true) didn't enable")
+		t.Error("setDebug(true) didn't enable")
 	}
-	SetDebug(false)
+	setDebug(false)
 	if DebugEnabled() {
-		t.Error("SetDebug(false) didn't disable")
+		t.Error("setDebug(false) didn't disable")
 	}
 }
