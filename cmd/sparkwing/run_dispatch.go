@@ -39,12 +39,10 @@ func atoiNonNeg(s string) (int, error) {
 }
 
 type runFlags struct {
-	from      string
-	on        string
-	retryOf   string
-	fullRetry bool
-	noUpdate  bool
-	verbose   bool
+	from     string
+	on       string
+	noUpdate bool
+	verbose  bool
 	// secrets sources secrets from the named profile's controller.
 	// Orthogonal to --on: --secrets prod resolves against prod even
 	// when running locally. Empty = laptop dotenv.
@@ -163,20 +161,6 @@ func parseRunFlags(args []string) (runFlags, []string) {
 			i++
 		case strings.HasPrefix(a, "--sw-on="):
 			wf.on = strings.TrimPrefix(a, "--sw-on=")
-			i++
-		case a == "--sw-retry-of":
-			if i+1 < len(args) {
-				wf.retryOf = args[i+1]
-				i += 2
-				continue
-			}
-			pass = append(pass, a)
-			i++
-		case strings.HasPrefix(a, "--sw-retry-of="):
-			wf.retryOf = strings.TrimPrefix(a, "--sw-retry-of=")
-			i++
-		case a == "--sw-full":
-			wf.fullRetry = true
 			i++
 		case a == "--sw-no-update":
 			wf.noUpdate = true
@@ -451,11 +435,6 @@ func dispatchRemote(pipelineName string, wf runFlags, passthrough []string) erro
 			GithubOwner: owner,
 			GithubRepo:  name,
 		},
-		RetryOf: wf.retryOf,
-	}
-	// --full is local-only; warn loudly when it would silently no-op remotely.
-	if wf.fullRetry && wf.retryOf != "" {
-		fmt.Fprintln(os.Stderr, "sparkwing run: --full is local-only; remote retry always skips passed nodes (ignoring --full)")
 	}
 
 	// Best-effort eager refresh closes the

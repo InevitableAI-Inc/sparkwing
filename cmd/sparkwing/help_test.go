@@ -97,12 +97,12 @@ func TestRunHelpListsArcFlags(t *testing.T) {
 	}
 	allFlags := []string{
 		// Hot tier
-		"--sw-from", "--sw-retry-of",
+		"--sw-from",
 		"--sw-start-at", "--sw-stop-at",
 		"--sw-dry-run",
 		"--sw-for", "--sw-on",
 		// Advanced tier — also surface in --help
-		"--sw-change-directory", "--sw-verbose", "--sw-full",
+		"--sw-change-directory", "--sw-verbose",
 		"--sw-allow-destructive", "--sw-allow-prod", "--sw-allow-money",
 		"--sw-job", "--sw-prefer", "--sw-backends-env",
 	}
@@ -125,14 +125,14 @@ func TestRunHelpListsArcFlags(t *testing.T) {
 // --help, not in the completion menu.
 func TestCompletionFlagsListsHotOnly(t *testing.T) {
 	hotFlags := []string{
-		"--sw-from", "--sw-retry-of",
+		"--sw-from",
 		"--sw-start-at", "--sw-stop-at",
 		"--sw-dry-run",
 		"--sw-for", "--sw-on",
 		"--help",
 	}
 	advancedFlags := []string{
-		"--sw-change-directory", "--sw-verbose", "--sw-full",
+		"--sw-change-directory", "--sw-verbose",
 		"--sw-allow-destructive", "--sw-allow-prod", "--sw-allow-money",
 		"--sw-job", "--sw-prefer", "--sw-backends-env",
 	}

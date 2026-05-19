@@ -168,16 +168,8 @@ func dispatchRun(args []string) error {
 	if wf.verbose {
 		env = append(env, "SPARKWING_LOG_LEVEL=debug")
 	}
-	// sparkwing-owned knobs ride env vars the pipeline binary reads at Options-build time.
-	if wf.retryOf != "" {
-		env = append(env, "SPARKWING_RETRY_OF="+wf.retryOf)
-		if wf.fullRetry {
-			env = append(env, "SPARKWING_RETRY_FULL=1")
-		}
-	}
 	// Forward --start-at / --stop-at via env so the pipeline binary's
-	// orchestrator/main.go can lift them onto Options alongside the
-	// existing --retry-of plumbing.
+	// orchestrator/main.go can lift them onto Options.
 	if wf.startAt != "" {
 		env = append(env, "SPARKWING_START_AT="+wf.startAt)
 	}

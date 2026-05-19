@@ -787,11 +787,9 @@ C, change-directory --change-directory   // re-anchor .sparkwing/ discovery
 config              --config             // named preset from config.yaml
 dry-run             --dry-run            // dry-run dispatch
 from                --from               // compile pipeline from a git ref
-full                --full               // with --retry-of: re-run every node
 mode                --mode               // run mode override
 no-update           --no-update          // skip auto-update on invocation
 on                  --on                 // remote-controller dispatch
-retry-of            --retry-of           // re-run, skip-passed by default
 secrets             --secrets            // ad-hoc secret injection
 start-at            --start-at           // skip nodes before this step
 stop-at             --stop-at            // skip nodes after this step

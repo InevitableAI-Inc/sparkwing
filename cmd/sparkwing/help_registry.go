@@ -976,7 +976,7 @@ v1.2.3' passes --version through to the pipeline's Args.`,
 		{"Run with no flags", "sparkwing run build-test-deploy"},
 		{"Pass a typed pipeline arg", "sparkwing run release --version v0.28.1"},
 		{"Run from a different git ref", "sparkwing run build-test-deploy --from feature/xyz"},
-		{"Retry a failed run", "sparkwing run build-test-deploy --retry-of run-a1b2c3"},
+		{"Retry a failed run", "sparkwing runs retry RUN_ID --failed"},
 		{"Dispatch remotely", "sparkwing run deploy --on prod --region us-west-2"},
 	},
 }
