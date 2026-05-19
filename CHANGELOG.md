@@ -16,6 +16,7 @@
 - Renamed `--sw-for` to `--sw-target`. The `Job.OnTarget("...")` author API is unchanged.
 - Renamed `--sw-on` to `--sw-profile` (and its argument `NAME` to `PROFILE`).
 - Renamed `--sw-from` to `--sw-ref` (and the env-var bridge `SPARKWING_FROM` to `SPARKWING_REF`).
+- Tightened `--sw-*` flag descriptions in `--help`. No behavior change.
 - Tightened `--sw-dry-run` description (no behavior change).
 
 ### Removed

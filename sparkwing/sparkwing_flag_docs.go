@@ -50,15 +50,15 @@ type SparkwingFlagDoc struct {
 // `sw-` so pipeline authors have the full unprefixed namespace for
 // their typed Inputs flags.
 var sparkwingFlagDocs = []SparkwingFlagDoc{
-	{Name: "sw-cd", Short: "C", Argument: "PATH", Desc: "Re-anchor .sparkwing/ discovery to PATH (mirrors `git -C` / `make -C`)", Group: "System"},
-	{Name: "sw-ref", Argument: "REF", Desc: "Compile from a git ref (branch/tag/SHA) instead of the working tree", Group: "System", Hot: true},
-	{Name: "sw-verbose", Short: "v", Desc: "Enable debug logging from the orchestrator (equivalent to SPARKWING_LOG_LEVEL=debug)", Group: "System"},
-	{Name: "sw-start-at", Argument: "STEP", Desc: "Start the run at STEP, skipping every step before it", Group: "System", Hot: true},
-	{Name: "sw-stop-at", Argument: "STEP", Desc: "Stop the run after STEP, skipping every step beyond it", Group: "System", Hot: true},
-	{Name: "sw-dry-run", Desc: "Run each step's dry-run probe instead of its real action; no mutation", Group: "System", Hot: true},
-	{Name: "sw-allow", Argument: "LABEL[,LABEL...]", Desc: "Authorize risk-labeled steps (repeatable; comma-separated allowed)", Group: "System"},
-	{Name: "sw-target", Argument: "TARGET", Desc: "Pick the pipeline target to run against (Config + Source binding follow)", Group: "System", Hot: true},
-	{Name: "sw-profile", Argument: "PROFILE", Desc: "Dispatch on a remote controller instead of running locally", Group: "System", Hot: true},
+	{Name: "sw-cd", Short: "C", Argument: "PATH", Desc: "Run as if started in PATH", Group: "System"},
+	{Name: "sw-ref", Argument: "REF", Desc: "Run the pipeline at REF (branch/tag/SHA) instead of the working tree", Group: "System", Hot: true},
+	{Name: "sw-verbose", Short: "v", Desc: "Enable debug logging", Group: "System"},
+	{Name: "sw-start-at", Argument: "STEP", Desc: "Start the run at STEP", Group: "System", Hot: true},
+	{Name: "sw-stop-at", Argument: "STEP", Desc: "Stop the run after STEP", Group: "System", Hot: true},
+	{Name: "sw-dry-run", Desc: "Run each step's dry-run probe instead of its real action", Group: "System", Hot: true},
+	{Name: "sw-allow", Argument: "LABEL[,LABEL...]", Desc: "Authorize risk-labeled steps (repeatable)", Group: "System"},
+	{Name: "sw-target", Argument: "TARGET", Desc: "Run against the named target (i.e. local, dev, prod)", Group: "System", Hot: true},
+	{Name: "sw-profile", Argument: "PROFILE", Desc: "Run via the named profile instead of locally", Group: "System", Hot: true},
 }
 
 // SparkwingFlagDocs returns the canonical sparkwing-owned flag
