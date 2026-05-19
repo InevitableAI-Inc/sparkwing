@@ -86,23 +86,6 @@ defaults:
 	}
 }
 
-func TestApplyBackendsConfig_LegacyEnvVarsDoNothing(t *testing.T) {
-	neutralizeEnv(t)
-	// The env-var shim was removed; setting these vars must have
-	// zero effect on backend selection.
-	t.Setenv("SPARKWING_LOG_STORE", "fs:///tmp/should-not-be-read")
-	t.Setenv("SPARKWING_ARTIFACT_STORE", "s3://should-not-be-read")
-	dir := writeBackendsYAML(t, t.TempDir(), ``)
-	opts := Options{SparkwingDir: dir}
-	if err := ApplyBackendsConfig(context.Background(), &opts); err != nil {
-		t.Fatalf("apply: %v", err)
-	}
-	if opts.ArtifactStore != nil || opts.LogStore != nil {
-		t.Errorf("env vars should not populate stores; got cache=%v logs=%v",
-			opts.ArtifactStore, opts.LogStore)
-	}
-}
-
 func TestApplyBackendsConfig_RespectsPreSetStores(t *testing.T) {
 	neutralizeEnv(t)
 	dir := writeBackendsYAML(t, t.TempDir(), `

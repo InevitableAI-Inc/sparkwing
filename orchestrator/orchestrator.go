@@ -141,9 +141,9 @@ type Options struct {
 
 	// BackendsConfig, when non-empty, names an extra backends.yaml
 	// fragment to layer underneath repo+user defaults. The outer
-	// sparkwing CLI uses this to forward profile-derived storage settings
-	// to the child without going through the deprecated env-var
-	// shim. The file is expected to be cleaned up by the caller.
+	// sparkwing CLI uses this to forward profile-derived storage
+	// settings to the child pipeline binary. The file is expected to be
+	// cleaned up by the caller.
 	BackendsConfig string
 
 	// DefaultStateDB names the SQLite file ApplyBackendsConfig falls
