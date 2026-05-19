@@ -22,8 +22,6 @@ const (
 	FailureTimeout            = "timeout"
 	FailureQueueTimeout       = "queue_timeout"
 	FailureRunnerLeaseExpired = "runner_lease_expired"
-	// Pre-v0.34 alias retained for backward-compatible deserialization.
-	FailureWorkerLeaseExpired = FailureRunnerLeaseExpired
 	// FailureLogsAuth: the runner's logs.append calls returned 401/403
 	// against the controller's auth surface. The run's structured
 	// logs are unrecoverable; better to fail loud than report
