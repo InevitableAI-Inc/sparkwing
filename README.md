@@ -82,6 +82,19 @@ func init() {
 for the full reference; [`docs/sdk.md`](./docs/sdk.md) is the SDK
 flat reference.
 
+## Stability
+
+Sparkwing follows semantic versioning, but with explicit scope: only
+some packages and surfaces carry stability promises. The short version
+is that `pkg/...`, the top-level `sparkwing/` SDK package, CLI flags,
+wire formats, and YAML configs are covered; everything under
+`internal/...` is implementation detail and may change at any time.
+
+See [VERSIONING.md](./VERSIONING.md) for the full policy, the
+deprecation procedure, and the pre-1.0 caveat. User-visible changes
+land in [CHANGELOG.md](./CHANGELOG.md); CI enforces that covered
+surfaces ship with matching entries.
+
 ## Reporting issues
 
 Open an issue at
