@@ -6,16 +6,17 @@ import (
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
-// Lint runs fast, repo-wide checks: gofmt compliance and go vet
-// across every package in the sparkwing module. Cross-repo callers
+// Lint runs fast, repo-wide checks: gofmt compliance, go vet across
+// every package in the sparkwing module, and the CHANGELOG gate that
+// enforces the stability policy in VERSIONING.md. Cross-repo callers
 // (a downstream release-all orchestration pipeline) can invoke
 // `sparkwing run lint` here as a gate.
 type Lint struct{ sparkwing.Base }
 
-func (Lint) ShortHelp() string { return "Fast static check: gofmt + go vet" }
+func (Lint) ShortHelp() string { return "Fast static check: gofmt + go vet + changelog gate" }
 
 func (Lint) Help() string {
-	return "Fast static checks across the public sparkwing module: gofmt compliance and go vet."
+	return "Fast static checks across the public sparkwing module: gofmt compliance, go vet, and the CHANGELOG-required gate (bin/check-changelog.sh, per VERSIONING.md)."
 }
 
 func (Lint) Examples() []sparkwing.Example {
@@ -43,6 +44,11 @@ func (p *Lint) run(ctx context.Context) error {
 		return err
 	}
 	sparkwing.Info(ctx, "go vet: no issues")
+
+	if _, err := sparkwing.Bash(ctx, "bash bin/check-changelog.sh").Run(); err != nil {
+		return err
+	}
+	sparkwing.Info(ctx, "changelog gate: ok")
 	return nil
 }
 

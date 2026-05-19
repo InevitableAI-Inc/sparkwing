@@ -1,6 +1,29 @@
 # Changelog
 
-## Unreleased
+All notable changes to sparkwing are recorded here. Format follows
+[Keep a Changelog](https://keepachangelog.com/). See
+[VERSIONING.md](./VERSIONING.md) for the stability policy that
+governs what counts as a breaking change and when CHANGELOG entries
+are required.
+
+## [Unreleased]
+
+### Added
+
+- `VERSIONING.md` at the repo root. Defines the stability promise for
+  `pkg/`, `sparkwing/`, CLI flags, wire protocols, and YAML config
+  formats; spells out what counts as a breaking change; documents the
+  deprecation procedure (godoc `// Deprecated:` + runtime warning +
+  CHANGELOG entry + at-least-one-minor grace period); acknowledges
+  the pre-1.0 caveat that minor bumps may still break per Go semver
+  convention.
+- CHANGELOG-required CI gate. `bin/check-changelog.sh` diffs the
+  current commit / working tree against `origin/main` (or `BASE_REF`
+  if set) and fails if any covered surface (`pkg/`, `sparkwing/`,
+  `cmd/`) changed without a matching `[Unreleased]` entry in
+  `CHANGELOG.md`. Excludes `_test.go`, `internal/`, `docs/`,
+  `examples/`, and `testdata/`. Wired into `sparkwing run lint` so
+  the existing fast-checks pipeline enforces it.
 
 ### Removed
 
