@@ -555,36 +555,3 @@ dashboard start` up so the dispatcher lives in the long-lived local
 web server. Cluster mode has the same property via the controller
 pod.
 
-## Migration from the pre-rewrite SDK
-
-If you're reading old jobs that don't compile, here's the rename map:
-
-| Old | New |
-|---|---|
-| `plan.Add(id, &J{})` | `sw.Job(plan, id, &J{})` (`J` must implement `Work(w *Work) (*WorkStep, error)`) |
-| `plan.Step(id, fn)` | `sw.Job(plan, id, fn)` (closure passes through directly) |
-| `plan.ExpandFrom(source, gen)` | `sw.JobFanOutDynamic(plan, name, source, fn)` |
-| `sparkwing.NodeForEach(plan, source, fn)` | `sw.JobFanOutDynamic(plan, name, source, fn)` |
-| `Work() *Work` on a Job | `Work(w *Work) (*WorkStep, error)` (return the result step, or nil) |
-| `w.Step(id, fn)` | `sw.Step(w, id, fn)` |
-| `w.Sequence(a, b, c)` | `b.Needs(a); c.Needs(b)` -- pure `.Needs` chain |
-| `w.Parallel(x, y)` for fan-in | `next.Needs(x, y)` directly |
-| `w.Parallel(x, y)` for UI cluster | `sw.GroupSteps(w, "name", x, y)` |
-| `sparkwing.Out(w, id, fn) + .Get(ctx)` | `sw.Step(w, id, fn) + sw.StepGet[T](ctx, step)` |
-| `sparkwing.Result(w, id, fn) + return w` | `return sw.Step(w, id, fn), nil` |
-| `w.SetResult(step)` | return `step` from `Work` |
-| `w.JobSpawn(id, &J{})` | `sw.JobSpawn(w, id, &J{})` |
-| `w.JobSpawnEach(items, fn)` | `sw.JobSpawnEach(w, items, fn)` |
-| `sw.Approval(plan, id, cfg)` | `sw.JobApproval(plan, id, cfg)` |
-| `sw.Group(plan, name, ...)` | `sw.GroupJobs(plan, name, ...)` |
-| `sw.JobFn(fn)` | (gone) -- pass `fn` directly to `sw.Job` |
-| `*TypedStep[T]` | (gone) -- only `*WorkStep` remains; `outType` is set by reflection |
-| `sparkwing.Step(ctx, name)` | structured `step_start` / `step_end` events emitted automatically by each `WorkStep` |
-| `sparkwing.StepErr(ctx, err)` | the same step events; for best-effort work, return nil from the step and `sparkwing.Error` if needed |
-| `InvokeJob(ctx, name, &J{})` | compose as a `Step` (or another sub-`Job` via `JobSpawn`) inside the parent's `Work` |
-| `InvokeJobsParallel(ctx, NamedJob...)` | declare each as its own Step in the same Work; the runner runs them in parallel by default |
-| `sparkwing.NamedJob` | gone - the `Step` id is the name |
-| `node.CacheKey(fn)` | `node.Cache(sparkwing.CacheOptions{Key: ..., CacheKey: fn})` |
-| `node.Exclusive(group)` | `node.Cache(sparkwing.CacheOptions{Key: group})` |
-
-See `CHANGELOG.md` for the full per-release migration notes.
