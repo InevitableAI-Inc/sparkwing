@@ -105,10 +105,10 @@ func TestClaim_PipelineFilter_Empty204(t *testing.T) {
 	}
 }
 
-// TestClaim_PipelineFilter_NilBackCompat proves omitting the filter
-// (or passing nil) preserves the pre-filter "claim any" behavior so
-// single-repo workers upgrading to the new client still work.
-func TestClaim_PipelineFilter_NilBackCompat(t *testing.T) {
+// TestClaim_PipelineFilter_NilMeansAll proves omitting the filter (or
+// passing nil) claims any pending trigger -- the documented contract
+// for "no pipeline filter".
+func TestClaim_PipelineFilter_NilMeansAll(t *testing.T) {
 	dir := t.TempDir()
 	st, err := store.Open(filepath.Join(dir, "state.db"))
 	if err != nil {
