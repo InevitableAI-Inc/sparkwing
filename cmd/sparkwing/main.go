@@ -601,8 +601,6 @@ func runJobs(args []string) error {
 		grep := fs.String("grep", "", "substring filter (server-side in cluster mode)")
 		since := fs.Duration("since", 0,
 			"only include output from nodes whose StartedAt >= now-D (e.g. 5m, 1h)")
-		format := fs.String("format", "", "DEPRECATED alias for -o/--output")
-		_ = fs.MarkHidden("format")
 		tree := fs.Bool("tree", false, "merge parent run + descendants into one chronological stream (local only)")
 		eventsOnly := fs.Bool("events-only", false, "filter to run-level envelope events (run_start, node_start, node_end, step_start, step_end, run_finish, plan_warn, ...) -- the bracketing NDJSON the dispatcher streams to stdout")
 		noEvents := fs.Bool("no-events", false, "filter to per-node body output only -- useful when scripts depend on the legacy shape")
@@ -616,29 +614,7 @@ func runJobs(args []string) error {
 		if *tree && *on != "" {
 			return errors.New("jobs logs: --tree is local-mode only (cannot combine with --on)")
 		}
-		// Merge --format into --output for backward compat.
-		// "ndjson" is accepted as an alias for "json" because the JSON
-		// output is already newline-delimited; agents that ask for
-		// "ndjson" by name shouldn't need to know they're the same.
 		effectiveOut := *outFmt
-		if effectiveOut == "" && *format != "" {
-			switch *format {
-			case "pretty", "table":
-				effectiveOut = "pretty"
-			case "json", "ndjson":
-				effectiveOut = "json"
-			case "plain":
-				effectiveOut = "plain"
-			default:
-				return fmt.Errorf("jobs logs: --format must be one of json|ndjson|pretty|plain, got %q", *format)
-			}
-		}
-		if effectiveOut == "ndjson" {
-			effectiveOut = "json"
-		}
-		if effectiveOut == "table" {
-			effectiveOut = "pretty"
-		}
 		if *pretty {
 			if effectiveOut != "" && effectiveOut != "pretty" {
 				return fmt.Errorf("jobs logs: --pretty and -o %s disagree", effectiveOut)
@@ -649,15 +625,12 @@ func runJobs(args []string) error {
 		if effectiveOut == "" && !*asJSON && !color.IsInteractiveStdout() {
 			effectiveOut = "json"
 		}
-		// jobs logs has its own pre-resolution above (--pretty / --format
-		// fold-in + auto-JSONL when piped), so the explicit-set bit
-		// reflects whether *anyone* (user or pre-resolution) settled on
-		// a non-empty effectiveOut. effectiveOut == "" means "let
-		// resolveOutputFormat default to table"; non-empty means a
-		// concrete choice was made (user-typed -o, or pre-resolution
-		// derived a value), so it should compete with --json on equal
-		// footing -- which matches the kubectl-style explicit-bit
-		// contract for the resolver.
+		// jobs logs has its own pre-resolution (--pretty + auto-JSONL when
+		// piped), so the explicit-set bit reflects whether anyone (user or
+		// pre-resolution) settled on a non-empty effectiveOut. Empty means
+		// "let resolveOutputFormat default to pretty"; non-empty means a
+		// concrete choice was made and should compete with --json on equal
+		// footing, matching the kubectl-style explicit-bit contract.
 		resolvedFmt, err := resolveOutputFormat(effectiveOut, effectiveOut != "", *asJSON, "jobs logs")
 		if err != nil {
 			return err
