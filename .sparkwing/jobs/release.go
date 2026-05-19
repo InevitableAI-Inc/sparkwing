@@ -14,15 +14,14 @@ import (
 
 // ReleaseArgs is the typed CLI surface for the public-sparkwing
 // release pipeline. --version is optional: when omitted the
-// pipeline prefers the highest unreleased CHANGELOG.md entry, then
-// falls back to bumping --bump (default minor) off the latest tag.
+// pipeline bumps --bump (default minor) off the latest origin tag.
 //
 // Preview / no-mutation mode is delivered through sparkwing's reserved
 // `--dry-run` flag; each step below either marks itself
 // SafeWithoutDryRun (read-only checks) or provides a .DryRun(...)
 // body (the tag push), so the pipeline doesn't carry its own flag.
 type ReleaseArgs struct {
-	Version string `flag:"version" desc:"Explicit release version (e.g. v1.5.5). When empty, derived from CHANGELOG.md or latest tag + --bump."`
+	Version string `flag:"version" desc:"Explicit release version (e.g. v1.5.5). When empty, derived from latest origin tag + --bump."`
 	Bump    string `flag:"bump" desc:"Auto-bump kind when --version is empty: patch|minor|major. Default: minor"`
 }
 
@@ -31,8 +30,8 @@ type ReleaseArgs struct {
 // cross-platform binaries (for GitHub Releases) and multi-arch
 // container images (for GHCR). This pipeline does NOT duplicate
 // that work -- its job is to validate the release shape (clean
-// tree, free tag, CHANGELOG entry) and push a single tag, then
-// step out of the way.
+// tree, free tag, non-empty CHANGELOG [Unreleased] section) and
+// push a single tag, then step out of the way.
 //
 // The "never force-push a Go module tag" invariant from the
 // platform-repo release pipeline applies here too: validate-version
@@ -47,12 +46,12 @@ func (Release) ShortHelp() string {
 }
 
 func (Release) Help() string {
-	return "Validates the release shape (clean tree, free tag, CHANGELOG entry) and pushes a vX.Y.Z tag to origin. The .github/workflows/release.yaml workflow takes over from the tag push to build cross-platform binaries (uploaded to GH Releases) and multi-arch container images (published to GHCR). This pipeline never builds or publishes artifacts itself."
+	return "Validates the release shape (clean tree, free tag, non-empty CHANGELOG.md [Unreleased] section) and pushes a vX.Y.Z tag to origin. The .github/workflows/release.yaml workflow takes over from the tag push to build cross-platform binaries (uploaded to GH Releases) and multi-arch container images (published to GHCR). This pipeline never builds or publishes artifacts itself."
 }
 
 func (Release) Examples() []sparkwing.Example {
 	return []sparkwing.Example{
-		{Comment: "Auto-pick version from CHANGELOG / tag bump", Command: "sparkwing run release"},
+		{Comment: "Auto-pick version by bumping latest origin tag", Command: "sparkwing run release"},
 		{Comment: "Tag and push an explicit version", Command: "sparkwing run release --version v1.5.5"},
 		{Comment: "Preview without pushing", Command: "sparkwing run release --dry-run"},
 	}
@@ -86,11 +85,17 @@ func (r *Release) Plan(_ context.Context, plan *sparkwing.Plan, in ReleaseArgs, 
 		RepoDir: repoDir,
 	})
 
+	changelog := sparkwing.Job(plan, "check-changelog", &checkChangelogJob{
+		RepoDir: repoDir,
+		Version: versionRef,
+	})
+	changelog.Needs(discover)
+
 	pushTag := sparkwing.Job(plan, "push-tag", &pushTagJob{
 		Version: versionRef,
 		RepoDir: repoDir,
 	})
-	pushTag.Needs(validate, clean)
+	pushTag.Needs(validate, clean, changelog)
 	return nil
 }
 
@@ -113,9 +118,11 @@ func repoRoot() (string, error) {
 //  2. tag + bump          -> bump kind off the highest origin tag.
 //
 // First-ever release (no tags) yields v0.1.0 from the bump fallback.
-// Release notes are produced by the GH-Actions workflow's
-// `gh release create --generate-notes` (commit-history walk), so we
-// no longer maintain CHANGELOG.md here.
+// CHANGELOG.md is maintained separately (see VERSIONING.md); the
+// check-changelog node verifies the [Unreleased] section has at
+// least one entry before push-tag runs. The GH-Actions release
+// workflow additionally emits commit-walk release notes via
+// `gh release create --generate-notes` for the GitHub Release page.
 type resolveVersionJob struct {
 	sparkwing.Base
 	sparkwing.Produces[string]
@@ -219,6 +226,76 @@ func (j *checkCleanTreeJob) run(ctx context.Context) error {
 	}
 	sparkwing.Info(ctx, "working tree is clean")
 	return nil
+}
+
+// checkChangelogJob refuses to ship if CHANGELOG.md's [Unreleased]
+// section has no entries. The PR-time CI gate (bin/check-changelog.sh
+// in `sparkwing run lint`) already enforces this on covered-surface
+// changes; this is the defense-in-depth fence at release time, so a
+// version cannot ship empty even if the CI gate was bypassed or the
+// branch landed via a path that skipped it. See VERSIONING.md.
+type checkChangelogJob struct {
+	sparkwing.Base
+	RepoDir string
+	Version sparkwing.Ref[string]
+}
+
+func (j *checkChangelogJob) Work(w *sparkwing.Work) (*sparkwing.WorkStep, error) {
+	sparkwing.Step(w, "run", j.run).SafeWithoutDryRun()
+	return nil, nil
+}
+
+func (j *checkChangelogJob) run(ctx context.Context) error {
+	path := filepath.Join(j.RepoDir, "CHANGELOG.md")
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("release: read CHANGELOG.md: %w", err)
+	}
+	entries, err := unreleasedEntries(string(body))
+	if err != nil {
+		return fmt.Errorf("release: parse CHANGELOG.md: %w", err)
+	}
+	if entries == 0 {
+		version := j.Version.Get(ctx)
+		return fmt.Errorf("release: CHANGELOG.md [Unreleased] is empty -- no entries to ship as %s. Add at least one entry under Added/Changed/Fixed/Removed/Deprecated/Security before re-running release", version)
+	}
+	sparkwing.Info(ctx, "CHANGELOG.md [Unreleased]: %d entries ready to ship", entries)
+	return nil
+}
+
+// unreleasedEntries counts the bullet lines (lines starting with
+// `- `) inside the `## [Unreleased]` (or `## Unreleased`) section of
+// a Keep-a-Changelog-formatted body. Stops at the next top-level
+// `## ` heading or EOF. Returns 0 if the section is missing or
+// contains only sub-headings / blank lines; returns an error only
+// when the body is unreadable.
+func unreleasedEntries(body string) (int, error) {
+	lines := strings.Split(body, "\n")
+	in := false
+	count := 0
+	for _, raw := range lines {
+		line := strings.TrimRight(raw, "\r")
+		if strings.HasPrefix(line, "## ") {
+			h := strings.TrimSpace(strings.TrimPrefix(line, "## "))
+			h = strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(h, "["), "]"))
+			if strings.EqualFold(h, "Unreleased") {
+				in = true
+				continue
+			}
+			if in {
+				break
+			}
+			continue
+		}
+		if !in {
+			continue
+		}
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "- ") || trimmed == "-" {
+			count++
+		}
+	}
+	return count, nil
 }
 
 // pushTagJob creates the annotated tag and pushes it to origin. The

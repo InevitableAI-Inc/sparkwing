@@ -10,6 +10,12 @@ are required.
 
 ### Added
 
+- `sparkwing run release` now refuses to ship a version when
+  `CHANGELOG.md` `[Unreleased]` has no entries. The PR-time CI gate
+  (`bin/check-changelog.sh` in `sparkwing run lint`) catches missing
+  entries at review time; this release-time fence catches them at
+  ship time so a version cannot escape empty even if the CI gate
+  was bypassed. Defense in depth.
 - `VERSIONING.md` at the repo root. Defines the stability promise for
   `pkg/`, `sparkwing/`, CLI flags, wire protocols, and YAML config
   formats; spells out what counts as a breaking change; documents the
@@ -24,6 +30,19 @@ are required.
   `CHANGELOG.md`. Excludes `_test.go`, `internal/`, `docs/`,
   `examples/`, and `testdata/`. Wired into `sparkwing run lint` so
   the existing fast-checks pipeline enforces it.
+
+### Fixed
+
+- Stale comments in `.sparkwing/jobs/release.go` and
+  `.sparkwing/pipelines.yaml` that claimed the release pipeline
+  validated a "CHANGELOG entry" (it didn't, until now) and that
+  CHANGELOG.md was "no longer maintained" (it is). Docstrings,
+  flag descriptions, examples, and the pipelines.yaml header now
+  describe the current behavior: CHANGELOG.md carries adopter
+  migration prose under `[Unreleased]`, validated at release time
+  by the new `check-changelog` node; the GH-Actions workflow's
+  `gh release create --generate-notes` is a separate commit-walk
+  summary for the GitHub Release page.
 
 ### Removed
 
