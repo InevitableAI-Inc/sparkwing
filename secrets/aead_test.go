@@ -54,16 +54,12 @@ func TestCipher_NonceVariesPerSeal(t *testing.T) {
 	}
 }
 
-func TestCipher_OpenLeavesPlaintextAsIs(t *testing.T) {
+func TestCipher_OpenRejectsUnsealed(t *testing.T) {
 	key, _ := GenerateKey()
 	c, _ := NewCipher(key)
 
-	got, err := c.Open("plain-no-prefix")
-	if err != nil {
-		t.Fatalf("Open of unprefixed value: %v", err)
-	}
-	if got != "plain-no-prefix" {
-		t.Fatalf("plaintext mutated: %q", got)
+	if _, err := c.Open("plain-no-prefix"); err == nil {
+		t.Fatal("Open accepted an unsealed value")
 	}
 }
 
@@ -82,19 +78,13 @@ func TestCipher_OpenRejectsTampered(t *testing.T) {
 	}
 }
 
-func TestCipher_OpenWithoutKeyRejectsEncrypted(t *testing.T) {
+func TestCipher_OpenWithoutKeyRejects(t *testing.T) {
 	var nilC *Cipher
 	if _, err := nilC.Open("enc:v1:somebody"); err == nil {
 		t.Fatal("nil cipher must reject sealed values")
 	}
-	// But should pass plaintext through cleanly so a controller
-	// without a key still serves pre-encryption rows.
-	got, err := nilC.Open("plain")
-	if err != nil {
-		t.Fatalf("nil cipher unexpectedly errored on plaintext: %v", err)
-	}
-	if got != "plain" {
-		t.Fatalf("got %q, want plain", got)
+	if _, err := nilC.Open("plain"); err == nil {
+		t.Fatal("nil cipher must reject unsealed values")
 	}
 }
 

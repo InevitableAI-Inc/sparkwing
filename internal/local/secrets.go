@@ -87,18 +87,20 @@ func (s *Server) handleGetSecret(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	// Decrypt before responding. Cipher.Open is a no-op for rows
-	// without the envelope prefix. A row with an envelope but no
-	// cipher configured produces a 500 -- the operator removed the
-	// key without a re-encrypt step, which is not silently recoverable.
+	// A row with an envelope but no cipher configured produces a 500 --
+	// the operator removed the key without a re-encrypt step, which is
+	// not silently recoverable.
 	plain := sec.Value
-	if secrets.IsEncrypted(plain) {
+	if s.secretsCipher != nil {
 		opened, oerr := s.secretsCipher.Open(plain)
 		if oerr != nil {
 			writeError(w, http.StatusInternalServerError, oerr)
 			return
 		}
 		plain = opened
+	} else if secrets.IsEncrypted(plain) {
+		writeError(w, http.StatusInternalServerError, errors.New("secrets cipher: encrypted value but no key configured"))
+		return
 	}
 	writeJSON(w, http.StatusOK, secretJSON{
 		Name:      sec.Name,

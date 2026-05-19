@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	controller "github.com/sparkwing-dev/sparkwing/internal/local"
 	"github.com/sparkwing-dev/sparkwing/orchestrator/store"
@@ -19,9 +18,7 @@ import (
 
 // End-to-end check that the secret POST/GET round-trip with a
 // configured cipher stores ciphertext on disk but returns the
-// original value to authorized readers. Also covers the
-// backward-compat path: cipher present, row written before cipher
-// landed.
+// original value to authorized readers.
 
 func newSecretsTestServer(t *testing.T, c *secrets.Cipher) (*httptest.Server, *store.Store) {
 	t.Helper()
@@ -95,38 +92,6 @@ func TestSecrets_EncryptionRoundTrip(t *testing.T) {
 	}
 	if got.Value != "supersecret" {
 		t.Fatalf("Value = %q, want supersecret", got.Value)
-	}
-}
-
-func TestSecrets_BackwardCompatPlaintextRow(t *testing.T) {
-	key, _ := secrets.GenerateKey()
-	c, _ := secrets.NewCipher(key)
-	srv, st := newSecretsTestServer(t, c)
-
-	// Simulate a row that predates the cipher: write directly via
-	// the store with no envelope prefix. The handler with a cipher
-	// configured should still serve it correctly.
-	if err := st.CreateOrReplaceSecret("LEGACY", "old-plaintext", "test", true, time.Now()); err != nil {
-		t.Fatalf("seed legacy: %v", err)
-	}
-
-	resp, err := http.Get(srv.URL + "/api/v1/secrets/LEGACY")
-	if err != nil {
-		t.Fatalf("GET: %v", err)
-	}
-	body, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("GET status = %d, body = %s", resp.StatusCode, body)
-	}
-	var got struct {
-		Value string `json:"value"`
-	}
-	if err := json.Unmarshal(body, &got); err != nil {
-		t.Fatalf("decode: %v", err)
-	}
-	if got.Value != "old-plaintext" {
-		t.Fatalf("Value = %q, want old-plaintext (legacy row)", got.Value)
 	}
 }
 

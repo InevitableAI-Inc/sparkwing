@@ -63,17 +63,15 @@ func (c *Cipher) Seal(plain string) (string, error) {
 	return envelopePrefix + base64.StdEncoding.EncodeToString(envelope), nil
 }
 
-// Open decodes a value that may or may not be sealed. Rows without
-// the envelope prefix are returned verbatim so existing plaintext
-// data round-trips through encrypted readers. Rows with the prefix
-// are decrypted; tampering trips the AEAD's authentication and
-// produces a clear error.
+// Open decrypts a sealed envelope. Returns an error for values that
+// don't carry the envelope prefix or when the AEAD authentication
+// fails (tampered ciphertext, wrong key).
 func (c *Cipher) Open(envelope string) (string, error) {
-	if !IsEncrypted(envelope) {
-		return envelope, nil
-	}
 	if c == nil {
-		return "", errors.New("secrets cipher: encrypted value but no key configured")
+		return "", errors.New("secrets cipher: no key configured")
+	}
+	if !IsEncrypted(envelope) {
+		return "", errors.New("secrets cipher: value is not sealed")
 	}
 	body := strings.TrimPrefix(envelope, envelopePrefix)
 	raw, err := base64.StdEncoding.DecodeString(body)
