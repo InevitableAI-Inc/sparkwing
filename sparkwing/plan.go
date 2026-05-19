@@ -407,11 +407,6 @@ type JobNode struct {
 	// dispatcher.
 	inline bool
 
-	// dynamic marks a node whose downstream shape isn't fully
-	// predictable from the plan alone. Auto-inferred for ExpandFrom
-	// sources; explicit via .Dynamic() otherwise.
-	dynamic bool
-
 	continueOnError bool
 	optional        bool
 	needsOptional   []string
@@ -1110,22 +1105,6 @@ func (p *Plan) JobGroupNames(id string) []string {
 	return out
 }
 
-// Dynamic marks the node as having runtime-variable downstream work
-// (e.g. invokes RunAndAwait, enqueues external tasks). ExpandFrom
-// sources are auto-detected; .Dynamic() is only needed for
-// non-ExpandFrom cases. Dynamic is purely a signal to readers.
-//
-//	plan.Add("orchestrate", &OrchestrateJob{}).Dynamic()
-func (n *JobNode) Dynamic() *JobNode {
-	n.dynamic = true
-	return n
-}
-
-// IsDynamic reports whether .Dynamic() was called. For the effective-
-// dynamic status (which includes ExpandFrom sources), use
-// Plan.IsDynamicNode(id).
-func (n *JobNode) IsDynamic() bool { return n.dynamic }
-
 // GroupSourceIDs returns the ids of the source nodes backing any
 // ExpandFrom Groups this node waits on via Needs(group). Returns nil
 // when the node has no dynamic-group deps.
@@ -1147,13 +1126,10 @@ func (p *Plan) GroupSourceIDs(id string) []string {
 	return out
 }
 
-// IsDynamicNode reports whether the node should render as dynamic:
-// .Dynamic() was called or it's the source of an ExpandFrom expansion.
+// IsDynamicNode reports whether the node sources runtime-variable
+// downstream work -- i.e. it is the source of an ExpandFrom expansion
+// whose membership resolves at dispatch time rather than Plan time.
 func (p *Plan) IsDynamicNode(id string) bool {
-	n := p.Job(id)
-	if n != nil && n.dynamic {
-		return true
-	}
 	for _, exp := range p.expansions {
 		if exp.Source != nil && exp.Source.id == id {
 			return true

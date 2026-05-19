@@ -23,9 +23,9 @@ type Decorations struct {
 	// ungrouped nodes; the dashboard renders those flat.
 	Groups []string `json:"groups,omitempty"`
 	// Dynamic marks nodes whose downstream shape is runtime-variable
-	// -- either explicit `.Dynamic()` or the source of an ExpandFrom.
-	// The dashboard paints a rainbow "DYNAMIC" pill on these, matching
-	// the terminal's rainbow-letter tag.
+	// -- the source of an ExpandFrom expansion whose membership resolves
+	// at dispatch time. The dashboard paints a rainbow "DYNAMIC" pill on
+	// these, matching the terminal's rainbow-letter tag.
 	Dynamic bool `json:"dynamic,omitempty"`
 	// Approval marks nodes declared with sparkwing.JobApproval(...). The
 	// dashboard always renders an approval pill on these -- grey

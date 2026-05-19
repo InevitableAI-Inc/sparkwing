@@ -31,7 +31,9 @@
 
 ### Removed
 
-- `JobNode.OnFailureNodeID()`. Use `OnFailureNode().ID()` with a nil check.
+- `JobNode.OnFailureNodeID()`. Use `OnFailureNode()` with a nil check.
+- `JobNode.Dynamic()` and `JobNode.IsDynamic()`. Dynamic-node detection is via
+  `Plan.IsDynamicNode(id)`, which auto-detects ExpandFrom sources.
 - Retired `--sw-retry-of` and `--sw-full`; use `sparkwing runs retry RUN_ID [--failed | --all]`.
 - Retired `--sw-job` and `--sw-prefer`; runner selection is now exclusively Plan-layer via `Job.Requires` / `Job.Prefers`. If you used these flags, declare the constraint in the pipeline instead.
 - Retired `--sw-backends-env`. `backends.yaml` environment selection is now exclusively auto-detect — if it picks wrong, fix the `match:` rules in `backends.yaml` or the `DetectEnvironment` logic.
