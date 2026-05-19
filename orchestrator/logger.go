@@ -384,25 +384,16 @@ func (p *PrettyRenderer) Flush() {
 	}
 }
 
-// breadcrumb renders "<node> › <parent>... › <job> › <step> │ ".
-// Step is the leaf so a reader's eye lands on the most-specific
-// frame just before the message; Job/JobStack frames are ancestors
-// of either the step or the message itself when there's no step.
+// breadcrumb renders "<node> › <step> │ ". Step is the leaf so a
+// reader's eye lands on the most-specific frame just before the
+// message.
 func (p *PrettyRenderer) breadcrumb(rec sparkwing.LogRecord, nodeHue string) string {
-	if rec.JobID == "" && rec.Job == "" && rec.Step == "" {
+	if rec.JobID == "" && rec.Step == "" {
 		return ""
 	}
 	var b strings.Builder
 	if rec.JobID != "" {
 		b.WriteString(p.color(rec.JobID, nodeHue))
-	}
-	for _, frame := range rec.JobStack {
-		b.WriteString(p.color(" › ", ansiDim))
-		b.WriteString(p.color(frame, ansiDim))
-	}
-	if rec.Job != "" {
-		b.WriteString(p.color(" › ", ansiDim))
-		b.WriteString(p.color(rec.Job, ansiDim))
 	}
 	if rec.Step != "" {
 		b.WriteString(p.color(" › ", ansiDim))
@@ -1107,17 +1098,11 @@ func splitStepErrorPrefix(s string) (stepID, body string) {
 	return rest[:end], rest[end+len(`": `):]
 }
 
-// writeStepStart renders a `step_start` event as `  ● <name>` (or with
-// the breadcrumb prefix when the step originated inside a Job spawn,
-// which is the only case that carries a non-empty rec.Job).
+// writeStepStart renders a `step_start` event as `  ● <name>`.
 func (p *PrettyRenderer) writeStepStart(w io.Writer, rec sparkwing.LogRecord, nodeHue string) {
+	_ = nodeHue
 	glyph := "●"
 	code := ansiBlue
-	if rec.Job != "" {
-		fmt.Fprint(w, p.breadcrumb(rec, nodeHue))
-		fmt.Fprintln(w, p.color(glyph+" "+rec.Msg, code))
-		return
-	}
 	fmt.Fprintln(w, p.color(fmt.Sprintf("  %s %s", glyph, rec.Msg), code))
 }
 
@@ -1129,6 +1114,7 @@ func (p *PrettyRenderer) writeStepStart(w io.Writer, rec sparkwing.LogRecord, no
 // step in a multi-step node carries its own failure body inline
 // instead of relying on the run-summary section to surface it.
 func (p *PrettyRenderer) writeStepEnd(w io.Writer, rec sparkwing.LogRecord, nodeHue string) {
+	_ = nodeHue
 	outcome, _ := rec.Attrs["outcome"].(string)
 	glyph, code := outcomeIcon(outcome)
 	if outcome == "success" || outcome == "cached" {
@@ -1139,12 +1125,7 @@ func (p *PrettyRenderer) writeStepEnd(w io.Writer, rec sparkwing.LogRecord, node
 	if dms > 0 {
 		tail = " " + p.color("("+fmtDuration(dms)+")", ansiDim)
 	}
-	if rec.Job != "" {
-		fmt.Fprint(w, p.breadcrumb(rec, nodeHue))
-		fmt.Fprintln(w, p.color(glyph+" "+rec.Msg, code)+tail)
-	} else {
-		fmt.Fprintln(w, p.color(fmt.Sprintf("  %s %s", glyph, rec.Msg), code)+tail)
-	}
+	fmt.Fprintln(w, p.color(fmt.Sprintf("  %s %s", glyph, rec.Msg), code)+tail)
 	if errMsg, ok := rec.Attrs["error"].(string); ok && errMsg != "" {
 		for _, errLine := range strings.Split(strings.TrimRight(errMsg, "\n"), "\n") {
 			fmt.Fprintln(w, "      "+p.color(errLine, ansiRed))
@@ -1156,16 +1137,12 @@ func (p *PrettyRenderer) writeStepEnd(w io.Writer, rec sparkwing.LogRecord, node
 // reason in brackets so a `--start-at` filter is distinguishable from
 // a user-authored SkipIf predicate.
 func (p *PrettyRenderer) writeStepSkipped(w io.Writer, rec sparkwing.LogRecord, nodeHue string) {
+	_ = nodeHue
 	glyph, code := outcomeIcon("skipped")
 	reason, _ := rec.Attrs["reason"].(string)
 	tail := ""
 	if reason != "" {
 		tail = " " + p.color("["+reason+"]", ansiDim)
-	}
-	if rec.Job != "" {
-		fmt.Fprint(w, p.breadcrumb(rec, nodeHue))
-		fmt.Fprintln(w, p.color(glyph+" "+rec.Msg, code)+tail)
-		return
 	}
 	fmt.Fprintln(w, p.color(fmt.Sprintf("  %s %s", glyph, rec.Msg), code)+tail)
 }

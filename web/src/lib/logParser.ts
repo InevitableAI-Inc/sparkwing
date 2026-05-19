@@ -64,8 +64,6 @@ export interface LogRecord {
   ts?: string;
   level?: string;
   node?: string;
-  job?: string;
-  job_stack?: string[];
   step?: string;
   event?: string;
   msg?: string;
@@ -361,14 +359,11 @@ function parseJSONLLogs(lines: string[]): ParsedLog {
 // because the enclosing StepSection already encodes them in its
 // `name` field; repeating them on every line is the "<node> ›
 // <step> │" breadcrumb noise that the user sees in the bucket
-// view. Job-stack frames (reusable Jobs spawned inside a step)
-// are kept since the section name doesn't carry them.
+// view.
 function recordToLine(rec: LogRecord): string {
   const parts: string[] = [];
   const ts = fmtTSInline(rec.ts);
   if (ts) parts.push(ts);
-  const crumb = jobBreadcrumb(rec);
-  if (crumb) parts.push(crumb);
   if (rec.event === "retry") parts.push("↻");
   if (rec.level === "error") parts.push("ERROR");
   if (rec.msg) parts.push(rec.msg);
@@ -396,18 +391,6 @@ function fmtTSInline(ts?: string): string {
   const s = String(d.getSeconds()).padStart(2, "0");
   const ms = String(d.getMilliseconds()).padStart(3, "0");
   return `[${h}:${m}:${s}.${ms}]`;
-}
-
-// jobBreadcrumb renders only the Job-stack frames -- the section
-// header takes care of node/step. A line emitted from a deeply
-// spawned Job (Job → SubJob → step) still wants the trace, since
-// the section knows nothing about it.
-function jobBreadcrumb(rec: LogRecord): string {
-  const frames: string[] = [];
-  if (rec.job_stack) frames.push(...rec.job_stack);
-  if (rec.job) frames.push(rec.job);
-  if (frames.length === 0) return "";
-  return frames.join(" › ") + " │";
 }
 
 // stepNameFromSection extracts the bare step name out of a

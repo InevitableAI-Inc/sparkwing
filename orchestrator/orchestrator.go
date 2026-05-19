@@ -1186,7 +1186,7 @@ func newDispatchState(ctx context.Context, backends Backends, r runner.Runner, r
 	// Outer fallback logger for SDK-internal Debug/Log calls that
 	// happen before the per-node nodeLogger opens.
 	if delegate != nil {
-		s.resolverCtx = sparkwing.WithLogger(ctx, delegate)
+		s.resolverCtx = sparkwingruntime.WithLogger(ctx, delegate)
 	} else {
 		s.resolverCtx = ctx
 	}

@@ -38,8 +38,8 @@ func (l *recordingWorkLogger) snapshot() []sparkwing.LogRecord {
 
 func newWorkCtx() (context.Context, *recordingWorkLogger) {
 	l := &recordingWorkLogger{}
-	ctx := sparkwing.WithLogger(context.Background(), l)
-	ctx = sparkwing.WithNode(ctx, "test-node")
+	ctx := sparkwingruntime.WithLogger(context.Background(), l)
+	ctx = sparkwingruntime.WithNode(ctx, "test-node")
 	return ctx, l
 }
 

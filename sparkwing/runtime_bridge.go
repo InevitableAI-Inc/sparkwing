@@ -19,6 +19,8 @@ type runtimePlumbingKeys struct {
 	Inputs           any
 	PipelineSecrets  any
 	SecretResolver   any
+	Logger           any
+	Node             any
 }
 
 // RuntimePlumbing exposes context keys to internal/sparkwingruntime so
@@ -41,4 +43,6 @@ var RuntimePlumbing = runtimePlumbingKeys{
 	Inputs:           keyInputs,
 	PipelineSecrets:  keyPipelineSecrets,
 	SecretResolver:   keySecretResolver,
+	Logger:           keyLogger,
+	Node:             keyNode,
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -19,8 +20,8 @@ func TestAnnotate_EmitsStructuredRecord(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := &recordingEmitter{}
-			ctx := sparkwing.WithLogger(context.Background(), rec)
-			ctx = sparkwing.WithNode(ctx, "ingest")
+			ctx := sparkwingruntime.WithLogger(context.Background(), rec)
+			ctx = sparkwingruntime.WithNode(ctx, "ingest")
 			sparkwing.Annotate(ctx, tc.msg)
 
 			if len(rec.records) != 1 {
@@ -52,8 +53,8 @@ func TestAnnotate_NoLogger_NoPanic(t *testing.T) {
 
 func TestAnnotate_MultipleCallsAccumulate(t *testing.T) {
 	rec := &recordingEmitter{}
-	ctx := sparkwing.WithLogger(context.Background(), rec)
-	ctx = sparkwing.WithNode(ctx, "n")
+	ctx := sparkwingruntime.WithLogger(context.Background(), rec)
+	ctx = sparkwingruntime.WithNode(ctx, "n")
 	sparkwing.Annotate(ctx, "first")
 	sparkwing.Annotate(ctx, "second")
 	sparkwing.Annotate(ctx, "third")

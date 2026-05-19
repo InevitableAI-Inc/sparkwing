@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -19,8 +20,8 @@ func TestSummary_EmitsStructuredRecord(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := &recordingEmitter{}
-			ctx := sparkwing.WithLogger(context.Background(), rec)
-			ctx = sparkwing.WithNode(ctx, "deploy")
+			ctx := sparkwingruntime.WithLogger(context.Background(), rec)
+			ctx = sparkwingruntime.WithNode(ctx, "deploy")
 			sparkwing.Summary(ctx, tc.md)
 
 			if len(rec.records) != 1 {
@@ -52,8 +53,8 @@ func TestSummary_NoLogger_NoPanic(t *testing.T) {
 
 func TestSummary_CarriesStepFromContext(t *testing.T) {
 	rec := &recordingEmitter{}
-	ctx := sparkwing.WithLogger(context.Background(), rec)
-	ctx = sparkwing.WithNode(ctx, "deploy")
+	ctx := sparkwingruntime.WithLogger(context.Background(), rec)
+	ctx = sparkwingruntime.WithNode(ctx, "deploy")
 	ctx = sparkwing.WithStep(ctx, "rollout")
 	sparkwing.Summary(ctx, "## Rollout complete")
 

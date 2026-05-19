@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/orchestrator/nodemetrics"
 	"github.com/sparkwing-dev/sparkwing/orchestrator/runner"
 	"github.com/sparkwing-dev/sparkwing/orchestrator/store"
@@ -178,8 +179,8 @@ func (r *InProcessRunner) executeNode(ctx context.Context, runID string, node *s
 	go runNodeHeartbeatLoop(hbCtx, 5*time.Second, r.backends.State, runID, node.ID())
 	defer stopHB()
 
-	nodeCtx := sparkwing.WithLogger(ctx, nlog)
-	nodeCtx = sparkwing.WithNode(nodeCtx, node.ID())
+	nodeCtx := sparkwingruntime.WithLogger(ctx, nlog)
+	nodeCtx = sparkwingruntime.WithNode(nodeCtx, node.ID())
 
 	// Snapshot before BeforeRun so replay re-runs hooks fresh.
 	// Best-effort: snapshot failures don't fail the node.

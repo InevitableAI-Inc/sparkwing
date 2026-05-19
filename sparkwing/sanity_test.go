@@ -253,7 +253,7 @@ func (r *recordingLogger) Emit(rec sparkwing.LogRecord) {
 
 func TestLogger_WritesThroughContext(t *testing.T) {
 	l := &recordingLogger{}
-	ctx := sparkwing.WithLogger(context.Background(), l)
+	ctx := sparkwingruntime.WithLogger(context.Background(), l)
 	sparkwing.Info(ctx, "hi %s", "there")
 	if len(l.lines) != 1 || l.lines[0] != "info: hi there" {
 		t.Fatalf("unexpected logger output: %v", l.lines)
