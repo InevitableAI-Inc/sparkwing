@@ -326,10 +326,6 @@ For each job (and each fan-out instance independently), the scheduler computes:
        chosen = first match of job.Prefers within allowed
               else profile.default_runner if it is in allowed
               else error: ambiguous; require an explicit choice
-
-3. CLI overrides (--prefer, --job <id>=<runner>) bias step 2 but
-   must keep chosen ∈ allowed. Overrides that would violate a hard
-   rail are rejected at parse time, not silently ignored.
 ```
 
 The whole decision produces either one runner per job, a skip mark, or a clear error at run start — before any work dispatches.
@@ -629,12 +625,6 @@ sparkwing run release --for dev
 sparkwing run release --on shared --for staging
 sparkwing run release --on prod   --for prod
 
-# Per-job runner override (must satisfy the job's Requires).
-sparkwing run release --for staging --job build=cloud-linux
-
-# Bias preferences across the run.
-sparkwing run integration-tests --prefer local
-
 # Force a backend environment (overrides auto-detect).
 sparkwing run release --for dev --backends-env cluster-shared
 
@@ -648,7 +638,6 @@ Autocomplete:
 - `sparkwing run <TAB>` — pipelines whose `runners:` intersects the current profile's `default_runner` (or all, if no default).
 - `sparkwing run <pipeline> --for <TAB>` — the pipeline's declared targets.
 - `sparkwing run <pipeline> --on <TAB>` — profiles whose `default_runner` is in the pipeline's allowed set.
-- `sparkwing run <pipeline> --job <TAB>` — job IDs from the resolved plan; `=<TAB>` offers runners satisfying that job's `Requires`.
 - `sparkwing run <pipeline> --backends-env <TAB>` — entries from `backends.yaml` `environments:`.
 
 ## Test scenarios
@@ -718,7 +707,7 @@ Complete. Eleven self-contained PRs landed the new execution model, plus a final
 6. **Extend `pipelines.yaml`** with `targets:`, `runners:`, `values:`, and lift `secrets:` to a typed list.
 7. **Add optional `Config()` / `Secrets()` methods** to pipelines. Pipelines without them keep working; pipelines with them get the layered typed config + fail-fast resolution.
 8. **Add `sources.yaml`** parser and resolver-by-target wiring. Added the `backends.yaml` parser, auto-detect rules, and the `Cache` / `Logs` interfaces.
-9. **CLI surface**: `--for`, `--job <id>=<runner>`, `--prefer`, `--backends-env`, autocomplete updates, `sparkwing run <pipeline> config` introspection.
+9. **CLI surface**: `--for`, `--backends-env`, autocomplete updates, `sparkwing run <pipeline> config` introspection.
 10. **Trim `RuntimeConfig` in place.** Removed `IsLocal`, `RunID`, `NodeID`, the `Debug` field, and every env-var-based detection. `sparkwing.DebugEnabled()` exposes the SPARKWING_DEBUG flag; `sparkwing.Runner(ctx)` exposes the chosen runner. Deleted the `Venue` enum (the runner-resolution rule subsumes it).
 11. **Trigger typed values.** Added `on.<trigger>.values:` blocks on trigger specs; values flow through the pipeline's typed Config struct via the same layering as `values.base` and `targets.<name>.values`.
 

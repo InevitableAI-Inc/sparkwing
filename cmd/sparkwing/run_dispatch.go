@@ -77,14 +77,6 @@ type runFlags struct {
 	// against. Empty means "use the single declared target if there's
 	// one, else no target."
 	forTarget string
-	// jobOverrides forces specific plan-node ids onto specific
-	// runners. Each entry is "<jobID>=<runnerName>". Repeated --job
-	// for the same id is rejected by the inner orchestrator.
-	jobOverrides []string
-	// preferLabels biases runner preferences across the run. Each
-	// entry is one label term (comma-OR within); --prefer composes
-	// with each job's own Prefers (job-level wins on tie).
-	preferLabels []string
 	// backendsEnv forces a specific environments: entry from
 	// backends.yaml, skipping auto-detect. Validated against the
 	// resolved file at run start.
@@ -278,28 +270,6 @@ func parseRunFlags(args []string) (runFlags, []string) {
 			i++
 		case strings.HasPrefix(a, "--sw-for="):
 			wf.forTarget = strings.TrimPrefix(a, "--sw-for=")
-			i++
-		case a == "--sw-job":
-			if i+1 < len(args) {
-				wf.jobOverrides = append(wf.jobOverrides, args[i+1])
-				i += 2
-				continue
-			}
-			pass = append(pass, a)
-			i++
-		case strings.HasPrefix(a, "--sw-job="):
-			wf.jobOverrides = append(wf.jobOverrides, strings.TrimPrefix(a, "--sw-job="))
-			i++
-		case a == "--sw-prefer":
-			if i+1 < len(args) {
-				wf.preferLabels = append(wf.preferLabels, args[i+1])
-				i += 2
-				continue
-			}
-			pass = append(pass, a)
-			i++
-		case strings.HasPrefix(a, "--sw-prefer="):
-			wf.preferLabels = append(wf.preferLabels, strings.TrimPrefix(a, "--sw-prefer="))
 			i++
 		case a == "--sw-backends-env":
 			if i+1 < len(args) {

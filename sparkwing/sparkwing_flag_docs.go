@@ -58,8 +58,6 @@ var sparkwingFlagDocs = []SparkwingFlagDoc{
 	{Name: "sw-dry-run", Desc: "Run each step's dry-run probe instead of its apply Fn; no mutation", Group: "System", Hot: true},
 	{Name: "sw-allow", Argument: "LABEL[,LABEL...]", Desc: "Authorize risk-labeled steps (repeatable; comma-separated allowed)", Group: "System"},
 	{Name: "sw-for", Argument: "TARGET", Desc: "Pick the pipeline target to run against (Config + Source binding follow)", Group: "System", Hot: true},
-	{Name: "sw-job", Argument: "ID=RUNNER", Desc: "Force one job to a specific runner (repeatable; must satisfy that job's Requires)", Group: "System"},
-	{Name: "sw-prefer", Argument: "LABEL", Desc: "Bias runner selection by label across the run (repeatable; loses to a job's own Prefers)", Group: "System"},
 	{Name: "sw-on", Argument: "NAME", Desc: "Dispatch on a remote controller instead of running locally", Group: "System", Hot: true},
 	{Name: "sw-backends-env", Argument: "NAME", Desc: "Force a specific environments: entry from backends.yaml (skips auto-detect)", Group: "System"},
 }

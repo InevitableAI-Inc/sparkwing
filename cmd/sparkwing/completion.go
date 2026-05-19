@@ -554,31 +554,6 @@ _sparkwing() {
         return
     fi
 
-    # Value completion: --prefer <TAB> -> label union across runners
-    # the pipeline can target.
-    if [[ ${CURRENT} -ge 2 && "${words[CURRENT-1]}" == "--sw-prefer" ]]; then
-        local pipe=""
-        if (( ${#swpath[@]} >= 2 )) && [[ "${swpath[1]}" == "run" ]]; then
-            pipe="${swpath[2]}"
-        fi
-        local -a labs
-        labs=( ${(f)"$(sparkwing _complete-runner-labels "$pipe" 2>/dev/null)"} )
-        _describe -t labels 'label' labs
-        return
-    fi
-
-    # Value completion: --job <TAB> -> runner names from runners.yaml.
-    # Job ids are only known after Plan() runs; we offer runner names
-    # so operators can type --job ID=<TAB> and at least get the
-    # right-hand side populated. The full ID=runner completion would
-    # need a Plan dry-run from the completion shell.
-    if [[ ${CURRENT} -ge 2 && "${words[CURRENT-1]}" == "--sw-job" ]]; then
-        local -a runs
-        runs=( ${(f)"$(sparkwing _complete-runners 2>/dev/null)"} )
-        _describe -t runners 'runner (use as ID=RUNNER)' runs
-        return
-    fi
-
     # Value completion: --default-runner <TAB> -> runner names.
     # Used by sparkwing configure profiles add/set --default-runner.
     if [[ ${CURRENT} -ge 2 && "${words[CURRENT-1]}" == "--default-runner" ]]; then

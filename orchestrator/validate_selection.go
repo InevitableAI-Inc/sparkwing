@@ -2,13 +2,10 @@ package orchestrator
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/sparkwing-dev/sparkwing/orchestrator/runner"
-	"github.com/sparkwing-dev/sparkwing/pkg/runners"
 	"github.com/sparkwing-dev/sparkwing/pkg/sources"
-	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
 // validateTargetSelection enforces the --for contract: pipelines
@@ -33,52 +30,6 @@ func validateTargetSelection(opts Options) error {
 		if !opts.PipelineYAML.HasTarget(opts.Target) {
 			return fmt.Errorf("pipeline %q has no target %q; declared: %v",
 				opts.Pipeline, opts.Target, targets)
-		}
-	}
-	return nil
-}
-
-// validateJobOverrides confirms each --job entry names a real plan
-// node and a runner declared in runners.yaml whose labels satisfy
-// the job's Requires terms. Runs after Plan() so node ids are
-// resolved but before dispatch so the run record never reflects an
-// unreachable selection.
-func validateJobOverrides(opts Options, plan *sparkwing.Plan) error {
-	if len(opts.JobRunnerOverrides) == 0 {
-		return nil
-	}
-	nodes := plan.Nodes()
-	byID := make(map[string]*sparkwing.JobNode, len(nodes))
-	ids := make([]string, 0, len(nodes))
-	for _, n := range nodes {
-		byID[n.ID()] = n
-		ids = append(ids, n.ID())
-	}
-	for id, runnerName := range opts.JobRunnerOverrides {
-		node, ok := byID[id]
-		if !ok {
-			sort.Strings(ids)
-			suggest := sparkwing.SuggestClosest(id, ids)
-			if suggest != "" {
-				return fmt.Errorf("--job %s=%s: no plan node named %q; did you mean %q?",
-					id, runnerName, id, suggest)
-			}
-			return fmt.Errorf("--job %s=%s: no plan node named %q (declared: %v)",
-				id, runnerName, id, ids)
-		}
-		r, ok, err := runners.Resolve(opts.SparkwingDir, runnerName)
-		if err != nil {
-			return fmt.Errorf("--job %s=%s: resolve runner: %w", id, runnerName, err)
-		}
-		if !ok {
-			return fmt.Errorf("--job %s=%s: runner %q is not declared in runners.yaml",
-				id, runnerName, runnerName)
-		}
-		if reqs := node.RequiresLabels(); len(reqs) > 0 {
-			if !sparkwing.MatchLabels(reqs, r.Labels) {
-				return fmt.Errorf("--job %s=%s: runner %q (labels %v) does not satisfy job %q Requires %v",
-					id, runnerName, runnerName, r.Labels, id, reqs)
-			}
 		}
 	}
 	return nil

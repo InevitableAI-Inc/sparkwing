@@ -238,12 +238,6 @@ func dispatchRun(args []string) error {
 	if wf.forTarget != "" {
 		env = append(env, "SPARKWING_FOR="+wf.forTarget)
 	}
-	if len(wf.jobOverrides) > 0 {
-		env = append(env, "SPARKWING_JOB_OVERRIDES="+strings.Join(wf.jobOverrides, ";"))
-	}
-	if len(wf.preferLabels) > 0 {
-		env = append(env, "SPARKWING_PREFER="+strings.Join(wf.preferLabels, ";"))
-	}
 	if wf.backendsEnv != "" {
 		env = append(env, "SPARKWING_BACKENDS_ENV="+wf.backendsEnv)
 	}
@@ -314,8 +308,6 @@ func runSparkwing(args []string) error {
 		return runInternalCompleteTargets(args[1:])
 	case "_complete-runners":
 		return runInternalCompleteRunners(args[1:])
-	case "_complete-runner-labels":
-		return runInternalCompleteRunnerLabels(args[1:])
 	case "_complete-backends-envs":
 		return runInternalCompleteBackendsEnvs(args[1:])
 	case "_complete-profiles-for-pipeline":

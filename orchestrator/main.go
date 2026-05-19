@@ -153,17 +153,6 @@ func Main() {
 		PipelineYAML:   pipelineYAML,
 		SparkwingDir:   sparkwingDir,
 	}
-	if v := os.Getenv("SPARKWING_JOB_OVERRIDES"); v != "" {
-		overrides, perr := parseJobOverridesEnv(v)
-		if perr != nil {
-			fmt.Fprintln(os.Stderr, "sparkwing run: --sw-job:", perr)
-			os.Exit(2)
-		}
-		opts.JobRunnerOverrides = overrides
-	}
-	if v := os.Getenv("SPARKWING_PREFER"); v != "" {
-		opts.GlobalPrefers = splitSemicolonClean(v)
-	}
 	if applyErr := applyCIEmbeddedEnv(&opts); applyErr != nil {
 		fmt.Fprintln(os.Stderr, "sparkwing run:", applyErr)
 		os.Exit(1)
@@ -592,50 +581,6 @@ func loadPipelineYAML(pipeline string) (*pipelines.Pipeline, string) {
 		return nil, ""
 	}
 	return cfg.Find(pipeline), filepath.Dir(yamlPath)
-}
-
-// parseJobOverridesEnv parses SPARKWING_JOB_OVERRIDES (semi-colon
-// separated "id=runner" pairs) into the map shape Options expects.
-// Duplicate ids are rejected so two --job entries naming the same
-// job surface as an error instead of silently last-write-wins.
-func parseJobOverridesEnv(raw string) (map[string]string, error) {
-	out := map[string]string{}
-	for _, entry := range strings.Split(raw, ";") {
-		entry = strings.TrimSpace(entry)
-		if entry == "" {
-			continue
-		}
-		eq := strings.IndexByte(entry, '=')
-		if eq <= 0 || eq == len(entry)-1 {
-			return nil, fmt.Errorf("--job entry %q must be ID=RUNNER", entry)
-		}
-		id := strings.TrimSpace(entry[:eq])
-		runner := strings.TrimSpace(entry[eq+1:])
-		if id == "" || runner == "" {
-			return nil, fmt.Errorf("--job entry %q must be ID=RUNNER", entry)
-		}
-		if _, ok := out[id]; ok {
-			return nil, fmt.Errorf("--job %s specified twice", id)
-		}
-		out[id] = runner
-	}
-	return out, nil
-}
-
-// splitSemicolonClean splits raw on ';' and drops empty entries.
-// Used for SPARKWING_PREFER which uses ';' as the delimiter so
-// commas inside a label term (the comma-OR syntax) don't get
-// mistaken for a separator.
-func splitSemicolonClean(s string) []string {
-	parts := strings.Split(s, ";")
-	out := make([]string, 0, len(parts))
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			out = append(out, p)
-		}
-	}
-	return out
 }
 
 func splitCommaClean(s string) []string {

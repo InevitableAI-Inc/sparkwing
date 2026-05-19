@@ -138,19 +138,6 @@ type Options struct {
 	// configured. Pre-set values from the caller are preserved.
 	State storage.StateStore
 
-	// JobRunnerOverrides forces specific plan-node ids onto specific
-	// runner names (from runners.yaml). Validated at run start: the
-	// id must match a node in the plan, the runner must exist, and
-	// its advertised labels must satisfy the job's Requires terms.
-	// Empty leaves runner selection to the regular Prefers /
-	// WhenRunner resolution.
-	JobRunnerOverrides map[string]string
-
-	// GlobalPrefers prepends bias terms to every job's Prefers list
-	// at snapshot time. The job's own Prefers stay first (job-level
-	// wins on tie). Terms use the same comma-OR syntax as Job.Prefers.
-	GlobalPrefers []string
-
 	// BackendsEnv, when non-empty, forces a specific environments:
 	// entry from backends.yaml. Skips auto-detect. Validated against
 	// the resolved File at run start.
@@ -334,15 +321,6 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 		return &Result{RunID: runID, Status: "failed", Error: err}, nil
 	}
 
-	// Per-job runner override validation: ids must exist in the
-	// resolved plan and the named runners must satisfy the job's
-	// Requires terms. Fails before the snapshot persists so the
-	// run record never reflects an unreachable selection.
-	if err := validateJobOverrides(opts, plan); err != nil {
-		_ = backends.State.FinishRun(ctx, runID, "failed", err.Error())
-		return &Result{RunID: runID, Status: "failed", Error: err}, nil
-	}
-
 	// OnTarget validation: every Job/WorkStep OnTarget(...) value must
 	// name a declared target; a pipeline with no targets block can't
 	// carry OnTarget at all. Fails before dispatch so authoring
@@ -358,9 +336,7 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 	// PipelineConfig and re-resolve PipelineSecrets without re-
 	// reading pipelines.yaml on its end.
 	snapMeta := planSnapshotMeta{
-		Target:             opts.Target,
-		GlobalPrefers:      opts.GlobalPrefers,
-		JobRunnerOverrides: opts.JobRunnerOverrides,
+		Target: opts.Target,
 	}
 	if pipeCfg != nil {
 		raw, merr := json.Marshal(pipeCfg)
@@ -2311,20 +2287,6 @@ type planSnapshot struct {
 	// SecretResolver. Values are never persisted -- secrets are
 	// re-resolved on the pod side, never shipped across the wire.
 	Secrets pipelines.SecretsField `json:"secrets,omitempty"`
-
-	// GlobalPrefers carries the --prefer terms the operator passed
-	// at run start so the cluster pool dispatcher applies the same
-	// bias when claiming jobs. The in-process orchestrator uses one
-	// runner today, so this is consumed only by cluster-side
-	// dispatchers; persisting it on the snapshot keeps the surface
-	// honest across venues.
-	GlobalPrefers []string `json:"global_prefers,omitempty"`
-
-	// JobRunnerOverrides forces specific node ids onto specific
-	// runner names. Surface lives here for the same reason as
-	// GlobalPrefers: cluster-side dispatchers honor the override
-	// when claiming the named node.
-	JobRunnerOverrides map[string]string `json:"job_runner_overrides,omitempty"`
 }
 
 type snapshotNode struct {
@@ -2428,22 +2390,18 @@ type snapshotSpawnEach struct {
 // when it picks up a node. Zero-value omits the fields from the
 // emitted JSON.
 type planSnapshotMeta struct {
-	Target             string
-	PipelineConfig     json.RawMessage
-	Secrets            pipelines.SecretsField
-	GlobalPrefers      []string
-	JobRunnerOverrides map[string]string
+	Target         string
+	PipelineConfig json.RawMessage
+	Secrets        pipelines.SecretsField
 }
 
 func marshalPlanSnapshot(p *sparkwing.Plan, rc sparkwing.RunContext, meta planSnapshotMeta) ([]byte, error) {
 	snap := planSnapshot{
-		Pipeline:           rc.Pipeline,
-		RunID:              rc.RunID,
-		Target:             meta.Target,
-		PipelineConfig:     meta.PipelineConfig,
-		Secrets:            meta.Secrets,
-		GlobalPrefers:      meta.GlobalPrefers,
-		JobRunnerOverrides: meta.JobRunnerOverrides,
+		Pipeline:       rc.Pipeline,
+		RunID:          rc.RunID,
+		Target:         meta.Target,
+		PipelineConfig: meta.PipelineConfig,
+		Secrets:        meta.Secrets,
 	}
 	// Cycle detection threads through the snapshot walk to catch
 	// A->B->A loops in one pass.

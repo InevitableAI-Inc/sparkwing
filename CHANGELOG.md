@@ -16,3 +16,4 @@
 ### Removed
 
 - Retired `--sw-retry-of` and `--sw-full`; use `sparkwing runs retry RUN_ID [--failed | --all]`.
+- Retired `--sw-job` and `--sw-prefer`; runner selection is now exclusively Plan-layer via `Job.Requires` / `Job.Prefers`. If you used these flags, declare the constraint in the pipeline instead.

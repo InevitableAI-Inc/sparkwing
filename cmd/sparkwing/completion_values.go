@@ -1,5 +1,5 @@
-// Value-completion helpers introduced by the execution-model CLI:
-// --for, --job, --prefer, --backends-env, --default-runner.
+// Value-completion helpers for --for, --backends-env,
+// --default-runner.
 //
 // Each helper prints one entry per line to stdout and exits zero.
 // The shell wrappers in completion.go feed them into _describe.
@@ -64,63 +64,6 @@ func runInternalCompleteRunners(_ []string) error {
 	sort.Strings(names)
 	for _, n := range names {
 		fmt.Println(n)
-	}
-	return nil
-}
-
-// runInternalCompleteRunnerLabels emits the union of advertised
-// labels across runners.yaml entries (and, when the pipeline argument
-// is provided and pipelines.yaml declares a runners: allow-list, the
-// intersection of those runners with the resolved set). Useful for
-// --prefer completion.
-func runInternalCompleteRunnerLabels(args []string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return nil //nolint:nilerr
-	}
-	sparkwingDir, ok := walkUpForSparkwing(cwd)
-	if !ok {
-		return nil
-	}
-	names, err := runners.Names(sparkwingDir)
-	if err != nil {
-		return nil //nolint:nilerr
-	}
-
-	allowed := map[string]bool{}
-	if len(args) == 1 && args[0] != "" {
-		if _, cfg, derr := pipelines.Discover(cwd); derr == nil && cfg != nil {
-			if p := cfg.Find(args[0]); p != nil && len(p.Runners) > 0 {
-				for _, r := range p.Runners {
-					allowed[r] = true
-				}
-			}
-		}
-	}
-
-	seen := map[string]struct{}{}
-	for _, n := range names {
-		if len(allowed) > 0 && !allowed[n] {
-			continue
-		}
-		r, ok, rerr := runners.Resolve(sparkwingDir, n)
-		if rerr != nil || !ok {
-			continue
-		}
-		for _, l := range r.Labels {
-			if l == "" {
-				continue
-			}
-			seen[l] = struct{}{}
-		}
-	}
-	out := make([]string, 0, len(seen))
-	for l := range seen {
-		out = append(out, l)
-	}
-	sort.Strings(out)
-	for _, l := range out {
-		fmt.Println(l)
 	}
 	return nil
 }
