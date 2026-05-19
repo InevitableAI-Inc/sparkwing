@@ -50,7 +50,7 @@ Per-project surface: list / describe / new pipelines plus the SDK pin (version /
 
 | Command | What |
 |---|---|
-| `sparkwing pipeline list [-o table\|json\|plain] [--all]` | Enumerate every pipeline in this repo |
+| `sparkwing pipeline list [-o pretty\|json\|plain] [--all]` | Enumerate every pipeline in this repo |
 | `sparkwing pipeline describe --name NAME [-o ...]` | Full metadata: args, examples, triggers, help |
 | `sparkwing pipeline discover --query TEXT [-o ...]` | Fuzzy search across names / descriptions / tags, ranked |
 | `sparkwing pipeline new --name NAME [--template minimal\|build-test-deploy] [--hidden] [--short ...]` | Scaffold a new pipeline (refuses to clobber; auto-bootstraps `.sparkwing/` on first use; default template is `minimal` -- pass `--template build-test-deploy` for a build/test/deploy DAG) |
@@ -233,7 +233,7 @@ zsh + fish get per-entry descriptions; bash is name-only (compgen limitation).
 ## Conventions
 
 - **No positional args on `sparkwing`.** Every input is `--flag value`. `sparkwing` is the exception.
-- **Structured output.** Every list / describe / get verb accepts `-o table|json|plain` (default `table`). `--json` is a hidden alias for `-o json`.
+- **Structured output.** Every list / describe / get verb accepts `-o pretty|json|plain` (default `pretty`). `--json` is a hidden alias for `-o json`.
 - **Remote dispatch.** `--on NAME` picks a profile. Absent, commands read local state (SQLite under `~/.sparkwing/`).
 - **Required flags.** Marked `[required]` in `--help`. Missing required flags fail before any side effect.
 - **Hidden entries.** Pipelines marked `hidden: true` (yaml) or `# hidden: true` (scripts) don't appear in `pipelines list` / tab-complete. Still invocable by exact name. Pass `--all` to `pipelines list` to see them.
