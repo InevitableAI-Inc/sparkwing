@@ -69,7 +69,7 @@ func Main() {
 
 	// `<pipeline> config` is a pure inspection subverb: print the
 	// layered Config + declared Secrets for the selected target,
-	// no Plan, no dispatch. Honors SPARKWING_FOR (the --sw-for
+	// no Plan, no dispatch. Honors SPARKWING_TARGET (the --sw-target
 	// value the outer CLI forwarded). Recognized before --help so
 	// `sparkwing run X config --help` is a future extension point
 	// if needed.
@@ -147,7 +147,7 @@ func Main() {
 		StopAt:         os.Getenv("SPARKWING_STOP_AT"),
 		DryRun:         os.Getenv("SPARKWING_DRY_RUN") == "1",
 		MaxParallel:    runtime.NumCPU(),
-		Target:         os.Getenv("SPARKWING_FOR"),
+		Target:         os.Getenv("SPARKWING_TARGET"),
 		BackendsConfig: os.Getenv("SPARKWING_BACKENDS_CONFIG"),
 		PipelineYAML:   pipelineYAML,
 		SparkwingDir:   sparkwingDir,

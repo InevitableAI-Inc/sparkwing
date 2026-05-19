@@ -417,8 +417,8 @@ _sparkwing_complete() {
         return
     fi
 
-    # Value completion for --on profile names.
-    if [[ "$prev" == "--sw-on" ]]; then
+    # Value completion for --sw-profile profile names.
+    if [[ "$prev" == "--sw-profile" ]]; then
         local names
         names=$(sparkwing _complete-profiles 2>/dev/null)
         COMPREPLY=( $(compgen -W "$names" -- "$cur") )
@@ -504,10 +504,10 @@ _sparkwing() {
         return
     fi
 
-    # Value completion: --on <TAB> -> profile names, optionally
+    # Value completion: --sw-profile <TAB> -> profile names, optionally
     # filtered to those whose default_runner sits in the pipeline's
     # allowed runner set when the pipeline is known.
-    if [[ ${CURRENT} -ge 2 && "${words[CURRENT-1]}" == "--sw-on" ]]; then
+    if [[ ${CURRENT} -ge 2 && "${words[CURRENT-1]}" == "--sw-profile" ]]; then
         local pipe=""
         if (( ${#swpath[@]} >= 2 )) && [[ "${swpath[1]}" == "run" ]]; then
             pipe="${swpath[2]}"
@@ -531,8 +531,8 @@ _sparkwing() {
         return
     fi
 
-    # Value completion: --for <TAB> -> the pipeline's declared targets.
-    if [[ ${CURRENT} -ge 2 && "${words[CURRENT-1]}" == "--sw-for" ]]; then
+    # Value completion: --sw-target <TAB> -> the pipeline's declared targets.
+    if [[ ${CURRENT} -ge 2 && "${words[CURRENT-1]}" == "--sw-target" ]]; then
         local pipe=""
         if (( ${#swpath[@]} >= 2 )) && [[ "${swpath[1]}" == "run" ]]; then
             pipe="${swpath[2]}"
@@ -671,7 +671,7 @@ _sparkwing_complete_flags() {
     # Pipeline-specific flags go FIRST so the "Pipeline Args" group
     # renders at the top of the menu -- operators can tab-cycle
     # directly to the per-pipeline knobs without scrolling past the
-    # sparkwing-owned plumbing (--sw-on/--sw-from/...)
+    # sparkwing-owned plumbing (--sw-profile/--sw-from/...)
     # every time. "sparkwing run <pipeline> --<TAB>" is the only path
     # that carries a pipeline name at a known position (leaf "run",
     # pipeline at $2).

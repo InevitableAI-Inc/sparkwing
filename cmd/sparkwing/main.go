@@ -204,7 +204,7 @@ func dispatchRun(args []string) error {
 		// local exec path; this branch only fires when something
 		// upstream silently flipped that. Forward anyway so the run
 		// record reflects the intent.
-		env = append(env, "SPARKWING_ON="+wf.on)
+		env = append(env, "SPARKWING_PROFILE="+wf.on)
 	}
 	if wf.secrets != "" {
 		env = append(env, "SPARKWING_SECRETS_PROFILE="+wf.secrets)
@@ -222,7 +222,7 @@ func dispatchRun(args []string) error {
 			}
 			path, cleanup, err := writeProfileBackendsConfig(prof.LogStore, prof.ArtifactStore)
 			if err != nil {
-				return fmt.Errorf("--on %s: materialize backends config: %w", wf.on, err)
+				return fmt.Errorf("--sw-profile %s: materialize backends config: %w", wf.on, err)
 			}
 			if path != "" {
 				defer cleanup()
@@ -236,7 +236,7 @@ func dispatchRun(args []string) error {
 	// Forward the new selection flags as env vars; the inner
 	// orchestrator/main.go lifts these onto Options at run start.
 	if wf.forTarget != "" {
-		env = append(env, "SPARKWING_FOR="+wf.forTarget)
+		env = append(env, "SPARKWING_TARGET="+wf.forTarget)
 	}
 	if wf.backendsConfig != "" {
 		env = append(env, "SPARKWING_BACKENDS_CONFIG="+wf.backendsConfig)

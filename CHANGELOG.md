@@ -13,6 +13,9 @@
   allowed). Profile `auto_allow` is now a list of labels
   (`auto_allow: [destructive]`) instead of per-marker booleans.
 - Renamed `--sw-change-directory` to `--sw-cd`. The `-C` short form is unchanged.
+- Renamed `--sw-for` to `--sw-target`. The `Job.OnTarget("...")` author API is unchanged.
+- Renamed `--sw-on` to `--sw-profile` (and its argument `NAME` to `PROFILE`).
+- Tightened `--sw-dry-run` description (no behavior change).
 
 ### Removed
 

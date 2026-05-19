@@ -24,8 +24,8 @@ import (
 //	--output / -o   pretty | json (default pretty)
 //	--json          alias for --output json
 //
-// --for is honored via the SPARKWING_FOR env var the outer sparkwing CLI
-// already forwards; no separate parse here.
+// --sw-target is honored via the SPARKWING_TARGET env var the outer
+// sparkwing CLI already forwards; no separate parse here.
 func runPipelineConfigInspect(pipeline string, extra []string) error {
 	format := "pretty"
 	for i := 0; i < len(extra); i++ {
@@ -51,7 +51,7 @@ func runPipelineConfigInspect(pipeline string, extra []string) error {
 		return unknownPipelineErr(pipeline)
 	}
 	pipelineYAML, sparkwingDir := loadPipelineYAML(pipeline)
-	target := os.Getenv("SPARKWING_FOR")
+	target := os.Getenv("SPARKWING_TARGET")
 
 	if pipelineYAML != nil {
 		if err := validateTargetSelection(Options{

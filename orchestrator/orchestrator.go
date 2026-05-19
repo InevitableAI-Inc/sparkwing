@@ -802,8 +802,8 @@ func buildRunFlags(opts Options) map[string]any {
 	if os.Getenv("SPARKWING_NO_UPDATE") == "1" {
 		flags["no_update"] = true
 	}
-	if v := os.Getenv("SPARKWING_ON"); v != "" {
-		flags["on"] = v
+	if v := os.Getenv("SPARKWING_PROFILE"); v != "" {
+		flags["profile"] = v
 	}
 	if v := os.Getenv("SPARKWING_SECRETS_PROFILE"); v != "" {
 		flags["secrets"] = v

@@ -152,7 +152,7 @@ func parseRunFlags(args []string) (runFlags, []string) {
 		case strings.HasPrefix(a, "--sw-from="):
 			wf.from = strings.TrimPrefix(a, "--sw-from=")
 			i++
-		case a == "--sw-on":
+		case a == "--sw-profile":
 			if i+1 < len(args) {
 				wf.on = args[i+1]
 				i += 2
@@ -160,8 +160,8 @@ func parseRunFlags(args []string) (runFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--sw-on="):
-			wf.on = strings.TrimPrefix(a, "--sw-on=")
+		case strings.HasPrefix(a, "--sw-profile="):
+			wf.on = strings.TrimPrefix(a, "--sw-profile=")
 			i++
 		case a == "--sw-no-update":
 			wf.noUpdate = true
@@ -256,7 +256,7 @@ func parseRunFlags(args []string) (runFlags, []string) {
 		case strings.HasPrefix(a, "--sw-cd="):
 			wf.changeDir = strings.TrimPrefix(a, "--sw-cd=")
 			i++
-		case a == "--sw-for":
+		case a == "--sw-target":
 			if i+1 < len(args) {
 				wf.forTarget = args[i+1]
 				i += 2
@@ -264,8 +264,8 @@ func parseRunFlags(args []string) (runFlags, []string) {
 			}
 			pass = append(pass, a)
 			i++
-		case strings.HasPrefix(a, "--sw-for="):
-			wf.forTarget = strings.TrimPrefix(a, "--sw-for=")
+		case strings.HasPrefix(a, "--sw-target="):
+			wf.forTarget = strings.TrimPrefix(a, "--sw-target=")
 			i++
 		case a == "--sw-backends-config":
 			if i+1 < len(args) {
