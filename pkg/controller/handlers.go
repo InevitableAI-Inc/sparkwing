@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/sparkwing-dev/sparkwing/internal/api"
-	"github.com/sparkwing-dev/sparkwing/pkg/store"
 	"github.com/sparkwing-dev/sparkwing/internal/otelutil"
+	"github.com/sparkwing-dev/sparkwing/pkg/store"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 

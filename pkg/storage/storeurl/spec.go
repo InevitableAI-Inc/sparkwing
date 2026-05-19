@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sparkwing-dev/sparkwing/pkg/store"
 	"github.com/sparkwing-dev/sparkwing/pkg/backends"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage/fs"
@@ -14,6 +13,7 @@ import (
 	"github.com/sparkwing-dev/sparkwing/pkg/storage/sparkwingcache"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage/sparkwinglogs"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage/stdoutlogs"
+	"github.com/sparkwing-dev/sparkwing/pkg/store"
 )
 
 // ProfileLookup resolves a profile name (from profiles.yaml) to its

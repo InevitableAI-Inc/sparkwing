@@ -7,15 +7,16 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sparkwing-dev/sparkwing/pkg/logs"
 	"github.com/sparkwing-dev/sparkwing/internal/orchestrator"
+	"github.com/sparkwing-dev/sparkwing/pkg/logs"
 	"github.com/sparkwing-dev/sparkwing/pkg/store"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
 type httpLogsPipe struct{ sparkwing.Base }
 
-func (httpLogsPipe) Plan(ctx context.Context, plan *sparkwing.Plan, _ sparkwing.NoInputs, rc sparkwing.RunContext) error {	a := sparkwing.Job(plan, "a", func(ctx context.Context) error {
+func (httpLogsPipe) Plan(ctx context.Context, plan *sparkwing.Plan, _ sparkwing.NoInputs, rc sparkwing.RunContext) error {
+	a := sparkwing.Job(plan, "a", func(ctx context.Context) error {
 		sparkwing.Info(ctx, "a: first line")
 		sparkwing.Info(ctx, "a: second line")
 		return nil

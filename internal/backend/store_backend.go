@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/sparkwing-dev/sparkwing/internal/orchestrator"
-	"github.com/sparkwing-dev/sparkwing/pkg/store"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage"
+	"github.com/sparkwing-dev/sparkwing/pkg/store"
 )
 
 // StoreBackend wraps a *store.Store for state, with either a

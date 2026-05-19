@@ -5,8 +5,8 @@ import (
 	"io"
 
 	"github.com/sparkwing-dev/sparkwing/pkg/controller/client"
-	"github.com/sparkwing-dev/sparkwing/pkg/store"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage"
+	"github.com/sparkwing-dev/sparkwing/pkg/store"
 )
 
 // ClientBackend wraps a *client.Client (controller HTTP) for state
