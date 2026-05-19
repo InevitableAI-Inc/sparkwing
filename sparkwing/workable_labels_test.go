@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -148,7 +149,7 @@ func TestWorkableLabels_JobFanOutDynamicHeterogeneous(t *testing.T) {
 		}
 		return nil, false
 	}
-	ctx := sparkwing.WithResolver(context.Background(), resolver)
+	ctx := sparkwingruntime.WithResolver(context.Background(), resolver)
 	children := exps[0].Gen(ctx)
 	if len(children) != 4 {
 		t.Fatalf("expected 4 children, got %d", len(children))

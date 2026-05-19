@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -285,7 +286,7 @@ func TestRefPanicsWithoutResolver(t *testing.T) {
 
 func TestRefResolves(t *testing.T) {
 	expected := buildOut{Tag: "v2", Digest: "sha256:def"}
-	ctx := sparkwing.WithResolver(context.Background(), func(id string) (any, bool) {
+	ctx := sparkwingruntime.WithResolver(context.Background(), func(id string) (any, bool) {
 		if id == "build" {
 			return expected, true
 		}

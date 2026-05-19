@@ -143,17 +143,3 @@ func TestPreviewItem_RisksEmpty(t *testing.T) {
 			preview.Nodes[0].Work.Steps[0].Risks)
 	}
 }
-
-// TestSortedUniqueRisks_Dedupes confirms the helper produces a sorted
-// deduplicated union across multiple inputs, ignoring empties.
-func TestSortedUniqueRisks_Dedupes(t *testing.T) {
-	got := SortedUniqueRisks(
-		[]string{"prod", "destructive"},
-		[]string{"prod", "money"},
-		[]string{"", "destructive"},
-	)
-	want := []string{"destructive", "money", "prod"}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("SortedUniqueRisks = %v, want %v", got, want)
-	}
-}

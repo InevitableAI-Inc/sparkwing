@@ -68,10 +68,10 @@ func (s *WorkStep) addRisk(label string) {
 	s.risks = append(s.risks, label)
 }
 
-// SortedUnique returns the deduplicated, lexicographically sorted
-// union of the provided label slices. Used by validators to render
-// stable error messages and by describe to emit a stable wire shape.
-func SortedUniqueRisks(slices ...[]string) []string {
+// sortedUniqueRisks mirrors internal/sparkwingruntime.SortedUniqueRisks
+// for sparkwing-internal callers (Describe builds the risk union here).
+// Kept here so describe.go does not need to import the runtime package.
+func sortedUniqueRisks(slices ...[]string) []string {
 	seen := map[string]bool{}
 	for _, sl := range slices {
 		for _, l := range sl {

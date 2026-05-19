@@ -1638,7 +1638,7 @@ SELECT run_id, node_id, status, outcome, deps_json, error, output_json, started_
 // needed label expression. Each entry in needed is a single term;
 // within a term, comma-separated values are alternatives (OR), and
 // across terms results compose with AND. Empty or nil needed matches
-// any have (including empty). Mirrors sparkwing.MatchLabels; kept
+// any have (including empty). Mirrors sparkwingruntime.MatchLabels; kept
 // in-package to avoid an import cycle between store and sparkwing.
 func labelsSatisfied(needed []string, have map[string]struct{}) bool {
 	for _, term := range needed {

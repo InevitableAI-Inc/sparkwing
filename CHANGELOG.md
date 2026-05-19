@@ -18,6 +18,10 @@
 - Renamed `--sw-from` to `--sw-ref` (and the env-var bridge `SPARKWING_FROM` to `SPARKWING_REF`).
 - Tightened `--sw-*` flag descriptions in `--help`. No behavior change.
 - Tightened `--sw-dry-run` description (no behavior change).
+- Moved 15 orchestrator-only plumbing functions out of the sparkwing package
+  into `internal/sparkwingruntime`. Pipeline authors never call these;
+  relocation tightens the author-facing surface visible in IDE autocomplete
+  and godoc. No behavior change.
 
 ### Removed
 

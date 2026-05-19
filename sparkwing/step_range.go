@@ -6,7 +6,8 @@ import (
 	"time"
 )
 
-// stepRangeKey scopes the WithStepRange context value.
+// stepRangeKey scopes the --start-at / --stop-at context value
+// installed by internal/sparkwingruntime.WithStepRange.
 type stepRangeKey struct{}
 
 // stepRange carries the operator-supplied --start-at / --stop-at
@@ -17,38 +18,16 @@ type stepRange struct {
 	stop  string
 }
 
-// WithStepRange installs a --start-at / --stop-at range on ctx so
-// every Work executed under it can filter its items down to the
-// selected window. The orchestrator validates the strings before
-// installing -- RunWork applies the filter only to Works that
-// actually contain the named bound, so multi-Job pipelines that
-// pass the range globally degrade gracefully on Works that don't.
-//
-// Lets `sparkwing run <pipeline> --start-at STEP` skip every step upstream
-// of STEP and resume from there without authors having to hand-roll
-// a stepOrder slice + skipBefore predicate per pipeline.
-func WithStepRange(ctx context.Context, startAt, stopAt string) context.Context {
-	if startAt == "" && stopAt == "" {
-		return ctx
-	}
-	return context.WithValue(ctx, stepRangeKey{}, stepRange{start: startAt, stop: stopAt})
-}
-
-// StepRangeFromContext returns the (startAt, stopAt) bounds plumbed
-// onto ctx by WithStepRange. Both empty when no range was set.
-// Exported so renderers (e.g. `sparkwing pipeline explain`) can
-// preview "what would be skipped" without re-running RunWork.
-func StepRangeFromContext(ctx context.Context) (startAt, stopAt string) {
-	r, _ := stepRangeFromContext(ctx)
-	return r.start, r.stop
-}
-
+// stepRangeFromContext reads the bounds that
+// internal/sparkwingruntime.WithStepRange installed on ctx. The
+// cross-package carrier is [2]string{start, stop} so the runtime
+// package does not need to name an unexported sparkwing type.
 func stepRangeFromContext(ctx context.Context) (stepRange, bool) {
-	r, ok := ctx.Value(stepRangeKey{}).(stepRange)
-	if !ok {
+	v, ok := ctx.Value(stepRangeKey{}).([2]string)
+	if !ok || (v[0] == "" && v[1] == "") {
 		return stepRange{}, false
 	}
-	return r, true
+	return stepRange{start: v[0], stop: v[1]}, true
 }
 
 // computeStepRangeSkips returns the set of work-item IDs that should

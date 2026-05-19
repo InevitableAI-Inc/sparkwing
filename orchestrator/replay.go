@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/orchestrator/runner"
 	"github.com/sparkwing-dev/sparkwing/orchestrator/store"
 	"github.com/sparkwing-dev/sparkwing/secrets"
@@ -134,7 +135,7 @@ func RunReplayNode(ctx context.Context, paths Paths, st *store.Store, runID, nod
 	// Replay-run nodes first (chain-of-replays sees latest), then
 	// fall back to the original.
 	originalRunID := run.ReplayOfRunID
-	ctx = sparkwing.WithJSONResolver(ctx, func(id string) ([]byte, bool) {
+	ctx = sparkwingruntime.WithJSONResolver(ctx, func(id string) ([]byte, bool) {
 		if data, err := st.GetNode(ctx, runID, id); err == nil && len(data.Output) > 0 {
 			return data.Output, true
 		}

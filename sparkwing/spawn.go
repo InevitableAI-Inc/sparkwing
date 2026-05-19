@@ -23,16 +23,11 @@ func (f SpawnHandlerFunc) Spawn(ctx context.Context, parentNodeID, spawnID strin
 	return f(ctx, parentNodeID, spawnID, job)
 }
 
-// WithSpawnHandler installs h into ctx. The orchestrator wraps the
-// per-node ctx with this before calling RunWork.
-func WithSpawnHandler(ctx context.Context, h SpawnHandler) context.Context {
-	return context.WithValue(ctx, keySpawnHandler, h)
-}
-
-// SpawnHandlerFromContext returns the installed handler or nil.
+// spawnHandlerFromContext returns the handler that
+// internal/sparkwingruntime.WithSpawnHandler installed, or nil.
 // RunWork errors loudly if a Work declares spawns and no handler is
 // present.
-func SpawnHandlerFromContext(ctx context.Context) SpawnHandler {
+func spawnHandlerFromContext(ctx context.Context) SpawnHandler {
 	if h, ok := ctx.Value(keySpawnHandler).(SpawnHandler); ok {
 		return h
 	}

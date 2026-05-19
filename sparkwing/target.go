@@ -2,6 +2,8 @@ package sparkwing
 
 import "context"
 
+// targetKey scopes the active-target context value installed by
+// internal/sparkwingruntime.WithTarget.
 type targetKey struct{}
 
 // Target returns the active target for the current run, or "" when no
@@ -26,12 +28,4 @@ func Target(ctx context.Context) string {
 		return v
 	}
 	return ""
-}
-
-// WithTarget returns a derived context carrying the active target.
-// Used by the orchestrator at run start to publish the resolved
-// --for selection; tests use it to exercise target-conditional code
-// paths from a bare ctx.
-func WithTarget(ctx context.Context, target string) context.Context {
-	return context.WithValue(ctx, targetKey{}, target)
 }

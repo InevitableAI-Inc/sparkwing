@@ -81,8 +81,10 @@ func (r Ref[T]) Get(ctx context.Context) T {
 }
 
 func (r Ref[T]) getInRun(ctx context.Context) T {
-	if res := resolverFromContext(ctx); res != nil {
-		if raw, ok := res.resolve(r.NodeID); ok {
+	resolve := resolverFromContext(ctx)
+	jsonResolve := jsonResolverFromContext(ctx)
+	if resolve != nil {
+		if raw, ok := resolve(r.NodeID); ok {
 			typed, ok := raw.(T)
 			if !ok {
 				var zero T
@@ -92,8 +94,8 @@ func (r Ref[T]) getInRun(ctx context.Context) T {
 			return typed
 		}
 	}
-	if jres := jsonResolverFromContext(ctx); jres != nil {
-		if data, ok := jres.resolve(r.NodeID); ok {
+	if jsonResolve != nil {
+		if data, ok := jsonResolve(r.NodeID); ok {
 			var out T
 			if err := json.Unmarshal(data, &out); err != nil {
 				var zero T
@@ -104,7 +106,7 @@ func (r Ref[T]) getInRun(ctx context.Context) T {
 		}
 	}
 	var zero T
-	if resolverFromContext(ctx) == nil && jsonResolverFromContext(ctx) == nil {
+	if resolve == nil && jsonResolve == nil {
 		panic(fmt.Sprintf("sparkwing: Ref[%T].Get called without a resolver in context", zero))
 	}
 	panic(fmt.Sprintf("sparkwing: Ref[%T].Get: node %q has not completed", zero, r.NodeID))
@@ -210,46 +212,22 @@ func RefToLastRun[T any](pipeline, nodeID string, opts ...RefOption) Ref[T] {
 	}
 }
 
-type refResolver struct {
-	get func(nodeID string) (any, bool)
+// resolverFromContext reads the in-run reference resolver that
+// internal/sparkwingruntime.WithResolver installed on ctx. Storing the
+// raw func (rather than a wrapper type) lets the runtime package
+// construct the value without naming an unexported sparkwing type.
+func resolverFromContext(ctx context.Context) func(nodeID string) (any, bool) {
+	f, _ := ctx.Value(keyRefResolver).(func(string) (any, bool))
+	return f
 }
 
-func (r *refResolver) resolve(id string) (any, bool) { return r.get(id) }
-
-// WithResolver installs a reference resolver into ctx. Intended for
-// orchestrator implementations.
-func WithResolver(ctx context.Context, get func(nodeID string) (any, bool)) context.Context {
-	return context.WithValue(ctx, keyRefResolver, &refResolver{get: get})
-}
-
-func resolverFromContext(ctx context.Context) *refResolver {
-	if r, ok := ctx.Value(keyRefResolver).(*refResolver); ok {
-		return r
-	}
-	return nil
-}
-
-// jsonRefResolver is the cluster-mode sibling of refResolver: returns
-// raw bytes; Ref[T].Get unmarshals. Distinct context key so both
-// resolvers can coexist.
-type jsonRefResolver struct {
-	get func(nodeID string) ([]byte, bool)
-}
-
-func (r *jsonRefResolver) resolve(id string) ([]byte, bool) { return r.get(id) }
-
-// WithJSONResolver installs a JSON-returning resolver into ctx. Used
-// by cluster-mode pod runners whose only handle to upstream outputs
-// is the controller's raw JSON.
-func WithJSONResolver(ctx context.Context, get func(nodeID string) ([]byte, bool)) context.Context {
-	return context.WithValue(ctx, keyJSONRefResolver, &jsonRefResolver{get: get})
-}
-
-func jsonResolverFromContext(ctx context.Context) *jsonRefResolver {
-	if r, ok := ctx.Value(keyJSONRefResolver).(*jsonRefResolver); ok {
-		return r
-	}
-	return nil
+// jsonResolverFromContext reads the cluster-mode JSON resolver
+// installed by internal/sparkwingruntime.WithJSONResolver. Cluster
+// pod runners' only handle to upstream outputs is the controller's
+// raw JSON.
+func jsonResolverFromContext(ctx context.Context) func(nodeID string) ([]byte, bool) {
+	f, _ := ctx.Value(keyJSONRefResolver).(func(string) ([]byte, bool))
+	return f
 }
 
 // collectCrossPipelineRefs inspects a job struct for Ref[T] fields

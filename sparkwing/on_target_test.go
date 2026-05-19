@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -12,7 +13,7 @@ func TestTarget_AccessorRoundTrip(t *testing.T) {
 	if got := sparkwing.Target(context.Background()); got != "" {
 		t.Fatalf("default Target should be empty, got %q", got)
 	}
-	ctx := sparkwing.WithTarget(context.Background(), "prod")
+	ctx := sparkwingruntime.WithTarget(context.Background(), "prod")
 	if got := sparkwing.Target(ctx); got != "prod" {
 		t.Fatalf("Target after WithTarget: got %q want %q", got, "prod")
 	}
@@ -52,7 +53,7 @@ func TestEffectiveJobTargets_Explicit(t *testing.T) {
 	plan := sparkwing.NewPlan()
 	a := sparkwing.Job(plan, "a", &buildJob{}).OnTarget("prod")
 	_ = a
-	got := sparkwing.EffectiveJobTargets(plan)
+	got := sparkwingruntime.EffectiveJobTargets(plan)
 	want := []string{"prod"}
 	if !reflect.DeepEqual(got["a"], want) {
 		t.Fatalf("effective[a] = %v, want %v", got["a"], want)
@@ -63,7 +64,7 @@ func TestEffectiveJobTargets_InheritsFromConsumer(t *testing.T) {
 	plan := sparkwing.NewPlan()
 	build := sparkwing.Job(plan, "build", &buildJob{})
 	sparkwing.Job(plan, "deploy", &buildJob{}).OnTarget("prod").Needs(build)
-	got := sparkwing.EffectiveJobTargets(plan)
+	got := sparkwingruntime.EffectiveJobTargets(plan)
 	if !reflect.DeepEqual(got["build"], []string{"prod"}) {
 		t.Fatalf("build should inherit from deploy: got %v", got["build"])
 	}
@@ -77,7 +78,7 @@ func TestEffectiveJobTargets_UniversalConsumerWins(t *testing.T) {
 	build := sparkwing.Job(plan, "build", &buildJob{})
 	sparkwing.Job(plan, "deploy", &buildJob{}).OnTarget("prod").Needs(build)
 	sparkwing.Job(plan, "publish", &buildJob{}).Needs(build)
-	got := sparkwing.EffectiveJobTargets(plan)
+	got := sparkwingruntime.EffectiveJobTargets(plan)
 	if got["build"] != nil {
 		t.Fatalf("build should be universal (nil), got %v", got["build"])
 	}
@@ -97,7 +98,7 @@ func TestJobAllowsTarget(t *testing.T) {
 		{[]string{"prod", "staging"}, "staging", true},
 	}
 	for _, c := range cases {
-		got := sparkwing.JobAllowsTarget(c.eff, c.target)
+		got := sparkwingruntime.JobAllowsTarget(c.eff, c.target)
 		if got != c.allow {
 			t.Errorf("JobAllowsTarget(%v, %q) = %v, want %v", c.eff, c.target, got, c.allow)
 		}
@@ -108,7 +109,7 @@ func TestEffectiveStepTargets_InheritsFromStepConsumer(t *testing.T) {
 	w := sparkwing.NewWork()
 	fetch := sparkwing.Step(w, "fetch", func(context.Context) error { return nil })
 	sparkwing.Step(w, "deploy", func(context.Context) error { return nil }).OnTarget("prod").Needs(fetch)
-	got := sparkwing.EffectiveStepTargets(w)
+	got := sparkwingruntime.EffectiveStepTargets(w)
 	if !reflect.DeepEqual(got["fetch"], []string{"prod"}) {
 		t.Fatalf("fetch effective = %v, want [prod]", got["fetch"])
 	}

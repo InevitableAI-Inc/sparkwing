@@ -43,7 +43,7 @@ func RunWork(ctx context.Context, w *Work) (any, error) {
 	}
 
 	parentNodeID := NodeFromContext(ctx)
-	handler := SpawnHandlerFromContext(ctx)
+	handler := spawnHandlerFromContext(ctx)
 	if (len(spawns) > 0 || len(gens) > 0) && handler == nil {
 		return nil, fmt.Errorf("sparkwing: RunWork: Work declares %d Spawn(s) but no SpawnHandler is installed in ctx; spawn dispatch requires the orchestrator-provided handler", len(spawns)+len(gens))
 	}
@@ -107,9 +107,9 @@ func RunWork(ctx context.Context, w *Work) (any, error) {
 	// `step_skipped` reason. Downstream Needs treats the skip as
 	// satisfied. Empty active target skips every non-universal step.
 	target := Target(ctx)
-	stepEff := EffectiveStepTargets(w)
+	stepEff := effectiveStepTargets(w)
 	for id, eff := range stepEff {
-		if JobAllowsTarget(eff, target) {
+		if jobAllowsTarget(eff, target) {
 			continue
 		}
 		if it, ok := items[id]; ok {

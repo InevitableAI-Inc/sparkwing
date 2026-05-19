@@ -218,7 +218,7 @@ func collectRisks(reg *Registration) (union []string, perStep []DescribeStepRisk
 			perStepLabels = append(perStepLabels, labels)
 		}
 	}
-	union = SortedUniqueRisks(perStepLabels...)
+	union = sortedUniqueRisks(perStepLabels...)
 	return union, perStep, true
 }
 

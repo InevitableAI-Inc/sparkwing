@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -343,7 +344,7 @@ func TestJobFanOutDynamic_RegistersExpansion(t *testing.T) {
 	}
 	// Resolve via an in-process Ref resolver to exercise the
 	// reflection-driven slice traversal end-to-end.
-	ctx := sparkwing.WithResolver(context.Background(), func(id string) (any, bool) {
+	ctx := sparkwingruntime.WithResolver(context.Background(), func(id string) (any, bool) {
 		if id == "discover" {
 			return []string{"a", "b", "c"}, true
 		}

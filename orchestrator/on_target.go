@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/pkg/pipelines"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
@@ -23,13 +24,13 @@ func computeOnTargetSkip(plan *sparkwing.Plan, target string) map[string]string 
 	if plan == nil {
 		return nil
 	}
-	eff := sparkwing.EffectiveJobTargets(plan)
+	eff := sparkwingruntime.EffectiveJobTargets(plan)
 	if len(eff) == 0 {
 		return nil
 	}
 	out := make(map[string]string, len(eff))
 	for id, set := range eff {
-		if sparkwing.JobAllowsTarget(set, target) {
+		if sparkwingruntime.JobAllowsTarget(set, target) {
 			continue
 		}
 		out[id] = formatJobOnTargetSkip(set, target)

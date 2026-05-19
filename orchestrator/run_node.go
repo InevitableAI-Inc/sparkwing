@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sparkwing-dev/sparkwing/controller/client"
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/orchestrator/runner"
 	"github.com/sparkwing-dev/sparkwing/orchestrator/store"
 	"github.com/sparkwing-dev/sparkwing/otelutil"
@@ -109,7 +110,7 @@ func RunNodeOnce(
 	if err != nil {
 		return runner.Result{}, fmt.Errorf("build plan: %w", err)
 	}
-	ctx = sparkwing.WithJSONResolver(ctx, func(id string) ([]byte, bool) {
+	ctx = sparkwingruntime.WithJSONResolver(ctx, func(id string) ([]byte, bool) {
 		data, err := stateClient.GetNodeOutput(ctx, runID, id)
 		if err != nil {
 			return nil, false
@@ -146,7 +147,7 @@ func RunNodeOnce(
 	// in-process default. Env-driven so the per-pod overrides set by
 	// the trigger loop flow through without a fresh API.
 	if info := podRunnerInfo(); info != nil {
-		ctx = sparkwing.WithRunner(ctx, info)
+		ctx = sparkwingruntime.WithRunner(ctx, info)
 	}
 
 	// Pod-side install of the PipelineConfig the orchestrator already
@@ -169,7 +170,7 @@ func RunNodeOnce(
 	if t, terr := rehydrateTarget(run.PlanSnapshot); terr != nil {
 		logger.Warn("pod: rehydrate target", "err", terr)
 	} else if t != "" {
-		ctx = sparkwing.WithTarget(ctx, t)
+		ctx = sparkwingruntime.WithTarget(ctx, t)
 	}
 
 	// Pod-side re-resolution of PipelineSecrets via the controller's

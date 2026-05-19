@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -330,7 +331,7 @@ func TestRunWork_SpawnDispatchedThroughHandler(t *testing.T) {
 		return nil, nil
 	})
 
-	hctx := sparkwing.WithSpawnHandler(ctx, handler)
+	hctx := sparkwingruntime.WithSpawnHandler(ctx, handler)
 	if _, err := sparkwing.RunWork(hctx, w); err != nil {
 		t.Fatalf("RunWork: %v", err)
 	}
@@ -359,7 +360,7 @@ func TestRunWork_SpawnForEachDispatchesEachItem(t *testing.T) {
 		return nil, nil
 	})
 
-	hctx := sparkwing.WithSpawnHandler(ctx, handler)
+	hctx := sparkwingruntime.WithSpawnHandler(ctx, handler)
 	if _, err := sparkwing.RunWork(hctx, w); err != nil {
 		t.Fatalf("RunWork: %v", err)
 	}

@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/orchestrator/runner"
 	"github.com/sparkwing-dev/sparkwing/orchestrator/store"
 	"github.com/sparkwing-dev/sparkwing/pkg/pipelines"
@@ -292,7 +293,7 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 	// scheduler level; this accessor is for diagnostics and the rare
 	// case where neither OnTarget nor a typed Config field is a clean
 	// fit.
-	ctx = sparkwing.WithTarget(ctx, opts.Target)
+	ctx = sparkwingruntime.WithTarget(ctx, opts.Target)
 
 	// Resolve the typed Config struct before Plan runs so pipelines
 	// can read PipelineConfig[T](ctx) from their Plan() body. Secrets
@@ -380,14 +381,14 @@ func Run(ctx context.Context, backends Backends, opts Options) (*Result, error) 
 			_ = backends.State.FinishRun(ctx, runID, "failed", err.Error())
 			return &Result{RunID: runID, Status: "failed", Error: err}, nil
 		}
-		ctx = sparkwing.WithStepRange(ctx, opts.StartAt, opts.StopAt)
+		ctx = sparkwingruntime.WithStepRange(ctx, opts.StartAt, opts.StopAt)
 	}
 	// Install the dry-run mode flag on the run-wide ctx so every
 	// Work executed under it routes through DryRunFn instead
 	// of the apply Fn. Steps without a dry-run body soft-skip with
 	// reason `no_dry_run_defined`.
 	if opts.DryRun {
-		ctx = sparkwing.WithDryRun(ctx)
+		ctx = sparkwingruntime.WithDryRun(ctx)
 	}
 
 	emitRunStart(opts.Delegate, invocation)
@@ -892,7 +893,7 @@ func emitRunPlan(delegate sparkwing.Logger, plan *sparkwing.Plan, target string)
 	if len(nodes) == 0 {
 		return
 	}
-	effective := sparkwing.EffectiveJobTargets(plan)
+	effective := sparkwingruntime.EffectiveJobTargets(plan)
 	rows := make([]any, 0, len(nodes))
 	for _, n := range nodes {
 		row := map[string]any{
@@ -929,7 +930,7 @@ func emitRunPlan(delegate sparkwing.Logger, plan *sparkwing.Plan, target string)
 		}
 		if eff, ok := effective[n.ID()]; ok && len(eff) > 0 {
 			row["effective_targets"] = eff
-			if !sparkwing.JobAllowsTarget(eff, target) {
+			if !sparkwingruntime.JobAllowsTarget(eff, target) {
 				row["skip_reason"] = formatJobOnTargetSkip(eff, target)
 			}
 		}
@@ -1189,8 +1190,8 @@ func newDispatchState(ctx context.Context, backends Backends, r runner.Runner, r
 	} else {
 		s.resolverCtx = ctx
 	}
-	s.resolverCtx = sparkwing.WithResolver(s.resolverCtx, s.resolve)
-	s.resolverCtx = sparkwing.WithJSONResolver(s.resolverCtx, s.resolveJSON)
+	s.resolverCtx = sparkwingruntime.WithResolver(s.resolverCtx, s.resolve)
+	s.resolverCtx = sparkwingruntime.WithJSONResolver(s.resolverCtx, s.resolveJSON)
 	s.resolverCtx = sparkwing.WithPipelineResolver(s.resolverCtx, s.pipelineRef())
 	s.resolverCtx = sparkwing.WithPipelineAwaiter(s.resolverCtx, s.pipelineAwaiter())
 	// Install the typed Inputs the registration parsed so step
@@ -1677,7 +1678,7 @@ func (s *dispatchState) runOneNode(node *sparkwing.JobNode) {
 	// runners) that have not opted in to advertisement.
 	if labels := node.WhenRunnerLabels(); len(labels) > 0 {
 		if adv, ok := activeRunner.(runner.LabelAdvertiser); ok {
-			if !sparkwing.MatchLabels(labels, adv.AdvertisedLabels()) {
+			if !sparkwingruntime.MatchLabels(labels, adv.AdvertisedLabels()) {
 				s.markSkipped(node.ID(),
 					fmt.Sprintf("WhenRunner labels %v not satisfied by active runner %v",
 						labels, adv.AdvertisedLabels()))
@@ -1690,11 +1691,11 @@ func (s *dispatchState) runOneNode(node *sparkwing.JobNode) {
 	// by-upstream and skipped-by-predicate nodes (handled above) don't
 	// inherit a duration from the time they spent waiting on deps.
 	s.markStarted(node.ID())
-	runnerCtx := sparkwing.WithSpawnHandler(s.resolverCtx, s.newSpawnHandler(node.ID()))
+	runnerCtx := sparkwingruntime.WithSpawnHandler(s.resolverCtx, s.newSpawnHandler(node.ID()))
 	// Install RunnerInfo so step bodies branching on
 	// sparkwing.Runner(ctx).HasLabel(...) see the runner the
 	// scheduler actually picked.
-	runnerCtx = sparkwing.WithRunner(runnerCtx, runnerInfoFor(activeRunner))
+	runnerCtx = sparkwingruntime.WithRunner(runnerCtx, runnerInfoFor(activeRunner))
 
 	// Node-level auto-retry: re-dispatch the whole runner on infra
 	// flakes. Only Failed outcomes with a non-nil err are eligible.

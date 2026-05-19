@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/pkg/pipelines"
 	"github.com/sparkwing-dev/sparkwing/pkg/sources"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
@@ -155,7 +156,7 @@ func TestClusterPodRoundTrip_RunnerInfoVisibleOnPod(t *testing.T) {
 	if info == nil {
 		t.Fatal("podRunnerInfo nil")
 	}
-	ctx := sparkwing.WithRunner(context.Background(), info)
+	ctx := sparkwingruntime.WithRunner(context.Background(), info)
 
 	r := sparkwing.Runner(ctx)
 	if r == nil {

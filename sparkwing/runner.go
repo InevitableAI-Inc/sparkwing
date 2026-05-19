@@ -1,6 +1,9 @@
 package sparkwing
 
-import "context"
+import (
+	"context"
+	"strings"
+)
 
 // RunnerInfo describes the runner that's about to execute (or is
 // executing) the current job. Populated by the orchestrator at
@@ -53,12 +56,32 @@ func (r *RunnerInfo) HasLabel(term string) bool {
 	if r == nil || term == "" {
 		return false
 	}
-	return MatchLabels([]string{term}, r.Labels)
+	if !strings.ContainsRune(term, ',') {
+		t := strings.TrimSpace(term)
+		for _, l := range r.Labels {
+			if l == t {
+				return true
+			}
+		}
+		return false
+	}
+	for _, alt := range strings.Split(term, ",") {
+		alt = strings.TrimSpace(alt)
+		if alt == "" {
+			continue
+		}
+		for _, l := range r.Labels {
+			if l == alt {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // runnerCtxKey is the typed key for storing *RunnerInfo on a
-// context.Context. Unexported so callers must go through
-// WithRunner / Runner.
+// context.Context. Set by internal/sparkwingruntime.WithRunner; read
+// by Runner.
 type runnerCtxKey struct{}
 
 // Runner returns the RunnerInfo the orchestrator installed for the
@@ -76,17 +99,4 @@ func Runner(ctx context.Context) *RunnerInfo {
 	}
 	v, _ := ctx.Value(runnerCtxKey{}).(*RunnerInfo)
 	return v
-}
-
-// WithRunner returns ctx with r installed. The orchestrator calls
-// this per dispatched job before invoking the job body; tests use
-// it to construct a ctx for adapter code that reads Runner(ctx).
-//
-// Nil r is honored: the resulting ctx surfaces Runner(ctx) = nil,
-// matching the no-install default.
-func WithRunner(ctx context.Context, r *RunnerInfo) context.Context {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	return context.WithValue(ctx, runnerCtxKey{}, r)
 }

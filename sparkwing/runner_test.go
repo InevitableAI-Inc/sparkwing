@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -26,7 +27,7 @@ func TestWithRunner_RoundTrip(t *testing.T) {
 		Type:   "kubernetes",
 		Labels: []string{"cloud-linux", "os=linux", "arch=amd64"},
 	}
-	ctx := sparkwing.WithRunner(context.Background(), want)
+	ctx := sparkwingruntime.WithRunner(context.Background(), want)
 	got := sparkwing.Runner(ctx)
 	if got != want {
 		t.Errorf("Runner(ctx) returned different pointer: %p vs %p", got, want)
@@ -57,7 +58,7 @@ func TestRunnerInfo_HasLabel_BareAndCommaOR(t *testing.T) {
 }
 
 func TestWithRunner_NilInfoStillReadsAsNil(t *testing.T) {
-	ctx := sparkwing.WithRunner(context.Background(), nil)
+	ctx := sparkwingruntime.WithRunner(context.Background(), nil)
 	if got := sparkwing.Runner(ctx); got != nil {
 		t.Errorf("Runner(ctx) after WithRunner(nil) = %+v, want nil", got)
 	}

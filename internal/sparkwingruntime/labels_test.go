@@ -1,9 +1,9 @@
-package sparkwing_test
+package sparkwingruntime_test
 
 import (
 	"testing"
 
-	"github.com/sparkwing-dev/sparkwing/sparkwing"
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 )
 
 func TestMatchLabels_EmptyNeededMatchesAnything(t *testing.T) {
@@ -17,10 +17,10 @@ func TestMatchLabels_EmptyNeededMatchesAnything(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if !sparkwing.MatchLabels(nil, tc.have) {
+			if !sparkwingruntime.MatchLabels(nil, tc.have) {
 				t.Errorf("nil needed should match %v", tc.have)
 			}
-			if !sparkwing.MatchLabels([]string{}, tc.have) {
+			if !sparkwingruntime.MatchLabels([]string{}, tc.have) {
 				t.Errorf("empty needed should match %v", tc.have)
 			}
 		})
@@ -41,7 +41,7 @@ func TestMatchLabels_AndAcrossTerms(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := sparkwing.MatchLabels(tc.needed, tc.have)
+			got := sparkwingruntime.MatchLabels(tc.needed, tc.have)
 			if got != tc.want {
 				t.Errorf("MatchLabels(%v, %v) = %v, want %v", tc.needed, tc.have, got, tc.want)
 			}
@@ -66,7 +66,7 @@ func TestMatchLabels_CommaOrWithinTerm(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := sparkwing.MatchLabels(tc.needed, tc.have)
+			got := sparkwingruntime.MatchLabels(tc.needed, tc.have)
 			if got != tc.want {
 				t.Errorf("MatchLabels(%v, %v) = %v, want %v", tc.needed, tc.have, got, tc.want)
 			}
@@ -89,7 +89,7 @@ func TestMatchLabels_MixedAndOr(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := sparkwing.MatchLabels(needed, tc.have)
+			got := sparkwingruntime.MatchLabels(needed, tc.have)
 			if got != tc.want {
 				t.Errorf("MatchLabels(%v, %v) = %v, want %v", needed, tc.have, got, tc.want)
 			}
@@ -106,7 +106,7 @@ func TestMatchLabelsSet_EquivalentToMatchLabels(t *testing.T) {
 		set[l] = struct{}{}
 	}
 
-	if a, b := sparkwing.MatchLabels(needed, have), sparkwing.MatchLabelsSet(needed, set); a != b {
+	if a, b := sparkwingruntime.MatchLabels(needed, have), sparkwingruntime.MatchLabelsSet(needed, set); a != b {
 		t.Errorf("MatchLabels = %v, MatchLabelsSet = %v; expected agreement", a, b)
 	}
 }

@@ -1,4 +1,4 @@
-package sparkwing
+package sparkwingruntime
 
 import "strings"
 

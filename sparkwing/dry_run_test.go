@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 )
 
@@ -24,7 +25,7 @@ func TestDryRun_StepWithDryRunFn_DryRunCalledApplySkipped(t *testing.T) {
 		return nil
 	})
 
-	ctx := sparkwing.WithDryRun(context.Background())
+	ctx := sparkwingruntime.WithDryRun(context.Background())
 	if _, err := sparkwing.RunWork(ctx, w); err != nil {
 		t.Fatalf("RunWork: %v", err)
 	}
@@ -47,7 +48,7 @@ func TestDryRun_SafeWithoutDryRun_ApplyRunsUnchanged(t *testing.T) {
 		return nil
 	}).SafeWithoutDryRun()
 
-	ctx := sparkwing.WithDryRun(context.Background())
+	ctx := sparkwingruntime.WithDryRun(context.Background())
 	if _, err := sparkwing.RunWork(ctx, w); err != nil {
 		t.Fatalf("RunWork: %v", err)
 	}
@@ -68,7 +69,7 @@ func TestDryRun_StepWithoutDryRunOrSafeMarker_SoftSkipped(t *testing.T) {
 		return nil
 	})
 
-	ctx := sparkwing.WithDryRun(context.Background())
+	ctx := sparkwingruntime.WithDryRun(context.Background())
 	if _, err := sparkwing.RunWork(ctx, w); err != nil {
 		t.Fatalf("RunWork: %v", err)
 	}
@@ -115,7 +116,7 @@ func TestDryRun_DryRunFnFailure_PropagatedAsStepError(t *testing.T) {
 		return wantErr
 	})
 
-	ctx := sparkwing.WithDryRun(context.Background())
+	ctx := sparkwingruntime.WithDryRun(context.Background())
 	_, err := sparkwing.RunWork(ctx, w)
 	if err == nil || !strings.Contains(err.Error(), wantErr.Error()) {
 		t.Errorf("expected DryRunFn error to surface, got %v", err)
@@ -192,7 +193,7 @@ func TestDryRun_IsDryRunReadableFromCtx(t *testing.T) {
 		return nil
 	}).SafeWithoutDryRun()
 
-	ctx := sparkwing.WithDryRun(context.Background())
+	ctx := sparkwingruntime.WithDryRun(context.Background())
 	if _, err := sparkwing.RunWork(ctx, w); err != nil {
 		t.Fatalf("RunWork: %v", err)
 	}
