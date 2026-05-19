@@ -18,11 +18,11 @@ import (
 	"time"
 
 	"github.com/sparkwing-dev/sparkwing/internal/backend"
-	"github.com/sparkwing-dev/sparkwing/internal/local"
 	"github.com/sparkwing-dev/sparkwing/internal/web"
 	"github.com/sparkwing-dev/sparkwing/logs"
 	"github.com/sparkwing-dev/sparkwing/orchestrator"
 	"github.com/sparkwing-dev/sparkwing/orchestrator/store"
+	"github.com/sparkwing-dev/sparkwing/pkg/controller"
 	"github.com/sparkwing-dev/sparkwing/pkg/storage"
 )
 
@@ -124,12 +124,14 @@ func Run(ctx context.Context, opts Options) error {
 		}
 	}
 
-	var ctrl *local.Server
+	var ctrl *controller.Server
 	if !useS3OnlyReader {
-		ctrl = local.New(st, nil)
-		if opts.ArtifactStore != nil {
-			ctrl.SetArtifactStore(opts.ArtifactStore)
-		}
+		ctrl = controller.New(st, nil).
+			WithArtifactStore(opts.ArtifactStore).
+			WithReconcileHook(func(rctx context.Context) error {
+				_, err := orchestrator.ReconcileOrphanedLocalRuns(rctx, st, 0)
+				return err
+			})
 		// Consume pending triggers (web/CLI retry, /api/v1/triggers)
 		// in the background by compiling + execing each pipeline's
 		// .sparkwing/ binary. Without this, retried runs sit in the

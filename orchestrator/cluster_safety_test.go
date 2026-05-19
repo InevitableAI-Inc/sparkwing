@@ -32,7 +32,7 @@ package orchestrator_test
 // worker.go ~lines 225-243) and fails LOUDLY if the concrete types
 // regress.
 //
-// Out of scope: laptop mode (internal/local, sparkwing-local-ws) is
+// Out of scope: laptop mode (pkg/controller wired via pkg/localws) is
 // single-process / single-trust-domain. Direct *store.Store access is
 // CORRECT there and the LocalBackends() helper is the canonical
 // laptop path. This test only pins the cluster-runner-pod path.

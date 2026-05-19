@@ -1,9 +1,8 @@
-// Package api carries wire-shape helpers shared between the
-// laptop-embedded controller (internal/local) and the cluster-mode
-// controller (pkg/controller). Both packages serve the same
-// /api/v1/* surface and need to agree on response shapes that aren't
-// covered by raw store.* types alone -- this is where those shared
-// shapes live.
+// Package api carries wire-shape helpers used by the pkg/controller
+// HTTP handlers. The controller serves the same /api/v1/* surface in
+// both laptop and cluster mode (selected by functional options at
+// New-time); response shapes that aren't covered by raw store.*
+// types alone live here so handler and client code agree.
 package api
 
 import (

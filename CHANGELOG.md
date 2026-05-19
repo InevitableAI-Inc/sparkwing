@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+### Changed
+
+- Collapsed `internal/local/` into `pkg/controller/`. The same
+  control-plane code now serves both laptop and cluster modes; the
+  mode is determined by which functional options the consumer sets
+  (`AttachPool` for cluster; `WithArtifactStore` + `WithReconcileHook`
+  for laptop). Eliminates ~30 duplicated files and the maintenance
+  tax of keeping them in sync.
+
+### Added
+
+- `pkg/controller.Server` functional options `WithArtifactStore` and
+  `WithReconcileHook`. Each unset option leaves the corresponding
+  route or behavior unwired:
+  - `WithArtifactStore` enables `GET /api/v1/artifacts/{key}`
+    (laptop mode); cluster mode leaves the route unregistered so
+    requests 404.
+  - `WithReconcileHook` runs a sweep closure (laptop wires
+    `orchestrator.ReconcileOrphanedLocalRuns`) before list-runs and
+    get-run reads, eliminating stale "running" rows from crashed
+    in-process orchestrators.
+- Pool routes (`GET /api/v1/pool*`) are now registered only when
+  `AttachPool` was called. Laptop mode leaves the routes
+  unregistered.
+
+### Removed
+
+- `internal/local/` package. Laptop-mode control plane is now
+  `pkg/controller/` configured via `WithArtifactStore` +
+  `WithReconcileHook`.
+
 ### Fixed
 
 - Cluster controller's retry response now returns the canonical

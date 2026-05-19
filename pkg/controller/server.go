@@ -1,11 +1,17 @@
-// Package controller is the cluster-mode control plane: an HTTP
-// service fronting the run/node/event/cache state store. The
-// controller is the single writer; short-lived orchestrator pods talk
-// to it for every state transition and use the same interface as
-// local-mode callers (orchestrator.StateBackend).
+// Package controller is the canonical control-plane: an HTTP service
+// fronting the run/node/event/cache state store. The same code serves
+// laptop mode (in-process, embedded by pkg/localws) and cluster mode
+// (standalone pod talked-to by short-lived orchestrators); mode is
+// determined by which functional options the consumer sets, not by a
+// build flag.
+//
+//   - Cluster mode wires AttachPool + WithCostRate.
+//   - Laptop mode wires WithArtifactStore + WithReconcileHook.
+//   - The handler set is otherwise identical so the dashboard frontend
+//     and CLI binary speak the same wire protocol against either side.
 //
 // The matching HTTP client (StateBackend against a remote controller)
-// lives in pkg/controller/client.
+// lives in controller/client.
 package controller
 
 import (
@@ -18,6 +24,7 @@ import (
 
 	"github.com/sparkwing-dev/sparkwing/orchestrator/store"
 	"github.com/sparkwing-dev/sparkwing/otelutil"
+	"github.com/sparkwing-dev/sparkwing/pkg/storage"
 	"github.com/sparkwing-dev/sparkwing/secrets"
 )
 
@@ -65,6 +72,22 @@ type Server struct {
 	bootstrapExpiry time.Time
 	bootstrapNeeded bool
 	bootstrapClosed bool
+
+	// artifactStore exposes /api/v1/artifacts/{key} when non-nil.
+	// Laptop mode wires this so the dashboard can serve build/test
+	// artifacts from the in-process backend; cluster mode leaves it
+	// nil (artifacts come from a dedicated process there) so the
+	// route is unregistered and 404s.
+	artifactStore storage.ArtifactStore
+
+	// reconcileHook runs before list/get-run reads when non-nil.
+	// Laptop mode sets this to a closure over
+	// orchestrator.ReconcileOrphanedLocalRuns so a dashboard refresh
+	// never shows a "running" row whose orchestrator process died.
+	// Cluster mode leaves it nil -- the cluster has a dedicated
+	// reconciler. Errors are swallowed so a transient sweep failure
+	// never blocks a read.
+	reconcileHook func(context.Context) error
 }
 
 // New constructs a Server bound to the given store. A nil dispatcher
@@ -98,6 +121,42 @@ func (s *Server) WithCostRate(rate float64, source string) *Server {
 	s.costPerRunnerHour = rate
 	s.costRateSource = source
 	return s
+}
+
+// WithArtifactStore enables in-process artifact serving at
+// /api/v1/artifacts/{key}. The route is registered only when this
+// option is set (laptop mode). Cluster mode serves artifacts from a
+// dedicated process and leaves this nil.
+func (s *Server) WithArtifactStore(a storage.ArtifactStore) *Server {
+	s.artifactStore = a
+	return s
+}
+
+// WithReconcileHook installs a function called before list-runs /
+// get-run reads. Laptop mode passes a closure over
+// orchestrator.ReconcileOrphanedLocalRuns so stale "running" rows
+// from crashed in-process orchestrators get cleaned on the next
+// dashboard refresh. Cluster mode leaves it nil; the cluster has its
+// own reconciler.
+//
+// fn errors are intentionally swallowed by the wrapper -- a flaky
+// sweep must never block a read.
+func (s *Server) WithReconcileHook(fn func(context.Context) error) *Server {
+	s.reconcileHook = fn
+	return s
+}
+
+// reconcileBeforeRead wraps a read handler so the reconcile hook (if
+// set) runs first. Returns h unchanged when no hook is configured;
+// no allocation, no overhead in cluster mode.
+func (s *Server) reconcileBeforeRead(h http.HandlerFunc) http.HandlerFunc {
+	if s.reconcileHook == nil {
+		return h
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		_ = s.reconcileHook(r.Context())
+		h(w, r)
+	}
 }
 
 // WithSecretsCipher binds the controller's secret encryption-at-rest
@@ -216,8 +275,8 @@ func (s *Server) Handler() http.Handler {
 
 	// Runs: lifecycle writes + read surface for dashboards/CLI.
 	mux.Handle("POST /api/v1/runs", requireScope(ScopeAdmin, http.HandlerFunc(s.handleCreateRun)))
-	mux.Handle("GET /api/v1/runs", requireScope(ScopeRunsRead, http.HandlerFunc(s.handleListRuns)))
-	mux.Handle("GET /api/v1/runs/{id}", requireScope(ScopeRunsRead, http.HandlerFunc(s.handleGetRun)))
+	mux.Handle("GET /api/v1/runs", requireScope(ScopeRunsRead, s.reconcileBeforeRead(s.handleListRuns)))
+	mux.Handle("GET /api/v1/runs/{id}", requireScope(ScopeRunsRead, s.reconcileBeforeRead(s.handleGetRun)))
 	mux.Handle("GET /api/v1/runs/{id}/nodes", requireScope(ScopeRunsRead, http.HandlerFunc(s.handleListNodes)))
 	// per-run audit + cost receipt; recomputed on demand.
 	mux.Handle("GET /api/v1/runs/{id}/receipt", requireScope(ScopeRunsRead, http.HandlerFunc(s.handleGetRunReceipt)))
@@ -325,11 +384,23 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/v1/runs/{id}/approvals", requireScope(ScopeRunsRead, http.HandlerFunc(s.handleListApprovalsForRun)))
 	mux.Handle("GET /api/v1/approvals/pending", requireScope(ScopeRunsRead, http.HandlerFunc(s.handleListPendingApprovals)))
 
-	// Warm-PVC pool.
-	mux.Handle("GET /api/v1/pool", requireScope(ScopeRunsRead, http.HandlerFunc(s.handlePoolList)))
-	mux.Handle("POST /api/v1/pool/checkout", requireScope(ScopeAdmin, http.HandlerFunc(s.handlePoolCheckout)))
-	mux.Handle("POST /api/v1/pool/return", requireScope(ScopeAdmin, http.HandlerFunc(s.handlePoolReturn)))
-	mux.Handle("POST /api/v1/pool/heartbeat", requireScope(ScopeAdmin, http.HandlerFunc(s.handlePoolHeartbeat)))
+	// Warm-PVC pool routes register only when AttachPool wired a
+	// binding (cluster mode). Laptop mode leaves these absent so
+	// GET /api/v1/pool/... 404s, advertising the feature is off.
+	if s.pool != nil {
+		mux.Handle("GET /api/v1/pool", requireScope(ScopeRunsRead, http.HandlerFunc(s.handlePoolList)))
+		mux.Handle("POST /api/v1/pool/checkout", requireScope(ScopeAdmin, http.HandlerFunc(s.handlePoolCheckout)))
+		mux.Handle("POST /api/v1/pool/return", requireScope(ScopeAdmin, http.HandlerFunc(s.handlePoolReturn)))
+		mux.Handle("POST /api/v1/pool/heartbeat", requireScope(ScopeAdmin, http.HandlerFunc(s.handlePoolHeartbeat)))
+	}
+
+	// Artifact reads register only when WithArtifactStore wired a
+	// backend (laptop mode). Cluster mode leaves this absent so
+	// GET /api/v1/artifacts/{key} 404s; cluster artifact reads go
+	// through a dedicated process.
+	if s.artifactStore != nil {
+		mux.Handle("GET /api/v1/artifacts/{key}", requireScope(ScopeRunsRead, http.HandlerFunc(s.handleArtifactGet)))
+	}
 
 	// Tokens CRUD. Admin-only; the bootstrap admin token is minted
 	// out-of-band via `sparkwing tokens create`.

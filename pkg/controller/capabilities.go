@@ -1,4 +1,4 @@
-package local
+package controller
 
 import (
 	"errors"
@@ -8,17 +8,15 @@ import (
 	"github.com/sparkwing-dev/sparkwing/pkg/storage"
 )
 
-// SetArtifactStore enables the /api/v1/artifacts/{key} read route.
-// Nil (the default) makes the handler return 404.
-func (s *Server) SetArtifactStore(a storage.ArtifactStore) {
-	s.artifactStore = a
-}
-
 // handleArtifactGet streams the artifact at {key} to the response.
-// Returns 404 when no ArtifactStore is configured or the key is
-// missing.
+// Registered only when WithArtifactStore was set; absent otherwise.
+// Returns 404 for unknown keys.
 func (s *Server) handleArtifactGet(w http.ResponseWriter, r *http.Request) {
 	if s.artifactStore == nil {
+		// Defensive: the route is gated at register-time, so this
+		// branch is only reachable if a caller invoked the handler
+		// directly (a test, typically). Mirror the gated-route
+		// behavior so callers see one shape regardless.
 		http.NotFound(w, r)
 		return
 	}

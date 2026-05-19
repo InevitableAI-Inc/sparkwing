@@ -56,6 +56,9 @@ func (n NoopDispatcher) Dispatch(_ context.Context, req RunRequest) error {
 type InProcessDispatcher struct {
 	Backends orchestrator.Backends
 	Logger   *slog.Logger
+	// MaxParallel caps concurrent node execution per dispatched run.
+	// Zero = unbounded.
+	MaxParallel int
 }
 
 func (d InProcessDispatcher) Dispatch(ctx context.Context, req RunRequest) error {
@@ -81,6 +84,7 @@ func (d InProcessDispatcher) Dispatch(ctx context.Context, req RunRequest) error
 			Git:         req.Git,
 			ParentRunID: req.ParentRunID,
 			RetryOf:     req.RetryOf,
+			MaxParallel: d.MaxParallel,
 		})
 		if err != nil {
 			lg.Error("dispatched run failed",

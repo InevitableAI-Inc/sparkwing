@@ -2,7 +2,7 @@ package logs
 
 // AuthErrorBody is the on-wire JSON shape returned for 401/403
 // responses by the logs service (and matched by other sparkwing
-// auth surfaces — pkg/controller/auth.go, internal/local/auth.go).
+// auth surface, pkg/controller/auth.go).
 //
 // Pinning a structured shape decouples client-side scope parsing
 // from the human-readable message phrasing. Older callers
