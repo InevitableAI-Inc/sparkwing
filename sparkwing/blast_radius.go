@@ -1,9 +1,6 @@
 package sparkwing
 
-import (
-	"sort"
-	"strings"
-)
+import "strings"
 
 // RiskBlockedError is the typed error returned when the dispatcher
 // refuses a run because one or more reachable steps declare risk
@@ -66,25 +63,4 @@ func (s *WorkStep) addRisk(label string) {
 		}
 	}
 	s.risks = append(s.risks, label)
-}
-
-// sortedUniqueRisks mirrors internal/sparkwingruntime.SortedUniqueRisks
-// for sparkwing-internal callers (Describe builds the risk union here).
-// Kept here so describe.go does not need to import the runtime package.
-func sortedUniqueRisks(slices ...[]string) []string {
-	seen := map[string]bool{}
-	for _, sl := range slices {
-		for _, l := range sl {
-			if l == "" || seen[l] {
-				continue
-			}
-			seen[l] = true
-		}
-	}
-	out := make([]string, 0, len(seen))
-	for l := range seen {
-		out = append(out, l)
-	}
-	sort.Strings(out)
-	return out
 }

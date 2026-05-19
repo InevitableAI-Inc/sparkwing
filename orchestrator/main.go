@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/sparkwing-dev/sparkwing/internal/sparkwingruntime"
 	"github.com/sparkwing-dev/sparkwing/pkg/pipelines"
 	"github.com/sparkwing-dev/sparkwing/sparkwing"
 	"golang.org/x/term"
@@ -23,7 +24,7 @@ import (
 // out of consumer pipeline binaries.
 func Main() {
 	if len(os.Args) > 1 && os.Args[1] == "--describe" {
-		described, err := sparkwing.DescribeAll()
+		described, err := sparkwingruntime.DescribeAll()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "describe:", err)
 			os.Exit(1)
@@ -243,7 +244,7 @@ func printUsage() {
 
 // printPipelineHelp dumps a help page from the reflected Argser schema.
 func printPipelineHelp(pipeline string) error {
-	schema, ok, err := sparkwing.DescribePipelineByName(pipeline)
+	schema, ok, err := sparkwingruntime.DescribePipelineByName(pipeline)
 	if err != nil {
 		return err
 	}
@@ -435,7 +436,7 @@ func stripExplainOutputFlags(args []string) []string {
 // others require values. Unknown flags are rejected unless the
 // schema has Extra=true. Enums are validated.
 func parseTypedFlags(pipeline string, args []string) (map[string]string, error) {
-	schema, ok, err := sparkwing.DescribePipelineByName(pipeline)
+	schema, ok, err := sparkwingruntime.DescribePipelineByName(pipeline)
 	if err != nil {
 		return nil, err
 	}

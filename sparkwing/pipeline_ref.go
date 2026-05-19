@@ -26,12 +26,6 @@ type PipelineResolver interface {
 	resolve(ctx context.Context, pipeline, nodeID string, maxAge time.Duration) (*ResolvedPipelineRef, error)
 }
 
-// WithPipelineResolver installs a PipelineResolver into ctx. Intended
-// for orchestrator implementations.
-func WithPipelineResolver(ctx context.Context, r PipelineResolver) context.Context {
-	return context.WithValue(ctx, keyPipelineResolver, r)
-}
-
 func pipelineResolverFromContext(ctx context.Context) PipelineResolver {
 	if r, ok := ctx.Value(keyPipelineResolver).(PipelineResolver); ok {
 		return r

@@ -96,6 +96,13 @@ type InputField struct {
 	isExtraBag bool
 }
 
+// IsExtraBag reports whether this field is the catch-all "extra"
+// map[string]string bag (used to collect unknown args). Introspection
+// helpers skip these because they aren't first-class flag entries.
+//
+// Exposed for internal/sparkwingruntime.
+func (f InputField) IsExtraBag() bool { return f.isExtraBag }
+
 type fieldKind int
 
 const (

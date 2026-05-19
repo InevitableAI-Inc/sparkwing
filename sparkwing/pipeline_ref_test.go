@@ -41,7 +41,7 @@ type buildOut struct {
 func TestRefToLastRun_Get_UnmarshalsData(t *testing.T) {
 	payload, _ := json.Marshal(buildOut{Digest: "sha256:abc", Tag: "v1.2.3"})
 	r := &stubResolver{runID: "run-xyz", data: payload}
-	ctx := WithPipelineResolver(context.Background(), r)
+	ctx := context.WithValue(context.Background(), keyPipelineResolver, r)
 
 	ref := RefToLastRun[buildOut]("build", "artifact", MaxAge(1*time.Hour))
 	got := ref.Get(ctx)
@@ -86,7 +86,7 @@ func TestRefToLastRun_Get_PanicsOnResolverError(t *testing.T) {
 		}
 	}()
 	r := &stubResolver{err: errors.New("no matching run")}
-	ctx := WithPipelineResolver(context.Background(), r)
+	ctx := context.WithValue(context.Background(), keyPipelineResolver, r)
 	ref := RefToLastRun[buildOut]("build", "artifact")
 	ref.Get(ctx)
 }
@@ -97,7 +97,7 @@ func TestRefToLastRun_Get_PanicsOnResolverError(t *testing.T) {
 // treats "no upstream output yet" elsewhere.
 func TestRefToLastRun_Get_EmptyDataProducesZeroValue(t *testing.T) {
 	r := &stubResolver{runID: "run-empty", data: nil}
-	ctx := WithPipelineResolver(context.Background(), r)
+	ctx := context.WithValue(context.Background(), keyPipelineResolver, r)
 	ref := RefToLastRun[buildOut]("build", "artifact")
 	got := ref.Get(ctx)
 	if got.Digest != "" || got.Tag != "" {
@@ -148,7 +148,7 @@ func TestPipelineResolverFunc_AdaptsPlainFunction(t *testing.T) {
 		called = true
 		return &ResolvedPipelineRef{RunID: "fn-run", Data: []byte(`{"digest":"z","tag":"z"}`)}, nil
 	})
-	ctx := WithPipelineResolver(context.Background(), fn)
+	ctx := context.WithValue(context.Background(), keyPipelineResolver, fn)
 	got := RefToLastRun[buildOut]("x", "y").Get(ctx)
 	if !called || got.Digest != "z" {
 		t.Fatalf("func resolver not invoked properly: called=%v got=%+v", called, got)

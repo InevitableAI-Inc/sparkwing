@@ -186,7 +186,7 @@ func RunNodeOnce(
 	}
 
 	// Pod-side twin of dispatchState.pipelineRef.
-	ctx = sparkwing.WithPipelineResolver(ctx, sparkwing.PipelineResolverFunc(
+	ctx = sparkwingruntime.WithPipelineResolver(ctx, sparkwing.PipelineResolverFunc(
 		func(innerCtx context.Context, pipeline, refNode string, maxAge time.Duration) (*sparkwing.ResolvedPipelineRef, error) {
 			run, err := stateClient.GetLatestRun(innerCtx, pipeline, []string{"success"}, maxAge)
 			if err != nil {
@@ -216,7 +216,7 @@ func RunNodeOnce(
 		}))
 
 	// Cluster-mode equivalent of dispatchState.pipelineAwaiter.
-	ctx = sparkwing.WithPipelineAwaiter(ctx, sparkwing.PipelineAwaiterFunc(
+	ctx = sparkwingruntime.WithPipelineAwaiter(ctx, sparkwing.PipelineAwaiterFunc(
 		func(innerCtx context.Context, req sparkwing.AwaitRequest) (*sparkwing.ResolvedPipelineRef, error) {
 			currentNode := sparkwing.NodeFromContext(innerCtx)
 

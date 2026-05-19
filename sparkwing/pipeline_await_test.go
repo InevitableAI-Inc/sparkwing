@@ -34,7 +34,7 @@ type awaitOut struct {
 func TestRunAndAwait_HappyPath(t *testing.T) {
 	payload, _ := json.Marshal(awaitOut{Image: "registry/app:v1"})
 	aw := &stubAwaiter{runID: "child", data: payload}
-	ctx := WithPipelineAwaiter(context.Background(), aw)
+	ctx := context.WithValue(context.Background(), keyPipelineAwaiter, aw)
 
 	got, err := RunAndAwait[awaitOut, NoInputs](ctx, "upstream", "build",
 		WithFreshTimeout(30*time.Second),
@@ -72,7 +72,7 @@ func TestRunAndAwait_NoAwaiterInstalled(t *testing.T) {
 // error to triage without logs.
 func TestRunAndAwait_AwaiterError(t *testing.T) {
 	aw := &stubAwaiter{err: errors.New("boom")}
-	ctx := WithPipelineAwaiter(context.Background(), aw)
+	ctx := context.WithValue(context.Background(), keyPipelineAwaiter, aw)
 
 	_, err := RunAndAwait[awaitOut, NoInputs](ctx, "up", "n")
 	if err == nil {
@@ -91,7 +91,7 @@ func TestRunAndAwait_AwaiterError(t *testing.T) {
 // zero value rather than surfacing a JSON-unmarshal panic.
 func TestRunAndAwait_EmptyDataZeroValue(t *testing.T) {
 	aw := &stubAwaiter{runID: "child", data: nil}
-	ctx := WithPipelineAwaiter(context.Background(), aw)
+	ctx := context.WithValue(context.Background(), keyPipelineAwaiter, aw)
 
 	got, err := RunAndAwait[awaitOut, NoInputs](ctx, "up", "n")
 	if err != nil {
@@ -106,7 +106,7 @@ func TestRunAndAwait_EmptyDataZeroValue(t *testing.T) {
 // nil args.
 func TestAwaitOption_Defaults(t *testing.T) {
 	aw := &stubAwaiter{runID: "x", data: []byte(`{}`)}
-	ctx := WithPipelineAwaiter(context.Background(), aw)
+	ctx := context.WithValue(context.Background(), keyPipelineAwaiter, aw)
 	_, _ = RunAndAwait[awaitOut, NoInputs](ctx, "up", "n")
 	if aw.lastReq.Timeout != 0 {
 		t.Fatalf("default timeout: %v", aw.lastReq.Timeout)

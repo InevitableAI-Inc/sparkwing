@@ -170,12 +170,6 @@ func (f PipelineAwaiterFunc) Await(ctx context.Context, req AwaitRequest) (*Reso
 	return f(ctx, req)
 }
 
-// WithPipelineAwaiter installs a PipelineAwaiter into ctx. Intended
-// for orchestrator implementations.
-func WithPipelineAwaiter(ctx context.Context, a PipelineAwaiter) context.Context {
-	return context.WithValue(ctx, keyPipelineAwaiter, a)
-}
-
 func pipelineAwaiterFromContext(ctx context.Context) PipelineAwaiter {
 	if a, ok := ctx.Value(keyPipelineAwaiter).(PipelineAwaiter); ok {
 		return a

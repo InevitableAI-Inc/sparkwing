@@ -186,16 +186,17 @@ func (r *Registration) SecretValues(args map[string]string) []string {
 	return out
 }
 
-// LookupInstance returns a fresh pipeline instance by name, used by
-// CLI introspection to query optional provider interfaces
+// Instance returns a fresh pipeline value for this registration, used
+// by introspection helpers that query optional provider interfaces
 // (HelpProvider, ShortHelpProvider, ExampleProvider). The orchestrator
 // goes through Registration.Invoke instead.
-func LookupInstance(name string) (any, bool) {
-	r, ok := Lookup(name)
-	if !ok {
-		return nil, false
+//
+// Exposed for internal/sparkwingruntime.
+func (r *Registration) Instance() any {
+	if r == nil || r.instance == nil {
+		return nil
 	}
-	return r.instance(), true
+	return r.instance()
 }
 
 // Registered returns the names of all registered pipelines, sorted.

@@ -7,13 +7,15 @@ package sparkwing
 // of this package small: a pipeline author sees a single
 // `RuntimePlumbing` entry in autocomplete rather than seven.
 type runtimePlumbingKeys struct {
-	DryRun          any
-	Runner          any
-	SpawnHandler    any
-	StepRange       any
-	Target          any
-	RefResolver     any
-	JSONRefResolver any
+	DryRun           any
+	Runner           any
+	SpawnHandler     any
+	StepRange        any
+	Target           any
+	RefResolver      any
+	JSONRefResolver  any
+	PipelineResolver any
+	PipelineAwaiter  any
 }
 
 // RuntimePlumbing exposes context keys to internal/sparkwingruntime so
@@ -24,11 +26,13 @@ type runtimePlumbingKeys struct {
 // the typed accessors: IsDryRun, Runner, Target, Ref[T].Get, and the
 // SpawnHandler / WorkStep methods.
 var RuntimePlumbing = runtimePlumbingKeys{
-	DryRun:          dryRunKey{},
-	Runner:          runnerCtxKey{},
-	SpawnHandler:    keySpawnHandler,
-	StepRange:       stepRangeKey{},
-	Target:          targetKey{},
-	RefResolver:     keyRefResolver,
-	JSONRefResolver: keyJSONRefResolver,
+	DryRun:           dryRunKey{},
+	Runner:           runnerCtxKey{},
+	SpawnHandler:     keySpawnHandler,
+	StepRange:        stepRangeKey{},
+	Target:           targetKey{},
+	RefResolver:      keyRefResolver,
+	JSONRefResolver:  keyJSONRefResolver,
+	PipelineResolver: keyPipelineResolver,
+	PipelineAwaiter:  keyPipelineAwaiter,
 }

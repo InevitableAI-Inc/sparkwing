@@ -1192,8 +1192,8 @@ func newDispatchState(ctx context.Context, backends Backends, r runner.Runner, r
 	}
 	s.resolverCtx = sparkwingruntime.WithResolver(s.resolverCtx, s.resolve)
 	s.resolverCtx = sparkwingruntime.WithJSONResolver(s.resolverCtx, s.resolveJSON)
-	s.resolverCtx = sparkwing.WithPipelineResolver(s.resolverCtx, s.pipelineRef())
-	s.resolverCtx = sparkwing.WithPipelineAwaiter(s.resolverCtx, s.pipelineAwaiter())
+	s.resolverCtx = sparkwingruntime.WithPipelineResolver(s.resolverCtx, s.pipelineRef())
+	s.resolverCtx = sparkwingruntime.WithPipelineAwaiter(s.resolverCtx, s.pipelineAwaiter())
 	// Install the typed Inputs the registration parsed so step
 	// bodies can read the value via sparkwing.Inputs[T](ctx).
 	if in := plan.Inputs(); in != nil {
