@@ -486,7 +486,7 @@ environments:
     logs:  { type: controller }
     state: { type: postgres, url_source: state_db_url }
 
-  cluster-shared:                       # manually selected via --backends-env
+  cluster-shared:
     cache: { type: s3, bucket: team-cache }
     logs:  { type: s3, bucket: team-logs }
     state: { type: postgres, url_source: state_db_url }
@@ -506,10 +506,9 @@ Adding a new backend type is a new `type:` value with a typed spec block; pipeli
 
 First match wins:
 
-1. CLI flag (`--backends-env <name>`) — explicit override.
-2. Target-level overlay (`targets.<name>.backend: { ... }`) — rare.
-3. Environment auto-detect — first `environments:` entry whose `detect:` block evaluates true.
-4. `defaults:` block — the fallback.
+1. Target-level overlay (`targets.<name>.backend: { ... }`) — rare.
+2. Environment auto-detect — first `environments:` entry whose `detect:` block evaluates true.
+3. `defaults:` block — the fallback.
 
 ### Pipeline binary distribution
 
@@ -625,9 +624,6 @@ sparkwing run release --for dev
 sparkwing run release --on shared --for staging
 sparkwing run release --on prod   --for prod
 
-# Force a backend environment (overrides auto-detect).
-sparkwing run release --for dev --backends-env cluster-shared
-
 # Introspect resolved plan + runner choices + sources before pressing go.
 sparkwing run release --for staging --plan
 sparkwing run release config --for staging
@@ -638,7 +634,6 @@ Autocomplete:
 - `sparkwing run <TAB>` — pipelines whose `runners:` intersects the current profile's `default_runner` (or all, if no default).
 - `sparkwing run <pipeline> --for <TAB>` — the pipeline's declared targets.
 - `sparkwing run <pipeline> --on <TAB>` — profiles whose `default_runner` is in the pipeline's allowed set.
-- `sparkwing run <pipeline> --backends-env <TAB>` — entries from `backends.yaml` `environments:`.
 
 ## Test scenarios
 
@@ -707,7 +702,7 @@ Complete. Eleven self-contained PRs landed the new execution model, plus a final
 6. **Extend `pipelines.yaml`** with `targets:`, `runners:`, `values:`, and lift `secrets:` to a typed list.
 7. **Add optional `Config()` / `Secrets()` methods** to pipelines. Pipelines without them keep working; pipelines with them get the layered typed config + fail-fast resolution.
 8. **Add `sources.yaml`** parser and resolver-by-target wiring. Added the `backends.yaml` parser, auto-detect rules, and the `Cache` / `Logs` interfaces.
-9. **CLI surface**: `--for`, `--backends-env`, autocomplete updates, `sparkwing run <pipeline> config` introspection.
+9. **CLI surface**: `--for`, autocomplete updates, `sparkwing run <pipeline> config` introspection.
 10. **Trim `RuntimeConfig` in place.** Removed `IsLocal`, `RunID`, `NodeID`, the `Debug` field, and every env-var-based detection. `sparkwing.DebugEnabled()` exposes the SPARKWING_DEBUG flag; `sparkwing.Runner(ctx)` exposes the chosen runner. Deleted the `Venue` enum (the runner-resolution rule subsumes it).
 11. **Trigger typed values.** Added `on.<trigger>.values:` blocks on trigger specs; values flow through the pipeline's typed Config struct via the same layering as `values.base` and `targets.<name>.values`.
 

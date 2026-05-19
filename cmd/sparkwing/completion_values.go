@@ -1,5 +1,4 @@
-// Value-completion helpers for --for, --backends-env,
-// --default-runner.
+// Value-completion helpers for --for and --default-runner.
 //
 // Each helper prints one entry per line to stdout and exits zero.
 // The shell wrappers in completion.go feed them into _describe.
@@ -14,7 +13,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sparkwing-dev/sparkwing/pkg/backends"
 	"github.com/sparkwing-dev/sparkwing/pkg/pipelines"
 	"github.com/sparkwing-dev/sparkwing/pkg/runners"
 	"github.com/sparkwing-dev/sparkwing/profile"
@@ -62,26 +60,6 @@ func runInternalCompleteRunners(_ []string) error {
 		return nil //nolint:nilerr
 	}
 	sort.Strings(names)
-	for _, n := range names {
-		fmt.Println(n)
-	}
-	return nil
-}
-
-// runInternalCompleteBackendsEnvs emits the environments declared in
-// backends.yaml, including the built-in gha and kubernetes detect
-// rules every install gets for free.
-func runInternalCompleteBackendsEnvs(_ []string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return nil //nolint:nilerr
-	}
-	sparkwingDir, _ := walkUpForSparkwing(cwd)
-	file, err := backends.Resolve(sparkwingDir)
-	if err != nil {
-		return nil //nolint:nilerr
-	}
-	names := file.EnvironmentOrder()
 	for _, n := range names {
 		fmt.Println(n)
 	}

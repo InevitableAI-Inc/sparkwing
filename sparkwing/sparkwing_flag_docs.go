@@ -59,7 +59,6 @@ var sparkwingFlagDocs = []SparkwingFlagDoc{
 	{Name: "sw-allow", Argument: "LABEL[,LABEL...]", Desc: "Authorize risk-labeled steps (repeatable; comma-separated allowed)", Group: "System"},
 	{Name: "sw-for", Argument: "TARGET", Desc: "Pick the pipeline target to run against (Config + Source binding follow)", Group: "System", Hot: true},
 	{Name: "sw-on", Argument: "NAME", Desc: "Dispatch on a remote controller instead of running locally", Group: "System", Hot: true},
-	{Name: "sw-backends-env", Argument: "NAME", Desc: "Force a specific environments: entry from backends.yaml (skips auto-detect)", Group: "System"},
 }
 
 // SparkwingFlagDocs returns the canonical sparkwing-owned flag

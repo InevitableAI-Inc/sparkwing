@@ -138,11 +138,6 @@ type Options struct {
 	// configured. Pre-set values from the caller are preserved.
 	State storage.StateStore
 
-	// BackendsEnv, when non-empty, forces a specific environments:
-	// entry from backends.yaml. Skips auto-detect. Validated against
-	// the resolved File at run start.
-	BackendsEnv string
-
 	// BackendsConfig, when non-empty, names an extra backends.yaml
 	// fragment to layer underneath repo+user defaults. The outer
 	// sparkwing CLI uses this to forward profile-derived storage settings

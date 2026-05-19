@@ -77,10 +77,6 @@ type runFlags struct {
 	// against. Empty means "use the single declared target if there's
 	// one, else no target."
 	forTarget string
-	// backendsEnv forces a specific environments: entry from
-	// backends.yaml, skipping auto-detect. Validated against the
-	// resolved file at run start.
-	backendsEnv string
 	// backendsConfig points at a (possibly synthesized) backends.yaml
 	// fragment the inner binary layers underneath defaults. The
 	// outer CLI uses this to forward profile-derived storage
@@ -270,17 +266,6 @@ func parseRunFlags(args []string) (runFlags, []string) {
 			i++
 		case strings.HasPrefix(a, "--sw-for="):
 			wf.forTarget = strings.TrimPrefix(a, "--sw-for=")
-			i++
-		case a == "--sw-backends-env":
-			if i+1 < len(args) {
-				wf.backendsEnv = args[i+1]
-				i += 2
-				continue
-			}
-			pass = append(pass, a)
-			i++
-		case strings.HasPrefix(a, "--sw-backends-env="):
-			wf.backendsEnv = strings.TrimPrefix(a, "--sw-backends-env=")
 			i++
 		case a == "--sw-backends-config":
 			if i+1 < len(args) {

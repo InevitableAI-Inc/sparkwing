@@ -104,7 +104,6 @@ func TestRunHelpListsArcFlags(t *testing.T) {
 		// Advanced tier — also surface in --help
 		"--sw-change-directory", "--sw-verbose",
 		"--sw-allow",
-		"--sw-backends-env",
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -134,7 +133,6 @@ func TestCompletionFlagsListsHotOnly(t *testing.T) {
 	advancedFlags := []string{
 		"--sw-change-directory", "--sw-verbose",
 		"--sw-allow",
-		"--sw-backends-env",
 	}
 	for _, tc := range []struct {
 		name string

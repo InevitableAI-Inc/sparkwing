@@ -545,15 +545,6 @@ _sparkwing() {
         return
     fi
 
-    # Value completion: --backends-env <TAB> -> environments declared
-    # in backends.yaml (after built-in merge).
-    if [[ ${CURRENT} -ge 2 && "${words[CURRENT-1]}" == "--sw-backends-env" ]]; then
-        local -a envs
-        envs=( ${(f)"$(sparkwing _complete-backends-envs 2>/dev/null)"} )
-        _describe -t environments 'environment' envs
-        return
-    fi
-
     # Value completion: --default-runner <TAB> -> runner names.
     # Used by sparkwing configure profiles add/set --default-runner.
     if [[ ${CURRENT} -ge 2 && "${words[CURRENT-1]}" == "--default-runner" ]]; then

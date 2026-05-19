@@ -238,9 +238,6 @@ func dispatchRun(args []string) error {
 	if wf.forTarget != "" {
 		env = append(env, "SPARKWING_FOR="+wf.forTarget)
 	}
-	if wf.backendsEnv != "" {
-		env = append(env, "SPARKWING_BACKENDS_ENV="+wf.backendsEnv)
-	}
 	if wf.backendsConfig != "" {
 		env = append(env, "SPARKWING_BACKENDS_CONFIG="+wf.backendsConfig)
 	}
@@ -308,8 +305,6 @@ func runSparkwing(args []string) error {
 		return runInternalCompleteTargets(args[1:])
 	case "_complete-runners":
 		return runInternalCompleteRunners(args[1:])
-	case "_complete-backends-envs":
-		return runInternalCompleteBackendsEnvs(args[1:])
 	case "_complete-profiles-for-pipeline":
 		return runInternalCompleteProfilesForPipeline(args[1:])
 	case "help", "-h", "--help":

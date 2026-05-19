@@ -148,7 +148,6 @@ func Main() {
 		DryRun:         os.Getenv("SPARKWING_DRY_RUN") == "1",
 		MaxParallel:    runtime.NumCPU(),
 		Target:         os.Getenv("SPARKWING_FOR"),
-		BackendsEnv:    os.Getenv("SPARKWING_BACKENDS_ENV"),
 		BackendsConfig: os.Getenv("SPARKWING_BACKENDS_CONFIG"),
 		PipelineYAML:   pipelineYAML,
 		SparkwingDir:   sparkwingDir,

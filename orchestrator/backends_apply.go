@@ -3,8 +3,6 @@ package orchestrator
 import (
 	"context"
 	"fmt"
-	"sort"
-	"strings"
 
 	"go.yaml.in/yaml/v3"
 
@@ -35,21 +33,7 @@ func ApplyBackendsConfig(ctx context.Context, opts *Options) error {
 
 	target := decodeTargetBackend(opts.PipelineYAML, opts.Target)
 
-	var envName string
-	if opts.BackendsEnv != "" {
-		if _, ok := file.Environments[opts.BackendsEnv]; !ok {
-			names := make([]string, 0, len(file.Environments))
-			for n := range file.Environments {
-				names = append(names, n)
-			}
-			sort.Strings(names)
-			return fmt.Errorf("--backends-env %q is not declared in backends.yaml (available: %s)",
-				opts.BackendsEnv, strings.Join(names, ", "))
-		}
-		envName = opts.BackendsEnv
-	} else {
-		envName, _, _ = backends.DetectEnvironment(file)
-	}
+	envName, _, _ := backends.DetectEnvironment(file)
 	eff := backends.Effective(file, envName, target)
 
 	lookup := storeurlProfileLookup(opts.ProfileLookup)
