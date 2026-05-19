@@ -1,17 +1,3 @@
-// Package controller is the canonical control-plane: an HTTP service
-// fronting the run/node/event/cache state store. The same code serves
-// laptop mode (in-process, embedded by pkg/localws) and cluster mode
-// (standalone pod talked-to by short-lived orchestrators); mode is
-// determined by which functional options the consumer sets, not by a
-// build flag.
-//
-//   - Cluster mode wires AttachPool + WithCostRate.
-//   - Laptop mode wires WithArtifactStore + WithReconcileHook.
-//   - The handler set is otherwise identical so the dashboard frontend
-//     and CLI binary speak the same wire protocol against either side.
-//
-// The matching HTTP client (StateBackend against a remote controller)
-// lives in controller/client.
 package controller
 
 import (

@@ -1,11 +1,3 @@
-// Package client is the HTTP StateBackend implementation used by
-// orchestrator pods to talk to the controller.
-//
-//	c := client.New("http://controller:4344", nil)
-//	backends := orchestrator.Backends{State: c, Logs: ..., Locks: ...}
-//	orchestrator.Run(ctx, backends, opts)
-//
-// Each method maps 1:1 to a controller endpoint.
 package client
 
 import (

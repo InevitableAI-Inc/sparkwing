@@ -1,20 +1,3 @@
-// Package logs is the sparkwing-logs service: an HTTP frontend over
-// file-per-node log storage. Workers POST log bytes as they stream;
-// the dashboard and CLI fetch them for display.
-//
-// Why a separate service (not the controller)?
-//
-//   - Controller state is structured + small + queryable; logs are
-//     unstructured + large + append-heavy. Different storage, different
-//     access patterns.
-//   - Logs scale with pipeline volume; controller DB shouldn't.
-//   - In prod the logs service can back to S3 / gitcache / blob store
-//     without touching the control plane.
-//
-// v1 is the simplest possible implementation: one file per
-// (run_id, node_id) under `root/runs/<run_id>/<node_id>.log`, raw
-// bytes appended on POST, whole file returned on GET. Fine for laptop
-// iteration; clustered prod will grow this out.
 package logs
 
 import (

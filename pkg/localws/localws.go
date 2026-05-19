@@ -1,7 +1,3 @@
-// Package localws is the single-process local dev server: one HTTP
-// server, one SQLite file, one port. Composes the controller,
-// logs-service, and web handlers on the same mux so the CLI and the
-// dashboard read from the same state.
 package localws
 
 import (

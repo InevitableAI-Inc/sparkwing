@@ -1,14 +1,3 @@
-// Package pool manages a pool of warm Docker cache PVCs.
-//
-// Each PVC in the pool goes through a state machine:
-//
-//	clean    - warmed, ready for checkout
-//	in-use   - checked out by a job
-//	dirty    - job returned it, needs rewarming
-//	warming  - warmer pod is actively pulling images into it
-//	unknown  - brand new, no state yet (treated as dirty)
-//
-// State is tracked via PVC annotations so the pool survives controller restarts.
 package pool
 
 import (

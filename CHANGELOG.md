@@ -10,6 +10,24 @@ are required.
 
 ### Docs
 
+- Curated godoc for the remaining `pkg/` packages: `pipelines`,
+  `controller` (and its `client` + `pool` subpackages), `backends`,
+  `runners`, `sources`, `localws`, `logs`, `store`, `runner`,
+  `docs`, `color`. Each now has a `doc.go` overview with `[Type]`
+  cross-references and `Example*` test functions where the package
+  can be exercised in-process (storage round-trip, pipelines YAML
+  parse, store sqlite open + run write, logs Server/Client via
+  httptest, controller construction + Cipher wiring). `pkg/runner`,
+  `pkg/docs`, `pkg/color`, `pkg/localws`, and `pkg/controller/pool`
+  ship doc.go-only (no executable example) where the package surface
+  is trivial or needs scaffolding the test runner can't provide.
+  Matches the style established for `sparkwing/` and `pkg/storage/`.
+- Removed three vestigial `sdk_doc.go` files
+  (`pkg/store/`, `pkg/logs/`, `pkg/controller/client/`) whose
+  contents claimed those packages were "not part of the stable
+  public surface." Stale: the recent rewrite promoted all three to
+  the covered surface in `VERSIONING.md`. Replaced by `doc.go`
+  files describing the actual contract.
 - Curated godoc for the `sparkwing/` author SDK and `pkg/storage/`
   public interfaces. Added `doc.go` package overviews to both
   (two-layer Plan / Work model, registration pattern, and modifier

@@ -1,7 +1,3 @@
-// Package docs ships the sparkwing user-facing documentation as
-// embedded markdown so the CLI is offline and version-locked to the
-// running binary. Source of truth is repo-root /docs/; this package
-// embeds a mirror under content/.
 package docs
 
 import (

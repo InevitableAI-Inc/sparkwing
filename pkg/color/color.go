@@ -1,13 +1,3 @@
-// Package color provides ANSI color helpers for pipeline output.
-//
-//	fmt.Println(color.Green("deployed %s", version))
-//	fmt.Println(color.Dim("skipping %s", name))
-//	fmt.Printf("status: %s %s\n", color.Bold("PASS"), color.Dim(duration))
-//
-// Color emission auto-detects: enabled only when stdout is a TTY and
-// neither NO_COLOR nor CI is set. Agents (Claude Code, Cursor, etc.)
-// and pipes get plain text. CLICOLOR_FORCE=1 / SPARKWING_FORCE_COLOR=1
-// re-enables for the rare case the user wants color through a pipe.
 package color
 
 import (

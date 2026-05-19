@@ -1,10 +1,3 @@
-// Package pipelines parses .sparkwing/pipelines.yaml, the registry
-// that maps each pipeline's invocation name to the Go type that
-// implements it plus its trigger rules, declared secrets, and tags.
-//
-// The file is intentionally a thin registry. The Plan itself, jobs,
-// conditions, and per-step details all live in Go code; pipelines.yaml
-// only holds metadata the controller needs before loading Go.
 package pipelines
 
 import (
