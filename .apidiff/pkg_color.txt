@@ -1,0 +1,13 @@
+# pkg/color
+
+func Blue(args ...any) string
+func Bold(args ...any) string
+func Cyan(args ...any) string
+func Dim(args ...any) string
+func Enabled() bool
+func Green(args ...any) string
+func IsInteractiveStdout() bool
+func Magenta(args ...any) string
+func Red(args ...any) string
+func SetEnabled(on bool)
+func Yellow(args ...any) string

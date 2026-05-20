@@ -1,0 +1,17 @@
+# pkg/docs
+
+func All() string
+type Entry struct {
+	Slug    string
+	Path    string
+	Title   string
+	Summary string
+	Bytes   int
+}
+const ErrNotFound = docsError("doc not found")
+func List() []Entry
+func Read(slug string) (string, error)
+func Search(query string) []Entry
+
+# methods on un-declared receiver types (likely a bug)
+func (e docsError) Error() string

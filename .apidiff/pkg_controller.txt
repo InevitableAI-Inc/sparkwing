@@ -1,0 +1,93 @@
+# pkg/controller
+
+type Agent struct {
+	Name          string
+	Type          string
+	Labels        map[string]string
+	LastSeen      string
+	Status        string
+	ActiveJobs    []string
+	MaxConcurrent int
+}
+func AuditFields(ctx context.Context) []slog.Attr
+type Authenticator struct {
+}
+func (a *Authenticator) AuthDisabled() bool
+func (a *Authenticator) Authenticate(raw string) (*Principal, error)
+func (a *Authenticator) Middleware(next http.Handler) http.Handler
+type Cipher interface {
+	Seal(plain string) (string, error)
+
+	Open(envelope string) (string, error)
+}
+type Dispatcher interface {
+	Dispatch(ctx context.Context, req RunRequest) error
+}
+func New(st *store.Store, logger *slog.Logger) *Server
+func NewAuthenticator(st *store.Store, cacheTTL time.Duration) *Authenticator
+type NoopDispatcher struct {
+	Logger *slog.Logger
+}
+func (n NoopDispatcher) Dispatch(_ context.Context, req RunRequest) error
+type PoolConfig struct {
+	Client kubernetes.Interface
+
+	Namespace string
+
+	ReconcileEvery time.Duration
+}
+type Principal struct {
+	Name        string
+	Kind        string
+	Scopes      []string
+	TokenPrefix string
+	Authed      time.Time
+}
+func (p *Principal) HasScope(s string) bool
+func PrincipalFromContext(ctx context.Context) (*Principal, bool)
+type RunRequest struct {
+	RunID       string
+	Pipeline    string
+	Args        map[string]string
+	Trigger     sparkwing.TriggerInfo
+	Git         *sparkwing.Git
+	ParentRunID string
+	RetryOf     string
+}
+const ScopeAdmin = "admin"
+const ScopeApprovalsWrite = "approvals.write"
+const ScopeLogsRead = "logs.read"
+const ScopeLogsWrite = "logs.write"
+const ScopeNodesClaim = "nodes.claim"
+const ScopeRunsRead = "runs.read"
+const ScopeRunsWrite = "runs.write"
+const ScopeTriggersRead = "triggers.read"
+func Serve(ctx context.Context, st *store.Store, addr string, logger *slog.Logger) error
+func ServeWith(ctx context.Context, s *Server, addr string) error
+type Server struct {
+}
+func (s *Server) AttachPool(cfg PoolConfig) *Server
+func (s *Server) EnableAuthFromStore() *Server
+func (s *Server) Handler() http.Handler
+func (s *Server) PoolListForTesting(ctx context.Context) ([]corev1.PersistentVolumeClaim, error)
+func (s *Server) WithArtifactStore(a storage.ArtifactStore) *Server
+func (s *Server) WithAuthenticator(a *Authenticator) *Server
+func (s *Server) WithCostRate(rate float64, source string) *Server
+func (s *Server) WithDispatcher(d Dispatcher) *Server
+func (s *Server) WithGitHubWebhookSecret(secret string) *Server
+func (s *Server) WithQueueTimeout(d time.Duration) *Server
+func (s *Server) WithReconcileHook(fn func(context.Context) error) *Server
+func (s *Server) WithSecretsCipher(c Cipher) *Server
+type TrendPoint struct {
+	Bucket    string
+	Total     int
+	Passed    int
+	Failed    int
+	Cached    int
+	AvgDurMs  int64
+	P95DurMs  int64
+	AvgWaitMs int64
+}
+
+# methods on un-declared receiver types (likely a bug)
+func (r *statusRecorder) WriteHeader(code int)

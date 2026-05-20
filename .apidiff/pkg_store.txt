@@ -1,0 +1,448 @@
+# pkg/store
+
+const AcquireCached AcquireKind = "cached"
+const AcquireCancellingOthers AcquireKind = "cancelling_others"
+const AcquireCoalesced AcquireKind = "coalesced"
+const AcquireFailed AcquireKind = "failed"
+const AcquireGranted AcquireKind = "granted"
+type AcquireKind string
+const AcquireQueued AcquireKind = "queued"
+const AcquireSkipped AcquireKind = "skipped"
+type AcquireSlotRequest struct {
+	Key           string
+	HolderID      string
+	RunID         string
+	NodeID        string
+	Capacity      int
+	Policy        string
+	CacheKeyHash  string
+	CacheTTL      time.Duration
+	CancelTimeout time.Duration
+	Lease         time.Duration
+}
+type AcquireSlotResponse struct {
+	Kind             AcquireKind
+	HolderID         string
+	LeaseExpiresAt   time.Time
+	LeaderRunID      string
+	LeaderNodeID     string
+	OutputRef        string
+	OriginRunID      string
+	OriginNodeID     string
+	SupersededIDs    []string
+	PreviousCapacity int
+	DriftNote        string
+}
+type Approval struct {
+	RunID       string
+	NodeID      string
+	RequestedAt time.Time
+	Message     string
+	TimeoutMS   int64
+	OnTimeout   string
+	Approver    string
+	ResolvedAt  *time.Time
+	Resolution  string
+	Comment     string
+}
+const ApprovalOnTimeoutApprove = "approve"
+const ApprovalOnTimeoutDeny = "deny"
+const ApprovalOnTimeoutFail = "fail"
+const ApprovalResolutionApproved = "approved"
+const ApprovalResolutionDenied = "denied"
+const ApprovalResolutionTimedOut = "timed_out"
+type ConcurrencyHolder struct {
+	Key            string
+	HolderID       string
+	RunID          string
+	NodeID         string
+	ClaimedAt      time.Time
+	LeaseExpiresAt time.Time
+	Superseded     bool
+}
+type ConcurrencyState struct {
+	Key      string
+	Capacity int
+	Holders  []ConcurrencyHolder
+	Waiters  []ConcurrencyWaiter
+}
+type ConcurrencyWaiter struct {
+	Key           string
+	RunID         string
+	NodeID        string
+	HolderID      string
+	ArrivedAt     time.Time
+	Policy        string
+	CacheKeyHash  string
+	LeaderRunID   string
+	LeaderNodeID  string
+	CancelTimeout time.Duration
+}
+type DebugPause struct {
+	RunID       string
+	NodeID      string
+	Reason      string
+	PausedAt    time.Time
+	ExpiresAt   time.Time
+	ReleasedAt  *time.Time
+	ReleasedBy  string
+	ReleaseKind string
+}
+const DefaultCancelTimeout = 60 * time.Second
+const DefaultConcurrencyHeartbeatInterval = 3 * time.Second
+const DefaultConcurrencyHeartbeatTimeout = 2 * time.Second
+const DefaultConcurrencyLease = 3 * time.Minute
+const DefaultLeaseDuration = 3 * time.Minute
+var ErrBootstrapClosed = errors.New("users: bootstrap closed (table not empty)")
+var ErrLockHeld = errors.New("held by another holder")
+var ErrNotFound = errors.New("not found")
+type Event struct {
+	RunID   string
+	Seq     int64
+	NodeID  string
+	Kind    string
+	TS      time.Time
+	Payload json.RawMessage
+}
+const FailureAgentLost = "agent_lost"
+const FailureLogsAuth = "logs_auth"
+const FailureOOMKilled = "oom_killed"
+const FailureQueueTimeout = "queue_timeout"
+const FailureRunnerLeaseExpired = "runner_lease_expired"
+const FailureTimeout = "timeout"
+const FailureUnknown = ""
+const MaxNodeDispatchEnvelope = 4 << 20
+type MetricSample struct {
+	TS            time.Time
+	CPUMillicores int64
+	MemoryBytes   int64
+}
+type Node struct {
+	RunID      string
+	NodeID     string
+	Status     string
+	Outcome    string
+	Deps       []string
+	Error      string
+	Output     []byte
+	StartedAt  *time.Time
+	FinishedAt *time.Time
+
+	ReadyAt        *time.Time
+	ClaimedBy      string
+	LeaseExpiresAt *time.Time
+
+	NeedsLabels []string
+
+	StatusDetail string
+
+	LastHeartbeat *time.Time
+
+	FailureReason string
+
+	ExitCode *int
+
+	Annotations []string
+
+	Summary string
+}
+type NodeDispatch struct {
+	RunID            string
+	NodeID           string
+	Seq              int
+	DispatchedAt     time.Time
+	CodeVersion      string
+	BinaryHash       string
+	RunnerLabels     []byte
+	EnvJSON          []byte
+	Workdir          string
+	InputEnvelope    []byte
+	InputSizeBytes   int64
+	SecretRedactions int
+}
+const NodeStatusApprovalPending = "approval_pending"
+type NodeStep struct {
+	RunID       string
+	NodeID      string
+	StepID      string
+	Status      string
+	StartedAt   *time.Time
+	FinishedAt  *time.Time
+	Annotations []string
+
+	Summary string
+}
+const OnLimitCancelOthers = "cancel_others"
+const OnLimitCoalesce = "coalesce"
+const OnLimitFail = "fail"
+const OnLimitQueue = "queue"
+const OnLimitSkip = "skip"
+func Open(path string) (*Store, error)
+func ParseRunFilter(q url.Values) RunFilter
+const PauseReasonAfter = "pause-after"
+const PauseReasonBefore = "pause-before"
+const PauseReasonOnFailure = "pause-on-failure"
+const PauseReleaseManual = "manual"
+const PauseReleaseTimeout = "timeout-released"
+const PrefixLen = 12
+const RetrySourceAuto = "auto"
+const RetrySourceManual = "manual"
+type Run struct {
+	ID            string
+	Pipeline      string
+	Status        string
+	TriggerSource string
+	GitBranch     string
+	GitSHA        string
+	Args          map[string]string
+	PlanSnapshot  []byte
+	Error         string
+
+	CreatedAt  time.Time
+	StartedAt  time.Time
+	FinishedAt *time.Time
+
+	ParentRunID string
+
+	Repo string
+
+	RepoURL string
+
+	GithubOwner string
+	GithubRepo  string
+
+	RetryOf   string
+	RetriedAs string
+
+	RetrySource string
+
+	ReplayOfRunID  string
+	ReplayOfNodeID string
+
+	Invocation map[string]any
+
+	AnnotationCount int
+	TopAnnotation   string
+	Annotations     []string
+}
+type RunFilter struct {
+	Pipelines   []string
+	Statuses    []string
+	Since       time.Time
+	Limit       int
+	ParentRunID string
+}
+type Secret struct {
+	Name      string
+	Value     string
+	Principal string
+	Masked    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+type Session struct {
+	ID         string
+	Principal  string
+	Scopes     []string
+	CSRFToken  string
+	CreatedAt  time.Time
+	ExpiresAt  time.Time
+	LastUsedAt *time.Time
+}
+const SessionIDLen = 32
+type SpawnedChild struct {
+	ParentNodeID string
+	Pipeline     string
+	ChildRunID   string
+}
+const StepFailed = "failed"
+const StepPassed = "passed"
+const StepRunning = "running"
+const StepSkipped = "skipped"
+type Store struct {
+}
+func (s *Store) AcquireConcurrencySlot(ctx context.Context, req AcquireSlotRequest) (AcquireSlotResponse, error)
+func (s *Store) AddNodeMetricSample(ctx context.Context, runID, nodeID string, sample MetricSample) error
+func (s *Store) AppendEvent(ctx context.Context, runID, nodeID, kind string, payload []byte) (int64, error)
+func (s *Store) AppendNodeAnnotation(ctx context.Context, runID, nodeID, msg string) error
+func (s *Store) AppendStepAnnotation(ctx context.Context, runID, nodeID, stepID, msg string) error
+func (s *Store) CancelWaiter(ctx context.Context, key, runID, nodeID string) (bool, error)
+func (s *Store) ClaimNextReadyNode(ctx context.Context, holderID string, lease time.Duration, runnerLabels []string) (*Node, error)
+func (s *Store) ClaimNextTrigger(ctx context.Context, lease time.Duration) (*Trigger, error)
+func (s *Store) ClaimNextTriggerFor(ctx context.Context, lease time.Duration, pipelines []string, sources []string) (*Trigger, error)
+func (s *Store) ClaimSpecificTrigger(ctx context.Context, id string, lease time.Duration) (*Trigger, error)
+func (s *Store) Close() error
+func (s *Store) CountActiveRunners(ctx context.Context, window time.Duration) (int, error)
+func (s *Store) CountConcurrencyCache(ctx context.Context) (int, error)
+func (s *Store) CountPendingNodes(ctx context.Context) (int, error)
+func (s *Store) CountUsers() (int, error)
+func (s *Store) CreateApproval(ctx context.Context, a Approval) error
+func (s *Store) CreateDebugPause(ctx context.Context, p DebugPause) error
+func (s *Store) CreateFirstUser(name, password string, now time.Time) (*User, error)
+func (s *Store) CreateNode(ctx context.Context, n Node) error
+func (s *Store) CreateOrReplaceSecret(name, value, principal string, masked bool, now time.Time) error
+func (s *Store) CreateRun(ctx context.Context, r Run) error
+func (s *Store) CreateSession(principal string, scopes []string, ttl time.Duration, now time.Time) (rawSession, csrfToken string, sess *Session, err error)
+func (s *Store) CreateToken(principal, kind string, scopes []string, ttl time.Duration, now time.Time) (raw string, tok *Token, err error)
+func (s *Store) CreateTrigger(ctx context.Context, t Trigger) error
+func (s *Store) CreateUser(name, password string, now time.Time) (*User, error)
+func (s *Store) DB() *sql.DB
+func (s *Store) DeleteRun(ctx context.Context, runID string) error
+func (s *Store) DeleteSecret(name string) error
+func (s *Store) DeleteSession(rawSession string) error
+func (s *Store) DeleteUser(name string) error
+func (s *Store) ExpireSessions(now time.Time) (int64, error)
+func (s *Store) ExtendSession(rawSession string, ttl time.Duration, now time.Time) error
+func (s *Store) FailExpiredNodeClaims(ctx context.Context) ([][2]string, error)
+func (s *Store) FailNodesInRun(ctx context.Context, runID, errMsg, failureReason string) ([]string, error)
+func (s *Store) FailStaleQueuedNodes(ctx context.Context, olderThan time.Duration) ([][2]string, error)
+func (s *Store) FindSpawnedChildTriggerID(ctx context.Context, parentRunID, parentNodeID, pipeline string) (string, error)
+func (s *Store) FinishNode(ctx context.Context, runID, nodeID, outcome, errMsg string, output []byte) error
+func (s *Store) FinishNodeStep(ctx context.Context, runID, nodeID, stepID, status string) error
+func (s *Store) FinishNodeWithReason(ctx context.Context, runID, nodeID, outcome, errMsg string, output []byte, reason string, exitCode *int) error
+func (s *Store) FinishRun(ctx context.Context, runID, status, errMsg string) error
+func (s *Store) FinishTrigger(ctx context.Context, id string) error
+func (s *Store) ForceReleaseSupersededHolders(ctx context.Context, key string) ([]ConcurrencyHolder, error)
+func (s *Store) GetActiveDebugPause(ctx context.Context, runID, nodeID string) (*DebugPause, error)
+func (s *Store) GetApproval(ctx context.Context, runID, nodeID string) (*Approval, error)
+func (s *Store) GetConcurrencyState(ctx context.Context, key string) (*ConcurrencyState, error)
+func (s *Store) GetLatestRun(ctx context.Context, pipeline string, statuses []string, maxAge time.Duration) (*Run, error)
+func (s *Store) GetNode(ctx context.Context, runID, nodeID string) (*Node, error)
+func (s *Store) GetNodeDispatch(ctx context.Context, runID, nodeID string, seq int) (*NodeDispatch, error)
+func (s *Store) GetRun(ctx context.Context, runID string) (*Run, error)
+func (s *Store) GetRunAncestorPipelines(ctx context.Context, runID string) ([]string, error)
+func (s *Store) GetSecret(name string) (*Secret, error)
+func (s *Store) GetTrigger(ctx context.Context, id string) (*Trigger, error)
+func (s *Store) HeartbeatConcurrencySlot(ctx context.Context, key, holderID string, lease time.Duration) (expires time.Time, superseded bool, err error)
+func (s *Store) HeartbeatNodeClaim(ctx context.Context, runID, nodeID, holderID string, lease time.Duration) error
+func (s *Store) HeartbeatTrigger(ctx context.Context, id string, lease time.Duration) (cancelled bool, err error)
+func (s *Store) ListApprovalsForRun(ctx context.Context, runID string) ([]*Approval, error)
+func (s *Store) ListDebugPauses(ctx context.Context, runID string) ([]*DebugPause, error)
+func (s *Store) ListEventsAfter(ctx context.Context, runID string, afterSeq int64, limit int) ([]Event, error)
+func (s *Store) ListNodeDispatches(ctx context.Context, runID, nodeID string) ([]*NodeDispatch, error)
+func (s *Store) ListNodeMetrics(ctx context.Context, runID, nodeID string) ([]MetricSample, error)
+func (s *Store) ListNodeSteps(ctx context.Context, runID string) ([]*NodeStep, error)
+func (s *Store) ListNodes(ctx context.Context, runID string) ([]*Node, error)
+func (s *Store) ListPendingApprovals(ctx context.Context) ([]*Approval, error)
+func (s *Store) ListPendingTriggersForParent(ctx context.Context, parentRunID string) ([]string, error)
+func (s *Store) ListRunRetryTree(ctx context.Context, runID string) ([]*Run, error)
+func (s *Store) ListRuns(ctx context.Context, f RunFilter) ([]*Run, error)
+func (s *Store) ListSecrets() ([]Secret, error)
+func (s *Store) ListSpawnedChildrenByRun(ctx context.Context, runID string) ([]SpawnedChild, error)
+func (s *Store) ListTokens(kind string, includeRevoked bool) ([]Token, error)
+func (s *Store) ListTriggers(ctx context.Context, f TriggerFilter) ([]*Trigger, error)
+func (s *Store) ListUsers() ([]User, error)
+func (s *Store) LookupSession(rawSession string, now time.Time) (*Session, error)
+func (s *Store) LookupToken(raw string, now time.Time) (*Token, error)
+func (s *Store) LookupTokenByPrefix(prefix string) (*Token, error)
+func (s *Store) MarkNodeReady(ctx context.Context, runID, nodeID string) error
+func (s *Store) PromoteNextWaiters(ctx context.Context, key string, lease time.Duration) ([]ConcurrencyWaiter, error)
+func (s *Store) PruneRunsOlderThan(ctx context.Context, cutoff time.Time) ([]string, error)
+func (s *Store) ReapExpiredNodeClaims(ctx context.Context) ([][2]string, error)
+func (s *Store) ReapExpiredTriggers(ctx context.Context) ([]string, error)
+func (s *Store) ReapStaleConcurrencyHolders(ctx context.Context) ([]ConcurrencyHolder, error)
+func (s *Store) ReapStaleConcurrencyWaiters(ctx context.Context, maxAge time.Duration) ([]ConcurrencyWaiter, error)
+func (s *Store) ReconcileConcurrencyKeys(ctx context.Context, lease time.Duration) (int, error)
+func (s *Store) ReleaseAndNotify(ctx context.Context, key, holderID, outcome, outputRef, cacheKeyHash string, ttl, promoteLease time.Duration) (released bool, followers []ConcurrencyWaiter, promoted []ConcurrencyWaiter, err error)
+func (s *Store) ReleaseConcurrencySlot(ctx context.Context, key, holderID, outcome, outputRef, cacheKeyHash string, ttl time.Duration) (bool, error)
+func (s *Store) ReleaseDebugPause(ctx context.Context, runID, nodeID, releasedBy, kind string) error
+func (s *Store) RequestCancel(ctx context.Context, id string) error
+func (s *Store) ResolveApproval(ctx context.Context, runID, nodeID, resolution, approver, comment string) (*Approval, error)
+func (s *Store) ResolveCoalesceFollowers(ctx context.Context, key, leaderRunID, leaderNodeID string) ([]ConcurrencyWaiter, error)
+func (s *Store) ResolveWaiter(ctx context.Context, key, runID, nodeID, cacheKeyHash, leaderRunID, leaderNodeID string) (WaiterResolution, error)
+func (s *Store) RevokeNodeReady(ctx context.Context, runID, nodeID string) (bool, error)
+func (s *Store) RevokeToken(prefix string, now time.Time) error
+func (s *Store) RotateToken(prefix string, grace, ttl time.Duration, now time.Time) (raw string, newTok, oldTok *Token, err error)
+func (s *Store) SetNodeStatus(ctx context.Context, runID, nodeID, status string) error
+func (s *Store) SetNodeSummary(ctx context.Context, runID, nodeID, md string) error
+func (s *Store) SetRetriedAs(ctx context.Context, runID, newID string) error
+func (s *Store) SetStepSummary(ctx context.Context, runID, nodeID, stepID, md string) error
+func (s *Store) SkipNodeStep(ctx context.Context, runID, nodeID, stepID string) error
+func (s *Store) StartNode(ctx context.Context, runID, nodeID string) error
+func (s *Store) StartNodeStep(ctx context.Context, runID, nodeID, stepID string) error
+func (s *Store) SweepExpiredConcurrencyCache(ctx context.Context) (int64, error)
+func (s *Store) SweepLRUConcurrencyCache(ctx context.Context, keepCount int) (int64, error)
+func (s *Store) TouchNodeHeartbeat(ctx context.Context, runID, nodeID string) error
+func (s *Store) UpdateNodeActivity(ctx context.Context, runID, nodeID, detail string) error
+func (s *Store) UpdateNodeDeps(ctx context.Context, runID, nodeID string, deps []string) error
+func (s *Store) UpdatePlanSnapshot(ctx context.Context, runID string, snapshot []byte) error
+func (s *Store) VerifyUser(name, password string, now time.Time) (*User, error)
+func (s *Store) WriteNodeDispatch(ctx context.Context, d NodeDispatch) error
+type Token struct {
+	Hash       string
+	Prefix     string
+	Principal  string
+	Kind       string
+	Scopes     []string
+	CreatedAt  time.Time
+	ExpiresAt  *time.Time
+	LastUsedAt *time.Time
+	RevokedAt  *time.Time
+	ReplacedBy string
+}
+func (t *Token) HasScope(scope string) bool
+func (t *Token) IsValid(now time.Time) bool
+func TokenKindFromPrefix(raw string) string
+const TokenKindRunner = "runner"
+const TokenKindService = "service"
+const TokenKindUser = "user"
+const TokenPrefixRunner = "swr"
+const TokenPrefixService = "sws"
+const TokenPrefixUser = "swu"
+type Trigger struct {
+	ID             string
+	Pipeline       string
+	Args           map[string]string
+	TriggerSource  string
+	TriggerUser    string
+	TriggerEnv     map[string]string
+	GitBranch      string
+	GitSHA         string
+	Status         string
+	CreatedAt      time.Time
+	ClaimedAt      *time.Time
+	LeaseExpiresAt *time.Time
+
+	ParentRunID string
+
+	Repo        string
+	RepoURL     string
+	GithubOwner string
+	GithubRepo  string
+
+	RetryOf string
+
+	RetrySource string
+
+	ParentNodeID string
+
+	Full bool
+}
+type TriggerFilter struct {
+	Statuses  []string
+	Pipelines []string
+	Repo      string
+	Limit     int
+}
+type User struct {
+	Name        string
+	PWHash      string
+	CreatedAt   time.Time
+	LastLoginAt *time.Time
+}
+const WaiterCached WaiterStatus = "cached"
+const WaiterCancelled WaiterStatus = "cancelled"
+const WaiterLeaderFinished WaiterStatus = "leader_finished"
+const WaiterPromoted WaiterStatus = "promoted"
+type WaiterResolution struct {
+	Status             WaiterStatus
+	HolderID           string
+	HolderLeaseExpires time.Time
+	OutputRef          string
+	OriginRunID        string
+	OriginNodeID       string
+	LeaderRunID        string
+	LeaderNodeID       string
+}
+type WaiterStatus string
+const WaiterStillWaiting WaiterStatus = "still_waiting"

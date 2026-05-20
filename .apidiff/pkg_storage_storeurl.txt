@@ -1,0 +1,8 @@
+# pkg/storage/storeurl
+
+func OpenArtifactStore(ctx context.Context, raw string) (storage.ArtifactStore, error)
+func OpenArtifactStoreFromSpec(ctx context.Context, spec backends.Spec, lookup ProfileLookup) (storage.ArtifactStore, error)
+func OpenLogStore(ctx context.Context, raw string) (storage.LogStore, error)
+func OpenLogStoreFromSpec(ctx context.Context, spec backends.Spec, lookup ProfileLookup) (storage.LogStore, error)
+func OpenStateStoreFromSpec(_ context.Context, spec backends.Spec) (storage.StateStore, error)
+type ProfileLookup func(name string) (controllerURL, token string, err error)

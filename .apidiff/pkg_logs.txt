@@ -1,0 +1,56 @@
+# pkg/logs
+
+type AuthError struct {
+	Status  int
+	Scope   string
+	RawBody string
+}
+func (e *AuthError) Error() string
+type AuthErrorBody struct {
+	Error string
+
+	MissingScope string
+
+	Principal string
+
+	Message string
+}
+type Client struct {
+}
+func (c *Client) Append(ctx context.Context, runID, nodeID string, data []byte) error
+func (c *Client) DeleteRun(ctx context.Context, runID string) error
+func (c *Client) Read(ctx context.Context, runID, nodeID string) ([]byte, error)
+func (c *Client) ReadFiltered(ctx context.Context, runID, nodeID string, f ReadFilter) ([]byte, error)
+func (c *Client) ReadRun(ctx context.Context, runID string) ([]byte, error)
+func (c *Client) Stream(ctx context.Context, runID, nodeID string) (io.ReadCloser, error)
+func New(root string, logger *slog.Logger) (*Server, error)
+func NewClient(baseURL string, httpClient *http.Client) *Client
+func NewClientWithToken(baseURL string, httpClient *http.Client, token string) *Client
+type ReadFilter struct {
+	Tail  int
+	Head  int
+	Lines string
+	Grep  string
+}
+type SearchResponse struct {
+	Query   string
+	Results []SearchResult
+	Total   int
+}
+type SearchResult struct {
+	RunID   string
+	NodeID  string
+	Line    int
+	Content string
+}
+func Serve(ctx context.Context, root, addr string, logger *slog.Logger) error
+func ServeWithTokens(ctx context.Context, root, addr string, controllerURL string, logger *slog.Logger) error
+type Server struct {
+}
+func (s *Server) Handler() http.Handler
+func (s *Server) WithControllerAuth(controllerURL string, cacheTTL time.Duration) *Server
+
+# methods on un-declared receiver types (likely a bug)
+func (t *bearerTransport) RoundTrip(req *http.Request) (*http.Response, error)
+func (r *statusRecorder) Flush()
+func (r *statusRecorder) WriteHeader(code int)

@@ -1,0 +1,33 @@
+# pkg/storage
+
+type ArtifactStore interface {
+	Get(ctx context.Context, key string) (io.ReadCloser, error)
+
+	Put(ctx context.Context, key string, r io.Reader) error
+
+	Has(ctx context.Context, key string) (bool, error)
+
+	Delete(ctx context.Context, key string) error
+
+	List(ctx context.Context, prefix string) ([]string, error)
+}
+var ErrListNotSupported = errors.New("storage: list not supported")
+var ErrNotFound = errors.New("storage: not found")
+type LogStore interface {
+	Append(ctx context.Context, runID, nodeID string, data []byte) error
+
+	Read(ctx context.Context, runID, nodeID string, opts ReadOpts) ([]byte, error)
+
+	ReadRun(ctx context.Context, runID string) ([]byte, error)
+
+	Stream(ctx context.Context, runID, nodeID string) (io.ReadCloser, error)
+
+	DeleteRun(ctx context.Context, runID string) error
+}
+type ReadOpts struct {
+	Tail  int
+	Head  int
+	Lines string
+	Grep  string
+}
+type StateStore = *store.Store
