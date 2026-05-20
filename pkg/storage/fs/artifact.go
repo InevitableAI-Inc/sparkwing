@@ -1,5 +1,6 @@
 // Package fs implements storage.ArtifactStore + storage.LogStore on
-// top of the local filesystem.
+// top of the local filesystem. Both surfaces run the shared
+// pkg/storage/conformance suites.
 //
 // Layout under Root:
 //

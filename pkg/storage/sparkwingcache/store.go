@@ -1,5 +1,8 @@
 // Package sparkwingcache adapts the sparkwing-cache HTTP /bin/<key>
 // endpoints to storage.ArtifactStore. Keys are treated as opaque.
+// Runs the shared pkg/storage/conformance.TestArtifactStore suite;
+// List is skipped because the underlying HTTP service has no
+// enumeration primitive.
 package sparkwingcache
 
 import (

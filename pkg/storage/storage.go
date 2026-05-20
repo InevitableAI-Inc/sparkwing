@@ -14,6 +14,14 @@ var ErrNotFound = errors.New("storage: not found")
 // without a native enumeration primitive.
 var ErrListNotSupported = errors.New("storage: list not supported")
 
+// ErrNotSupported is returned by any operation a partial
+// implementation deliberately doesn't perform (e.g. Read on a
+// write-only LogStore). Conformance suites under
+// pkg/storage/conformance use errors.Is on this sentinel to skip
+// subtests for operations the implementation has opted out of,
+// rather than failing them.
+var ErrNotSupported = errors.New("storage: operation not supported")
+
 // ArtifactStore is a content-addressed blob store. Keys are
 // caller-defined opaque strings. Implementations must tolerate
 // concurrent Put on the same key (last write wins) without data

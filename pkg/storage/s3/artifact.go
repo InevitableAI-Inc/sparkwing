@@ -1,5 +1,7 @@
 // Package s3 implements storage.ArtifactStore + storage.LogStore on
-// top of any S3-compatible object store.
+// top of any S3-compatible object store. Both surfaces run the
+// shared pkg/storage/conformance suites against an in-memory
+// gofakes3 server.
 //
 // Object layout (Prefix is caller-supplied):
 //

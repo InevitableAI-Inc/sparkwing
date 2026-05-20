@@ -12,6 +12,10 @@
 // returning empty bytes would hide that fact from a dashboard caller.
 // DeleteRun is a no-op (idempotent), since no per-run object exists
 // to delete.
+//
+// Runs the shared pkg/storage/conformance.TestLogStore suite. The
+// read-side subtests skip on ErrReadUnsupported (which wraps
+// storage.ErrNotSupported).
 package stdoutlogs
 
 import (
@@ -48,9 +52,9 @@ func NewWithWriter(w io.Writer) *LogStore {
 var _ storage.LogStore = (*LogStore)(nil)
 
 // ErrReadUnsupported is returned by every read path on this backend.
-// Wrapping in a sentinel lets a caller distinguish "this backend
-// can't read" from "this read failed transiently."
-var ErrReadUnsupported = errors.New("stdout logs backend does not support reads; configure a persistent backend (filesystem, s3, controller) for log retrieval")
+// Wraps [storage.ErrNotSupported] so callers using either the local
+// or shared sentinel can detect the case via errors.Is.
+var ErrReadUnsupported = fmt.Errorf("stdout logs backend does not support reads; configure a persistent backend (filesystem, s3, controller) for log retrieval: %w", storage.ErrNotSupported)
 
 // Append writes the payload to stdout, prefixing each non-empty line
 // with `<runID> <nodeID> | ` so concurrent jobs are disentangled by a

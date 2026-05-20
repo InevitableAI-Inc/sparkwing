@@ -13,6 +13,7 @@ type ArtifactStore interface {
 }
 var ErrListNotSupported = errors.New("storage: list not supported")
 var ErrNotFound = errors.New("storage: not found")
+var ErrNotSupported = errors.New("storage: operation not supported")
 type LogStore interface {
 	Append(ctx context.Context, runID, nodeID string, data []byte) error
 

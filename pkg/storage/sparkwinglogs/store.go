@@ -1,5 +1,7 @@
 // Package sparkwinglogs adapts the sparkwing-logs HTTP service to
-// storage.LogStore. Thin wrapper around logs.Client.
+// storage.LogStore. Thin wrapper around logs.Client. Runs the
+// shared pkg/storage/conformance.TestLogStore suite against an
+// in-process stub of the sparkwing-logs HTTP API.
 package sparkwinglogs
 
 import (
